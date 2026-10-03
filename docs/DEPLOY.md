@@ -26,10 +26,10 @@ The server is **stateless**: rooms and matches live only in memory, with no data
    ```
    After installing, **close and reopen** the terminal; `node -v` should show v22 or higher (winget's LTS is currently v24.x, which also works). Without winget, download installers from <https://nodejs.org/en/download> and <https://git-scm.com/download/win>.
 2. Download, one of two ways. It's best to use a fixed, short directory that is **not inside OneDrive's sync range**, such as `C:\Stronghold-Protocol`:
-   - **All-in-one bundle (recommended)**: on the repo's [Releases](https://github.com/sganggs/Stronghold-Protocol/releases) page download the latest version's (currently v0.1.1) all-in-one bundle zip (already includes dependencies, front-end libraries and all assets, including the official 3D board), unzip it, and put the `Stronghold-Protocol` folder inside at the location above. Git is not needed, and the first launch won't download assets. The assets are copyright of Shanghai Hypergryph / Yostar, for non-commercial use only — see [NOTICE.md](../NOTICE.md).
+   - **All-in-one bundle (recommended)**: on the repo's [Releases](https://github.com/vietdoan0233/Stronghold-Protocol-ENG/releases) page download the latest version's (currently v0.1.1) all-in-one bundle zip (already includes dependencies, front-end libraries and all assets, including the official 3D board), unzip it, and put the `Stronghold-Protocol` folder inside at the location above. Git is not needed, and the first launch won't download assets. The assets are copyright of Shanghai Hypergryph / Yostar, for non-commercial use only — see [NOTICE.md](../NOTICE.md).
    - **Source**:
      ```powershell
-     git clone https://github.com/sganggs/Stronghold-Protocol.git C:\Stronghold-Protocol
+     git clone https://github.com/vietdoan0233/Stronghold-Protocol-ENG.git C:\Stronghold-Protocol
      ```
 3. Double-click `C:\Stronghold-Protocol\scripts\start-windows.bat`. The first run will: install dependencies (`npm ci`; skipped with the bundle, which already has them) → copy front-end libraries → download about 250 MB of assets (skipped with the bundle; shows progress, and re-launching after an interruption resumes) → if a local Arknights client is detected, ask whether to extract the official textures (can be skipped) → start the server and open the browser.
 4. The window prints an address friends can use, such as `http://192.168.1.23:3000`. Open it on another device to confirm it works. Closing the window stops the server.

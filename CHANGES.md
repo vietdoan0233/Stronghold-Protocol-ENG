@@ -24,7 +24,7 @@ Consequently:
 - The server boot banner now prints `Stronghold Protocol: Alliance v<version>`.
 - All documentation, the page `<title>`, and metadata say "Stronghold Protocol: Alliance".
 
-The repository and GitHub slug remain `Stronghold-Protocol` (the subtitle is the only part that changed).
+This English fork lives at `github.com/vietdoan0233/Stronghold-Protocol-ENG`, forked from the upstream Chinese project `github.com/sganggs/Stronghold-Protocol`.
 
 ## 2. Terminology
 

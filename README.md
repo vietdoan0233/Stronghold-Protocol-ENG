@@ -75,8 +75,8 @@ The bundle already contains the code, runtime dependencies and all the art / aud
 ### Option 2: Run from source
 
 ```bash
-git clone https://github.com/sganggs/Stronghold-Protocol.git
-cd Stronghold-Protocol
+git clone https://github.com/vietdoan0233/Stronghold-Protocol-ENG.git
+cd Stronghold-Protocol-ENG
 npm install        # install dependencies (postinstall copies pixi / preact / three into public/vendor)
 npm run setup      # check the environment and download ~250 MB of art / audio from public mirrors (interruptible; re-running resumes)
 npm start          # start the server: http://localhost:3000

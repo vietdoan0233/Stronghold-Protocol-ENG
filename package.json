@@ -4,13 +4,13 @@
   "private": true,
   "description": "An unofficial fan remake of Arknights' \"Stronghold Protocol: Alliance\" as an online web game (1–4 player co-op, Node.js server + browser client)",
   "license": "GPL-3.0-or-later",
-  "homepage": "https://github.com/sganggs/Stronghold-Protocol#readme",
+  "homepage": "https://github.com/vietdoan0233/Stronghold-Protocol-ENG#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sganggs/Stronghold-Protocol.git"
+    "url": "git+https://github.com/vietdoan0233/Stronghold-Protocol-ENG.git"
   },
   "bugs": {
-    "url": "https://github.com/sganggs/Stronghold-Protocol/issues"
+    "url": "https://github.com/vietdoan0233/Stronghold-Protocol-ENG/issues"
   },
   "keywords": [
     "arknights",
