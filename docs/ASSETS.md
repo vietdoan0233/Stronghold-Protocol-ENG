@@ -82,7 +82,7 @@ The research JSONs in `docs/research/` (03, 05, 07) define **which** ids are nee
 | Operator battle Spine (Front, Back) | fexli/ArknightsResource `spine/{id}/{id}/{Front,Back}/` | `spine/op/{charId}/{front,back}/{stem}.{skel,atlas,png}` |
 | Token Spine | fexli: the default model, or else the first skin variant (`spine/{tokenId}/{variant}/Spine/`) | `spine/token/{tokenId}/{stem}.*` |
 | Enemy Spine (PC build, premultiplied alpha) | isHarryh/Ark-Models `models_enemies/{key}/`, file names from `models_data.json` | `spine/enemy/{enemyId}/{stem}.*` |
-| Enemy Spine that no dump carries (灼热源石虫 / 炽焰源石虫) | the local client only (`tools/local-extract/extract.py ENEMY_SPINES`, optional); never downloaded and never required: an overlay of the web alias (`enemies[id].spineLocal`) | `local/spine/enemy/{enemyId}/{stem}.*` (listed in `data/local-assets.json`) |
+| Enemy Spine that no dump carries (Blazing Originium Slug / Pyric Originium Slug) | the local client only (`tools/local-extract/extract.py ENEMY_SPINES`, optional); never downloaded and never required: an overlay of the web alias (`enemies[id].spineLocal`) | `local/spine/enemy/{enemyId}/{stem}.*` (listed in `data/local-assets.json`) |
 | BGM | AA2 `voice` branch `audio/sound_beta_2/music/**` | `audio/bgm/{file}.mp3` |
 | SFX (UI, battle, per unit) | AA2 `voice` `audio/sound_beta_2/**`, mapped from `audio_data.json` banks | `audio/sfx/{same sub-path}.mp3` |
 | Fonts: Bender Regular and Light, Novecento Wide | TimWangZi/The-font-of-Arknights | `public/fonts/*.{otf,ttf,woff2}`, `public/fonts/fonts.css` |
@@ -93,21 +93,21 @@ The `stem` of a Spine model is the upstream file name. Two examples: `char_107_l
 
 - **Operators:** all 138 pool charIds from `activity_table` (`charShopChessDatas[*].charId ∪ backupCharId`), including hidden chess and backup operators.
 - **Tokens:** the 20 pool tokens.
-- **Enemies:** 253 ids planned, 252 in the manifest (心烛 has no assets). The set is the union of:
+- **Enemies:** 253 ids planned, 252 in the manifest (Heart Candle has no assets). The set is the union of:
   - the 07 enemy list;
-  - every enemy in the `act1autochess_*` wave, boss and 联防 levels that act2 modes use (from `05-maps.json`; the tutorial is excluded);
+  - every enemy in the `act1autochess_*` wave, boss and Unite levels that act2 modes use (from `05-maps.json`; the tutorial is excluded);
   - the bosses (`boss_1..10`);
   - the closure of their summons (`randomEnemyAttribute` spawns and blackboard `enemy_key` references);
-  - every key of `data/enemies.json` (built by `tools/build-data.mjs`, when present), which adds for example the enemies swapped in by 机变 effects;
+  - every key of `data/enemies.json` (built by `tools/build-data.mjs`, when present), which adds for example the enemies swapped in by draft effects;
   - the bosses' handbook/model ids, such as `enemy_1559_vtlionk`;
-  - enemy units spawned by operator kits (research 03 skills/talents). For example, 隐德来希's default S3 summons 心烛 `enemy_5601_entlec` through the talent key `take_extra_enemy_key`. 心烛 has no icon and no Spine in any dump, so it has no manifest entry: it is reported as a miss, and the client must draw a glyph.
+  - enemy units spawned by operator kits (research 03 skills/talents). For example, Entelechia's default S3 summons Heart Candle `enemy_5601_entlec` through the talent key `take_extra_enemy_key`. Heart Candle has no icon and no Spine in any dump, so it has no manifest entry: it is reported as a miss, and the client must draw a glyph.
 - **Extra tokens:** any `token_*` key of `data/tokens.json` that research does not list gets the default avatar and Spine locations.
-  - The non-token summons in that file (`enemy_9012_acloon` 炎佑, `char_605_cmedic`, `char_613_acmedc`) are found under `enemies` and `chars`.
+  - The non-token summons in that file (`enemy_9012_acloon` Yan's Protection, `char_605_cmedic`, `char_613_acmedc`) are found under `enemies` and `chars`.
 - **Skill icons:** the default skill of every chess (`defaultSkillIndex`), plus each backup operator's `skillIndex`. That makes 144 icons.
 - **UI:**
   - every group from `07-assets.json → autochessUi`: rarity, elite and chess-level sprites, the shop panel and cards, HUD, bond board, equip slot, round dialog, band choose, settlement, prepare backdrop;
   - `arts` (rarity stars, elite icons, the camp logos of pool nations, the loading illustrations used by the act2 modes, battle common sprites, act2 entry backdrops and season logo, item rarity frames);
-  - extras: mode choice art, battle-ready backdrops, battle UI (speed, pause, HP slider, attack range, boss avatar frame, skill ready), `empty_skill`, the 机变 panel and cards, the equip-replace dialog, the bond detail dialog, the prep-ready panel, stage-info titles.
+  - extras: mode choice art, battle-ready backdrops, battle UI (speed, pause, HP slider, attack range, boss avatar frame, skill ready), `empty_skill`, the draft panel and cards, the equip-replace dialog, the bond detail dialog, the prep-ready panel, stage-info titles.
 
 ## Post-processing
 
@@ -167,7 +167,7 @@ All paths are URL paths relative to the site root, for example `/assets/char/ava
   // units' attack / hit (tools/assets/audio.mjs pickUnitSfx): operators get normal-mode banks only — the plain
   // `attack` / `combat` ability first, never a bank holding a skill-mode file (`_d` / `_h` / `_s`; the normal attack's end
   // in `_n`) — with their own projectile banks (ON_PROJECTILE_BORN / _HIT.projectile_chr_<name>) as fallbacks
-  // (DESIGN §18.4: 纯烬艾雅法拉's S3 impact used to be her `hit`); enemies and tokens take the first attack-like bank
+  // (DESIGN §18.4: Eyjafjalla the Hvít Aska's S3 impact used to be her `hit`); enemies and tokens take the first attack-like bank
   fonts: { css: '/fonts/fonts.css', faces: { [name]: { family, weight, woff2?, original } } }
 }
 ```
@@ -223,26 +223,26 @@ The manifest roles describe an enemy's first form. Enemies whose skeleton holds 
 catch-up frames and hidden tabs (`keepsState`), the game screen's pre-entry buffer (`keepEarly`) and the render engine's
 event queue (`render/interp.js isCosmeticEvent`) too — or, for a view built mid-battle, UnitInfo `form`, which `render/app.js renderInfo` passes to the view; a
 `change` clip plays once first, an `end` clip is timed from the fx's `dur` to finish as that state ends, keeping the
-current form's death clip until the next form's fx). A blocked or revealed 隐匿 enemy is drawn solid: the sim sends the
-stealth bit only while its 隐匿 is on:
-- 掠海漂移体's crawl (`Change`, then `*_02`);
-- 转译基底·α's three forms (`A_Die_B` / `_C` / `_D`, 2 s each, then `B_*` 寻仇者, `C_*` 幽灵, `D_*` 特战术师);
-- the 深池逐火 embers (`Die`, then `Idle_2` / `Move_2` / `Die_2`; `Revive` ends as it stands up) and 假想敌：再生's puppet
+current form's death clip until the next form's fx). A blocked or revealed concealed enemy is drawn solid: the sim sends the
+stealth bit only while its concealment is on:
+- Skimming Sea Drifter's crawl (`Change`, then `*_02`);
+- Decode Basis α's three forms (`A_Die_B` / `_C` / `_D`, 2 s each, then `B_*` Avenger, `C_*` Wraith, `D_*` Special Tactician);
+- the Dublinn Flamechaser embers (`Die`, then `Idle_2` / `Move_2` / `Die_2`; `Revive` ends as it stands up) and OpFor: Rebirth's puppet
   (`A_Die`, then `B_*`; `B_Revive`);
-- the leaders' 重生: 锏 (`Revive1`, `Revive2` held, `Revive3`, then `B_*`), 扎罗 (`A_revive_1` / `_2` / `_3`, then `B_*`),
-  “复仇者” (`Revive_Begin` / `_Loop` / `_End`), 杰斯顿 (`C1_Die`, then `C2_*`);
-- 守墓石像 (the statue on `Sleep` [ASSUMED by name], then the flyer's `*_2`).
+- the leaders' revival: Degenbrecher (`Revive1`, `Revive2` held, `Revive3`, then `B_*`), Zaaro (`A_revive_1` / `_2` / `_3`, then `B_*`),
+  “Hateful Avenger” (`Revive_Begin` / `_Loop` / `_End`), Jesselton (`C1_Die`, then `C2_*`);
+- Tombkeeper Grotesque (the statue on `Sleep` [ASSUMED by name], then the flyer's `*_2`).
 
-Not mapped (clip names ambiguous): “自在”, “巨大的丑东西”, 主角阵营角色 and “余音” (`*_A` / `*_B`: which of its two forms is A
+Not mapped (clip names ambiguous): “Free”, “The Big Ugly Thing”, Hero's Sidekick and “Echoes” (`*_A` / `*_B`: which of its two forms is A
 is not known) keep their manifest clips.
 
 Other renderer rules from research 07 §5.4–5.5:
 - **Choosing the model:** Front when the unit faces right or down; Front mirrored when facing left; Back when facing up.
 - **Attack speed:** set the attack `timeScale` to `duration / attackInterval`.
-- **Model size:** every skeleton is drawn at one `UNIT.modelScale` (render/style.js, 320 skeleton units per tile), which stands for the official standard. The official client also scales each enemy model in its battle prefab: the Graphic / FaceSwitcher / Spine transforms multiply to 0.27 for most enemies and for the operators' battle skins, but not for all of them. For example, 威龙 is 0.16, 妖怪 0.20 and 青铜镜 0.6. The skeletons themselves carry no such scale, because every enemy SkeletonDataAsset uses 0.01. So an enemy is drawn × data/enemies.json `modelScale` (its prefab's product ÷ 0.27, see docs/DATA.md; user playtest #6: 威龙 used to be drawn 1.35× a 妖怪 instead of 1.08×), and its HP bar sits on that model: at its setup-pose bounds' height × the same factors, or, for a skeleton without bounds, at the chibi headroom × `modelScale` (bosses 2.2 tiles). `tools/local-extract/enemy_scales.py` reads the products from a local client, and `tools/build-data.mjs MODEL_SCALES` keeps them.
+- **Model size:** every skeleton is drawn at one `UNIT.modelScale` (render/style.js, 320 skeleton units per tile), which stands for the official standard. The official client also scales each enemy model in its battle prefab: the Graphic / FaceSwitcher / Spine transforms multiply to 0.27 for most enemies and for the operators' battle skins, but not for all of them. For example, Raptor is 0.16, Monster 0.20 and Bronze Mirror 0.6. The skeletons themselves carry no such scale, because every enemy SkeletonDataAsset uses 0.01. So an enemy is drawn × data/enemies.json `modelScale` (its prefab's product ÷ 0.27, see docs/DATA.md; user playtest #6: Raptor used to be drawn 1.35× a Monster instead of 1.08×), and its HP bar sits on that model: at its setup-pose bounds' height × the same factors, or, for a skeleton without bounds, at the chibi headroom × `modelScale` (bosses 2.2 tiles). `tools/local-extract/enemy_scales.py` reads the products from a local client, and `tools/build-data.mjs MODEL_SCALES` keeps them.
 - **Enemy aliases:** `enemies[id].spineAliasOf` means the model belongs to another enemy. Two cases:
-  - `_2` variants whose official prefab is the base one (鸭爵, 高普尼克, 流泪小子, 圆仔, 假想敌：胄, 假想敌：铳): the base model, as in the game.
-  - an enemy whose own model no dump carries: 灼热源石虫 / 炽焰源石虫 (`enemy_1305_mhslim` / `_2`) use the plain 源石虫 on
+  - `_2` variants whose official prefab is the base one (Duck Lord, Gopnik, Crying Thief, Fatty, OpFor: Armor, OpFor: Gun): the base model, as in the game.
+  - an enemy whose own model no dump carries: Blazing Originium Slug / Pyric Originium Slug (`enemy_1305_mhslim` / `_2`) use the plain Originium Slug on
     the web (`plan.mjs ENEMY_SPINE_ALIAS`). Their official skeletons only exist in the client's enemy art bundles
     (`refs/arts/enm_art_*.ab`), so they are an optional **overlay**, `enemies[id].spineLocal` = `{ group, skel, atlas,
     textures, pma, anims, animations, events, hits, bounds }` (file names in the `data/local-assets.json` group
@@ -256,24 +256,24 @@ Other renderer rules from research 07 §5.4–5.5:
     - The client (`assets.js spineEntry`, with `assets.local()`, which `createFieldView` awaits with the manifest) draws
       the official model when the local manifest lists every file of it; otherwise, or when it fails to load
       (`UnitView`: the entry's `fallback`), the web alias, tinted toward the slug's own lava colours
-      (`render/units.js ALIAS_TINT`: 灼热 orange, 炽焰 red-orange; research 07 §5.6 "a hue shift", [ASSUMED] look) so a
-      source install without the extraction still tells them from the plain 源石虫. A release bundle carries the
+      (`render/units.js ALIAS_TINT`: Blazing orange, Pyric red-orange; research 07 §5.6 "a hue shift", [ASSUMED] look) so a
+      source install without the extraction still tells them from the plain Originium Slug. A release bundle carries the
       models only when it is zipped from a checkout where the extraction ran with the `spine/enemy` job (an extraction
       made with 0.1.0 lacks it: `node tools/setup.mjs --local` again, then check that `data/local-assets.json` lists
       `spine/enemy/enemy_1305_mhslim` and `spine/enemy/enemy_1305_mhslim_2`).
-    User feedback after 0.1.0 (D3: "所有特殊源石虫的模型全表现为普通源石虫"): the ELEMENT faction spawns up to ten of them a
+    User feedback after 0.1.0 (D3: "all special Originium Slug models render as the normal Originium Slug"): the ELEMENT faction spawns up to ten of them a
     round. A 2026-10-03 audit of every enemy of `data/enemies.json` (249) against the client's battle prefabs (the
-    skeleton each prefab's Spine renderer draws) found no other enemy drawn with another enemy's model; 伊利昂的木驮兽
+    skeleton each prefab's Spine renderer draws) found no other enemy drawn with another enemy's model; Wooden Burdenbeast of Ilion
     (`enemy_10159_mntrjn`) starts on its `Full` skin (five passengers) in the game and is drawn with the `default` one.
 
 ### Other fallbacks
 
 - **Tokens:**
-  - Without an avatar, use `chars[owner].avatar` with a 召唤物 badge, or `prof.battlecard.token`.
+  - Without an avatar, use `chars[owner].avatar` with a summon badge, or `prof.battlecard.token`.
   - Without a Spine, draw the avatar sprite with a bob tween.
   - `spineVariant` names the skin-variant model that stands in for the missing default model.
-- **Enemies without a spine** (for example `enemy_9016_acstmr`): draw `icon` in a diamond. Enemies with no manifest entry at all (`enemy_5601_entlec` 心烛): draw a procedural glyph.
-- **Battle effects** (projectiles per kind, hit sparks and slashes, skill bursts and auras, 蕾缪安's lock reticles and shells, 回环射手 boomerangs — DESIGN §17.3) are procedural: the FX atlas is drawn at run time (`public/js/render/textures.js`), so they need no downloaded or local art. The local client does have battle effect art — `battle/[pack]common.ab` holds per-weapon projectile sprites (`projectile_arrow(_new)`, `projectile_crossbow(_new)`, `projectile_yuki`, `img_fx_light_01/02`, `trail_11`), and the per-character `battle/prefabs/effects/*.ab` are particle systems whose textures live in other bundles — but none of it is extracted: the sim's `arrow` also covers gun snipers, and friends joining a game may not have the local art.
+- **Enemies without a spine** (for example `enemy_9016_acstmr`): draw `icon` in a diamond. Enemies with no manifest entry at all (`enemy_5601_entlec` Heart Candle): draw a procedural glyph.
+- **Battle effects** (projectiles per kind, hit sparks and slashes, skill bursts and auras, Lemuen's lock reticles and shells, boomerang sniper boomerangs — DESIGN §17.3) are procedural: the FX atlas is drawn at run time (`public/js/render/textures.js`), so they need no downloaded or local art. The local client does have battle effect art — `battle/[pack]common.ab` holds per-weapon projectile sprites (`projectile_arrow(_new)`, `projectile_crossbow(_new)`, `projectile_yuki`, `img_fx_light_01/02`, `trail_11`), and the per-character `battle/prefabs/effects/*.ab` are particle systems whose textures live in other bundles — but none of it is extracted: the sim's `arrow` also covers gun snipers, and friends joining a game may not have the local art.
 - **Spine memory** (`public/js/assets.js`): skeletons are refcounted in an LRU with an idle budget (`SPINE_IDLE_BYTES`, 48 MB) and a 15 s grace; eviction runs `SPINE_EVICT_DELAY_MS` (1 s) after a release, the "no scene on screen" budget (0 bytes) applies after `SPINE_QUIET_DELAY_MS` (3 s) with nothing referenced, and a skeleton whose unload is still in flight is never handed out again — a new load waits for the unload (DESIGN §17.1; it used to leave operators invisible after a battle → prep switch).
 
 ### Looking up `data/chess.json` asset ids
@@ -309,7 +309,7 @@ The 2026-09-27 verification pass also checked:
 
 The project's code is GPL-3.0-or-later (`LICENSE`); none of the items below is covered by it. Details: `NOTICE.md` (scope, non-commercial terms) and `THIRD-PARTY-NOTICES.md` (libraries, fonts, licence texts).
 
-- **Game assets.** All images, Spine models, audio and game data are © **Hypergryph (上海鹰角网络)**. The overseas publisher is **Yostar**.
+- **Game assets.** All images, Spine models, audio and game data are © **Hypergryph (Shanghai Hypergryph)**. The overseas publisher is **Yostar**.
   - This is an **unofficial, non-commercial fan project**: no ads, donations or paywall.
   - Assets are fetched from public community dumps at install time and are not redistributed in this repository. The plug-and-play bundle attached to a GitHub release does carry them (with the local-client art) under the same non-commercial terms, with `NOTICE.md` inside.
   - Assets will be removed on request from the rights holders.

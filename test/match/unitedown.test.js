@@ -117,6 +117,6 @@ test('the docs describe the rule (docs/META.md §4, docs/SIM.md §1.1 / §9, doc
   assert.match(META, /knocked out at the end of its own combat is deployed and forced out at once/);
   assert.match(SIM, /`carryState: \{ down: true \}`/);
   assert.match(SIM, /reason `'killed'` or `FORCED_EXIT`/);
-  assert.match(PLAYING, /作战结束时已被击倒的干员在原位倒地/);
+  assert.match(PLAYING, /operators already knocked down when combat ends lie on their tile/);
   assert.ok(!/已倒下的干员不参加/.test(PLAYING));
 });

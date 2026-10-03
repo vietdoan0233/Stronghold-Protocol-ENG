@@ -1,12 +1,10 @@
-# Third-party notices（第三方组件声明）
+# Third-party notices
 
 Stronghold Protocol's own code is licensed under **GPL-3.0-or-later** (see [LICENSE](LICENSE) and [NOTICE.md](NOTICE.md)).
 The components below are **not** part of that grant: each stays under its own licence, reproduced at the end of this
 file. Nothing here is committed to the repository except `tools/local-extract/aklz4.py`; the client libraries are
 installed by npm and copied into `public/vendor/` by `tools/vendor.mjs` (postinstall), and the release bundle carries
 them (with `node_modules/`, which keeps each package's own licence file).
-
-本项目自己的代码采用 GPL-3.0-or-later；下列第三方组件各自保留原许可证，不受 GPL 约束。
 
 ## Software
 
@@ -39,7 +37,7 @@ at all, this project grants an additional permission under GPL-3.0 section 7 for
 ## Game data, art and audio
 
 All names, characters, artwork, Spine models, UI graphics, music, sound effects and game data of *Arknights* /
-「卫戍协议：盟约」 are © Shanghai Hypergryph Network Technology Co., Ltd. (上海鹰角网络科技有限公司) and its licensors
+"Stronghold Protocol: Alliance" are © Shanghai Hypergryph Network Technology Co., Ltd. and its licensors
 (Yostar and others). They are **not** licensed under the GPL and this project grants no rights to them; see
 [NOTICE.md](NOTICE.md) for the non-commercial terms. Community mirrors used by `tools/fetch-assets.mjs` /
 `tools/build-data.mjs`: [Kengxxiao/ArknightsGameData](https://github.com/Kengxxiao/ArknightsGameData),
@@ -47,7 +45,7 @@ All names, characters, artwork, Spine models, UI graphics, music, sound effects 
 [fexli/ArknightsResource](https://github.com/fexli/ArknightsResource),
 [isHarryh/Ark-Models](https://github.com/isHarryh/Ark-Models),
 [ArknightsAssets/ArknightsAssets2](https://github.com/ArknightsAssets/ArknightsAssets2) — thanks to their maintainers.
-Quotations of PRTS Wiki, BWIKI, NGA, 巴哈姆特 and other community pages in `docs/` stay under the terms of their
+Quotations of PRTS Wiki, BWIKI, NGA, Bahamut and other community pages in `docs/` stay under the terms of their
 sources (the wikis' texts are CC BY-NC-SA).
 
 ---

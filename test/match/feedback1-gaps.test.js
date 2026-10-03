@@ -269,7 +269,7 @@ test('§21.26 docs: DESIGN (the subsection and the normative lines), META, PLAYI
   const META = doc('docs/META.md');
   assert.match(META, /\*\*Strategy\*\* \(`botPickBand`\)/);
   assert.match(META, /carries `harmony: 1` in both lists/);
-  assert.match(doc('docs/PLAYING.md'), /盟约详情会写「含调和 \+1」/);
+  assert.match(doc('docs/PLAYING.md'), /The alliance details show "incl\. Harmony \+1"/);
   const log = doc('CHANGELOG.md');
   const v011 = log.slice(log.indexOf('## 0.1.1'), log.indexOf('## 0.1.0'));
   assert.match(v011, /变形同构体的详情卡列出天赋栏里的对应关系/);

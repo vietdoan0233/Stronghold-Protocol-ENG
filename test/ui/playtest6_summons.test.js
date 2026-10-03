@@ -65,14 +65,14 @@ test('the guide and SIM.md state the start-of-battle rule the switch selects (fl
   const playing = readFileSync(path.join(ROOT, 'docs', 'PLAYING.md'), 'utf8');
   const sim = readFileSync(path.join(ROOT, 'docs', 'SIM.md'), 'utf8');
   if (SKILL_SUMMON_START_DEPLOY) {
-    assert.match(playing, /医疗探机、诅咒娃娃[^\n]*开战时[^\n]*部署一次/, 'PLAYING.md §4: the drone / doll also deploy once at the start');
+    assert.match(playing, /the medical drone and curse doll[^\n]*deploy once[^\n]*at the start of battle/, 'PLAYING.md §4: the drone / doll also deploy once at the start');
     assert.match(sim, /deploys once at the battle start/, 'SIM.md token pieces: the PRTS start deploy');
   } else {
     assert.match(playing, /医疗探机、诅咒娃娃要等所属干员发动技能时才在摆放的位置出现/, 'PLAYING.md §4: only with the skill');
     assert.match(sim, /a skill's summon[^.]*waits on its tile and takes the field there\s+each time the skill gives one/, 'SIM.md token pieces');
   }
   // the exception for unplaced summons is stated for the summons it holds for (test/content/playtest6_summons)
-  assert.match(playing, /狼群、流形（战术家的援军）没有摆放时会在战术点出现/);
+  assert.match(playing, /the wolf pack and manifold \(a Tactician's reinforcements\) appear at the tactical point when not placed/);
   assert.ok(!/没有摆放的召唤物不会出现/.test(playing), 'no blanket "unplaced summons never appear"');
 });
 

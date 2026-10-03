@@ -37,7 +37,7 @@ test('the release version is what players see', () => {
   assert.match(read('public/js/screens/title.js'), /v\$\{APP_VERSION\}/, 'title screen footer');
   assert.ok(!/PROTOCOL v1/.test(read('public/js/screens/title.js')), 'no protocol number posing as a version');
   const server = read('server/index.js');
-  assert.match(server, /Stronghold Protocol: Covenant v\$\{APP_VERSION\}/, 'boot banner');
+  assert.match(server, /Stronghold Protocol: Alliance v\$\{APP_VERSION\}/, 'boot banner');
   assert.match(server, /app: APP_VERSION/, '/healthz');
 });
 
@@ -53,7 +53,7 @@ test('GPL-3.0-or-later: LICENSE, package metadata and notices', () => {
   }
   const notice = read('NOTICE.md');
   assert.match(notice, /GPL-3\.0-or-later/);
-  assert.match(notice, /非商业/);
+  assert.match(notice, /non-commercial/);
   assert.match(notice, /section 7/, 'the Spine Runtimes linking permission');
   const aklz4 = read('tools/local-extract/aklz4.py');
   assert.match(aklz4, /SPDX-License-Identifier: BSD-3-Clause/);
