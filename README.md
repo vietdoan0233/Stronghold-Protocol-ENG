@@ -82,7 +82,14 @@ npm run setup      # check the environment and download ~250 MB of art / audio f
 npm start          # start the server: http://localhost:3000
 ```
 
-You can also run the launch script directly (Windows `scripts\start-windows.bat`, macOS / Linux `scripts/start.sh`): the first run installs dependencies, downloads assets, then starts the server and opens the browser.
+**After the first setup**, you don't need `install` / `setup` again — to play, just start the server and open <http://localhost:3000>:
+
+```bash
+cd Stronghold-Protocol-ENG
+npm start
+```
+
+You can also run the launch script directly (Windows `scripts\start-windows.bat`, macOS / Linux `scripts/start.sh`): the first run installs dependencies, downloads assets, then starts the server and opens the browser; later runs just start it and open the browser for you.
 
 - The **official 3D board** requires extracting textures from a local *Arknights* PC client (the native Windows client, or CrossOver / PlayCover on macOS). When `npm run setup` detects a client it asks whether to extract (requires Python 3.8+, with dependencies installed inside the project's `.venv-extract`, leaving your system untouched); afterwards you can re-extract with `node tools/setup.mjs --local`, or point at a path with `--game "<…/StreamingAssets/AB/Windows>"`. Without a client, the 2D board is used automatically and nothing else is affected.
 - Asset downloads prefer GitHub and fall back to the jsDelivr mirror on failure.
