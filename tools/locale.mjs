@@ -111,6 +111,9 @@ const counts = (a) => { const m = new Map(); for (const x of a) m.set(x, (m.get(
 const sameBag = (a, b) => { const A = counts(a); const B = counts(b); return A.size === B.size && [...A].every(([k, v]) => B.get(k) === v); };
 const strip = (s) => s.replace(TAG_RE, ' ').replace(PH_RE, ' ');
 const numbersOf = (s) => strip(s).replace(/(\d),(?=\d{3}\b)/g, '$1').match(/\d+(?:\.\d+)?/g) || [];
+// the glossary writes a tier (阶) in Roman numerals ("Tier IV"): count it as the digit the source has
+const ROMAN = { I: 1, II: 2, III: 3, IV: 4, V: 5, VI: 6 };
+const tierDigits = (s) => s.replace(/\b([Tt]ier) (VI|IV|V|III|II|I)\b/g, (_, t, r) => `${t} ${ROMAN[r]}`);
 
 /**
  * What differs between a source text and its translation.
@@ -131,7 +134,7 @@ export function checkEntry(zh, en) {
   if ((zh.match(COND_RE) || []).length !== (en.match(COND_RE) || []).length) review.push('<condition> markers differ');
   if ((zh.match(/\n/g) || []).length !== (en.match(/\n/g) || []).length) review.push('line breaks differ');
   const nz = numbersOf(zh);
-  const ne = numbersOf(en);
+  const ne = numbersOf(tierDigits(en));
   if (!sameBag(nz, ne)) {
     const E = counts(ne);
     const missing = [...counts(nz)].filter(([k, v]) => (E.get(k) || 0) < v).map(([k]) => k);

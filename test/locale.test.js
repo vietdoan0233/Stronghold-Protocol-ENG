@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { applyLocale, collectSources, parseLocaleTable, localeUrl, hasLocaleTable, pickLocale, TEXT_KEYS, LOCALE_FILES, LOCALES, DEFAULT_LOCALE } from '../public/js/locale.js';
 import { createDataStore, RETRY_DELAYS_MS } from '../public/js/data.js';
 import { richTextPlain } from '../public/js/ui/richText.js';
-import { checkEntry, checkTables, coverage, planSync, readTable, serializeTable } from '../tools/locale.mjs';
+import { checkEntry, checkTables, coverage, planSync, readTable, serializeTable, sourcesOf } from '../tools/locale.mjs';
 import { chessSubtitle } from '../public/js/ui/loadoutModel.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -396,7 +396,7 @@ describe('shipped tables (public/locales/en)', () => {
     for (const f of files) {
       const name = f.replace(/\.json$/, '');
       const t = readTable(name);
-      const order = [...collectSources(readJson(`data/${name}.json`)).keys()];
+      const order = [...sourcesOf(name).keys()]; // the data's display texts, then the texts the server derives from them
       assert.equal(readFileSync(path.join(dir, f), 'utf8'), serializeTable(t, order), `${f}: not canonical`);
     }
   });
@@ -461,6 +461,12 @@ describe('coverage and sync (tools/locale.mjs)', () => {
       for (const m of r.missing) assert.ok(/[\u4e00-\u9fff]/.test(m.zh) && m.keys.length > 0);
     }
     assert.deepEqual(coverage(['nope']), []);
+  });
+  // The ratchet: a file listed here is translated in full. A data rebuild that adds or rewords Chinese display text fails
+  // here until the table has it (node tools/locale.mjs coverage --list).
+  const COMPLETE = ['choices', 'config', 'emotes', 'factions'];
+  test('the files that are translated in full stay translated in full', () => {
+    for (const r of coverage(COMPLETE)) assert.deepEqual(r.missing.map((m) => m.zh), [], `${r.file}: display text without English`);
   });
   test('planSync only copies translations that agree across tables', () => {
     const { adds, conflicts } = planSync();

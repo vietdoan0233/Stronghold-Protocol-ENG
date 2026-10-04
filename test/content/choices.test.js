@@ -512,7 +512,7 @@ test('战术决策 E2E (co-op 3): team cards reach every teammate (AI included),
   const sp = toDraft(h, 3);
   assert.equal(sp.family, 'tactic');
   assert.equal(m.publicView().sp.name, 'Tactical Decision');
-  assert.equal(m.publicView().sp.desc, '进行协同调整，做好迎战准备。', 'the official header');
+  assert.equal(m.publicView().sp.desc, 'Make coordinated adjustments and prepare for battle.', 'the official header');
   assert.equal(sp.cards.length, 6);
   assert.ok(sp.cards.every((c) => TEAM_PREP.includes(c.id)), 'drawn from the pool (with replacement)');
   offerTactic(m, TEAM_PREP);

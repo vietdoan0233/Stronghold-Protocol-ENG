@@ -7,6 +7,9 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { createDisplay, L } from '../server/display.js';
+import { derivedSources } from '../tools/locale.mjs';
+import { bountyText, isMultiRoundBounty } from '../server/match/choices.js';
+import { DATA } from './match/harness.js';
 
 const HAN = /[一-鿿぀-ヿ]/;
 
@@ -57,4 +60,18 @@ test('the shipped tables: operator, family, effect and title names resolve in th
   assert.equal(L('升华'), 'Sublimation');
   assert.equal(L('坚若磐石'), 'Rock Solid');
   assert.equal(L('一个玩家自己取的名字'), '一个玩家自己取的名字', 'what is not in a table is never changed');
+});
+
+test('multi-round bounty cards: the text the server derives (choices.js bountyText) has an English entry, raw and plain', () => {
+  const derived = derivedSources('choices');
+  const cards = DATA.choices.cards.bounty.filter(isMultiRoundBounty);
+  assert.ok(cards.length >= 8, 'the data has its multi-round cards');
+  assert.equal(derived.size, new Set(cards.map((c) => bountyText(DATA.effects[c.effectId].descRaw, c))).size);
+  for (const c of cards) {
+    const raw = bountyText(DATA.effects[c.effectId].descRaw, c);
+    assert.ok(derived.has(raw), `${c.effectId}: derived source`);
+    assert.ok(!HAN.test(L(raw)), `${c.effectId}: English for the rewritten text — ${L(raw)}`);
+    assert.ok(!HAN.test(L(bountyText(c.desc, c))), `${c.effectId}: English for the rewritten plain text — ${L(bountyText(c.desc, c))}`);
+    assert.match(L(raw), /<@ba\.vup>two battles<\/>/, `${c.effectId}: says how long it lasts, in blue`);
+  }
 });

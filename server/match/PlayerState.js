@@ -1600,7 +1600,7 @@ export class PlayerState {
       const eff = b.card.effectId ? this.gd.effect(b.card.effectId) : null;
       out.push({
         id: b.id, name: L(b.card.name) || 'Bounty', desc: L(bountyText((eff && eff.descRaw) || b.card.desc || '', b.card)), iconKind: 'choice', iconId: b.card.effectId || 'bounty',
-        counter: left, counterText: left == null ? 'Every battle after this' : `${left} ${left === 1 ? 'battle' : 'battles'} left`,
+        counter: left, counterText: left == null ? 'Every battle thereafter' : `${left} ${left === 1 ? 'battle' : 'battles'} left`,
       });
     }
     return out;

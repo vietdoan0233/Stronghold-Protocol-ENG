@@ -25,9 +25,12 @@ const read = (p) => readFileSync(path.join(ROOT, p), 'utf8');
 
 // the browser data store reads the real data files from disk
 globalThis.fetch = async (url) => {
-  const name = String(url).split('/').pop();
+  const u = String(url);
+  const name = u.split('/').pop();
   try {
-    const body = readFileSync(path.join(ROOT, 'data', name), 'utf8');
+    // the English overlay tables too (as served at /locales/en/), so the store shows what the player sees
+    const file = u.includes('/locales/') ? path.join(ROOT, 'public', 'locales', 'en', name) : path.join(ROOT, 'data', name);
+    const body = readFileSync(file, 'utf8');
     return { ok: true, status: 200, json: async () => JSON.parse(body) };
   } catch {
     return { ok: false, status: 404, json: async () => ({}) };

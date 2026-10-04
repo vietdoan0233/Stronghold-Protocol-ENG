@@ -141,7 +141,7 @@ test('#4 the 悬赏决策 draft: kill bounties only (no 战术特训, no 鸭爵 
           assert.ok([1, 2].includes(c.rounds), `${c.id}: ${c.rounds} battles`);
           assert.ok(!MULTI.has(c.id), `${c.id} ${c.name}: no official draft shows a multi-round card (player feedback #2)`);
           assert.match(c.descRaw || '', DURATION_RE[c.rounds], `${c.id} ${c.name}: the card text shows its battles (${c.descRaw})`);
-          assert.equal(cardView(c).descRaw, c.descRaw, 'the public card carries the rich text (ui/choiceOverlay.js renders it first)');
+          assert.equal(cardView(c).descRaw, L(c.descRaw), 'the public card carries the rich text (ui/choiceOverlay.js renders it first), in the server\'s language');
         }
       }
     }
@@ -233,7 +233,7 @@ test('#4 E2E: a multi-round card lasts two battles like the "两场作战" cards
   assert.equal(b.roundsLeft, 2);
   const e = ps.privateView().effects.find((x) => x.id === b.id);
   assert.equal(e.counterText, '2 battles left');
-  assert.match(e.desc, /<@ba\.vup>两场作战<\/>/, 'the effects tooltip says the same');
+  assert.match(e.desc, /<@ba\.vup>two battles<\/>/, 'the effects tooltip says the same');
   h.drive(() => m.phase === PHASE.ROUND_START && m.round === 7, { ready: true });
   assert.deepEqual(bountyRounds(b.id), [4, 5], 'its enemies come for two battles, then never again');
   assert.ok(!ps.bounties.some((x) => x.id === b.id), 'and the bounty is gone');
@@ -251,7 +251,7 @@ test('#4 the active bounty says how many battles it has left, with its card text
   assert.ok(e, 'listed');
   assert.equal(e.counter, 2);
   assert.equal(e.counterText, '2 battles left');
-  assert.match(e.desc, /<@ba\.vup>两场作战<\/>/);
+  assert.match(e.desc, /<@ba\.vup>two battles<\/>/);
   m.dispose();
 });
 
