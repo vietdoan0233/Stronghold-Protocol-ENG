@@ -8,7 +8,7 @@ translation is built so that it can never change how the game plays.
 | UI chrome — buttons, labels, toasts, tickers, dialogs (`public/js/**`, `public/css/**`) | in place: the string literals are English |
 | Game data — operator / enemy / item / alliance / strategy names and descriptions (`data/*.json`) | a **read-time overlay**: one table per data file in `public/locales/en/`, applied by the browser when the file is loaded; `data/*.json` itself is never edited |
 | Server messages — errors, toasts, tickers (`server/**`, `shared/constants.js`) | in place: fixed messages are English; text the server composes from the data goes through `L()` (see *Server texts*) |
-| Terminal output of the launcher and setup tools (`scripts/`, `tools/setup.mjs`, `tools/doctor.mjs`) | in place: English |
+| Terminal output of the launcher and setup tools (`scripts/`, `tools/setup.mjs`, `tools/doctor.mjs`) | in place: English — **not translated yet** (see [../HANDOFF.md](../HANDOFF.md)) |
 
 Terms are fixed in [GLOSSARY.md](GLOSSARY.md); what was changed and why is in [../CHANGES.md](../CHANGES.md).
 

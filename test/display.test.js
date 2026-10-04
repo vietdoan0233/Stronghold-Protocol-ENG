@@ -9,7 +9,7 @@ import path from 'node:path';
 import { createDisplay, L } from '../server/display.js';
 import { derivedSources } from '../tools/locale.mjs';
 import { bountyText, isMultiRoundBounty } from '../server/match/choices.js';
-import { DATA } from './match/harness.js';
+import { makeMatch, DATA } from './match/harness.js';
 
 const HAN = /[一-鿿぀-ヿ]/;
 
@@ -74,4 +74,28 @@ test('multi-round bounty cards: the text the server derives (choices.js bountyTe
     assert.ok(!HAN.test(L(bountyText(c.desc, c))), `${c.effectId}: English for the rewritten plain text — ${L(bountyText(c.desc, c))}`);
     assert.match(L(raw), /<@ba\.vup>two battles<\/>/, `${c.effectId}: says how long it lasts, in blue`);
   }
+});
+
+/** Every string of a message that holds Chinese, with its path. */
+function chineseIn(v, p = '', out = []) {
+  if (typeof v === 'string') { if (HAN.test(v)) out.push(`${p}: ${v.slice(0, 80)}`); } else if (Array.isArray(v)) v.forEach((x, i) => chineseIn(x, `${p}[${i}]`, out));
+  else if (v && typeof v === 'object') for (const [k, x] of Object.entries(v)) chineseIn(x, p ? `${p}.${k}` : k, out);
+  return out;
+}
+
+test('wire: no Chinese in the display text the server sends (tickers, toasts, draft cards, effects, titles, result)', () => {
+  const seen = [];
+  // two co-op matches (humans + a bot) and a solo one, played through to the result; the battle frames (b.snap / b.ev) carry ids only
+  for (const [seed, mode] of [[1, 'coop'], [2, 'coop'], [3, 'solo']]) {
+    const h = makeMatch({ mode, difficulty: seed % 2 ? 'NORMAL' : 'HARD', humans: mode === 'solo' ? 1 : 2, bots: mode === 'solo' ? 0 : 1, seed, fake: true });
+    const check = (msg) => {
+      if (!msg || msg.t === 'b.snap' || msg.t === 'b.ev') return;
+      seen.push(...chineseIn(msg).map((s) => `${msg.t} ${s}`));
+    };
+    h.onSend.push((id, msg) => check(msg));
+    h.onBroadcast.push((msg) => check(msg));
+    h.autoHumans().start();
+    h.runToEnd();
+  }
+  assert.deepEqual([...new Set(seen)].slice(0, 12), [], 'every display field of every message is English');
 });

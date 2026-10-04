@@ -76,44 +76,46 @@ Covenant operator's name and in the GPL `LICENSE` text ("covenant not to sue") �
 
 ## 4. What has been localized
 
-Fully translated to English and **verified test-green**:
+Everything a player reads while playing is English, and the full test suite (`node --test`) is green:
 
-- All **user-facing documentation**: `README.md`, `docs/PLAYING.md` (player guide), `docs/DEPLOY.md`,
-  `docs/ASSETS.md`, `docs/BALANCE.md`
-- `NOTICE.md`, `THIRD-PARTY-NOTICES.md`, `CHANGES.md` (this file)
-- `package.json` (incl. the package name), `package-lock.json`, `Dockerfile`, `public/index.html`, and
-  the `server/index.js` boot banner
-- The test assertions coupled to the above moved in lockstep (a number of tests assert on exact
-  user-facing strings, so docs + code + tests were translated together).
+- **UI chrome** — every button, label, heading, tooltip, toast, ticker line, dialog and `aria-label` of the browser client
+  (`public/js/**`, `public/css/**`, `shared/constants.js`), roughly a thousand string literals, with one glossary
+  ([docs/GLOSSARY.md](docs/GLOSSARY.md)). The tests coupled to those strings moved in the same commits.
+- **Game data** — operator, enemy, boss, alliance, strategy, gear, summon, stage, Draft-card and emote **names**, and the
+  **descriptions** (skills, talents, traits, modules, alliance and strategy effects, gear, garrison rules, enemy abilities,
+  Draft cards, tips, mode and title texts). `data/*.json` is generated from the official Chinese client data and is *not*
+  edited: the English lives in read-time overlay tables (`public/locales/en/*.json`, keyed by the exact Chinese text; see
+  [docs/LOCALE.md](docs/LOCALE.md)). Every table is translated in full, and a coverage ratchet in `test/locale.test.js`
+  keeps it that way. Official Arknights Global English is used verbatim wherever it exists (operator kits, enemy abilities,
+  skills, modules and status terms are harvested from the `en_US` game data); the rest was written in the voice of the game
+  and reviewed against the official terminology.
+- **Server texts** — errors, toasts, tickers, the HTTP error pages, the AI teammates' names, and every text the server
+  composes from the data (draft cards, the effects list, result titles, ticker templates) reach the client in English
+  (`server/display.js`; the simulation keeps reading the pristine Chinese data).
+- **Docs for players and operators** — `README.md`, `docs/PLAYING.md`, `docs/DEPLOY.md`, `docs/ASSETS.md`, `docs/BALANCE.md`,
+  `NOTICE.md`, `THIRD-PARTY-NOTICES.md`, `docs/GLOSSARY.md`, `docs/LOCALE.md`, this file; the dev pages under `public/dev/`.
 
-Alongside the text, verified Chinese→English **name maps** were built for the 122 operators and 247
-enemies/bosses (joined on the stable `charId`/`enemyId` and checked against the official English game
-data), plus a hand-built map for the mode-specific strategies / alliances / items / summons. These make
-the remaining passes mechanical.
+## 5. What is still Chinese, and why
 
-## 5. What is not yet localized
-
-- **Internal engine docs**: `docs/DESIGN.md`, `docs/SIM.md`, `docs/META.md`, and `CHANGELOG.md`. Unlike
-  the player docs, these are heavy with quoted Chinese (PRTS / community citations) and skill
-  descriptions — genuine prose, not just embedded names — so they need a careful translation pass rather
-  than a term swap. The name maps are ready for it.
-- **`docs/DATA.md`**: left in step with the data it documents. Its examples are the *actual* Chinese
-  values from `data/*.json`; translating them before the data would misrepresent the data. It moves with
-  the data phase below.
-- **Generated data** (`data/*.json`): built by `tools/build-data.mjs` from the official Chinese game
-  data and checked byte-for-byte by `test/data.test.js`. Localizing it means translating the build
-  pipeline too, so it is a separate, larger phase.
-- **Runtime UI/server strings** in `public/js/**` and `server/**` (shop labels, toasts, tickers, error
-  messages). Many are asserted verbatim by tests, so they must be translated together with their tests.
-- **`docs/research/*`** is left in Chinese on purpose: it is a raw mirror of the official game data that
-  feeds the build, not prose meant to be read.
-- Some **test descriptions** (the `test('…')` labels) still contain Chinese operator/skill names; these
-  are cosmetic (they don't affect behaviour) and will be swept with the engine-doc pass.
+- **`data/*.json`** — generated data, pinned byte-for-byte by `test/data.test.js` (and parsed by the simulation, which derives
+  mechanics from the Chinese rule text). The overlay is applied only in the browser's display store and at the server's
+  wire boundary.
+- **Art with text in it** — the official tutorial pages (the "How to Play" viewer), UI sprites and other pictures extracted
+  from the Arknights client contain Chinese; they are images and cannot be translated by text.
+- **Internal engine docs** — `docs/DESIGN.md`, `docs/SIM.md`, `docs/META.md`, `docs/DATA.md`, `CHANGELOG.md` and
+  `docs/research/*` (a raw mirror of the official data that feeds the build) are heavy with quoted Chinese sources; they are
+  developer references, not player-facing.
+- **Code comments, test titles, development tools** — `tools/build-data.mjs` (and the other generators and dev tools)
+  keep their Chinese comments and parsing patterns; they never reach a player.
+- **Identifiers** — ids, enum values, buff keys, CSS classes and `data-*` attributes are never translated
+  (see section 3).
+- **Not done yet: the launcher and setup output** — `scripts/launch.mjs`, `scripts/start*`, `scripts/install-service-windows.ps1`,
+  `tools/setup.mjs` and `tools/doctor.mjs` still print Chinese. They are the next translation target; see `HANDOFF.md`.
 
 ## 6. How the translation keeps tests green
 
-Several hundred tests assert on exact Chinese strings (server messages, data `name` fields, UI reason
-strings, rendered text). The rule followed here: translate a producing surface and the tests that assert
-it **in the same step**, and for assertions that span translated and untranslated files, accept both
-languages temporarily (e.g. `/24 (小时|hours)/`). Each `test(...)` block is independent, so an assertion
-only breaks when a file and its matching regex disagree.
+Several hundred tests asserted exact Chinese strings (server messages, data `name` fields, UI reason strings, rendered
+text). A producing surface and the tests that assert it moved **in the same step**; where a test mixes a server-composed
+text with the browser's data store, both read the English overlay, as in production. New tests pin the localization itself:
+`test/locale.test.js` (overlay mechanism, shipped tables, the coverage ratchet, official operator names) and
+`test/display.test.js` (the server's `L()` and the "no Chinese on the wire" check).
