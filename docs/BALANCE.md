@@ -353,7 +353,7 @@ Peril leaks per alive bot in R12 / R13: solo 8.0 / 9.2 → 5.7 / 4.8, co-op 20.5
 are bound by the drafts, not the pick: in 223 of the 312 co-op Peril bounty picks no card still on offer had a kill
 chance ≥ 0.5 (solo 22 of 80), and only 5 picks (solo 0) took a card below 0.5 while one ≥ 0.5 was on offer — re-measure
 after the bounty-half fix (player report #2). Strategies played alone (solo Peril, seeds 201–220, forced with `--band`):
-Cannot 9 → 14 wins of 20, Quintus 9 → 11, Dobermann 8 → 9 (keeping an unused Teaching Pointer vs dropping it: 11 vs 11 wins over 24 Dobermann
+Cannot 9 → 14 wins of 20, Quintus 9 → 11, Dobermann 8 → 9 (keeping an unused Teacher's Pointer vs dropping it: 11 vs 11 wins over 24 Dobermann
 matches — kept, as it costs nothing but a hand slot). Decision time per bot prep is unchanged (one thread, back to back
 on a quiet host, seeds 1–6, solo Peril / co-op Peril; the rehearsal included): wall clock p50 / p95 94 / 191 → 89 / 205 ms
 and 86 / 175 → 83 / 162 ms, CPU 131 / 314 → 124 / 329 ms and 97 / 209 → 91 / 188 ms; the heuristics alone (CPU) 31 / 74
@@ -394,7 +394,7 @@ heuristics CPU 36 / 88 → 35 / 86 ms and 16 / 40 → 16 / 40 ms.
 * docs/META.md §2.6 example guards `ctx.source.kind === 'choice'` (its EffectRef reuses the handler's key).
 * Rock Solid = least LP lost (`titles.comment_3 { stat: 'lpLost', rule: 'min' }` in tuning.json; results.js supports
   `rule: 'min'` among the players still alive).
-* Teaching Pointer / “"Mystery Customer"” stay a random bounty, documented in docs/META.md §2.5.
+* Teacher's Pointer / “"Mystery Customer"” stay a random bounty, documented in docs/META.md §2.5.
 
 ---
 

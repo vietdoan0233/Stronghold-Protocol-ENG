@@ -177,7 +177,7 @@ export function MorphPairings({ off = null, carried = null }) {
   if (!rows.length) return null;
   const wearer = Array.isArray(carried);
   return html`<div class=${cx('dmorph', wearer && 'is-wearer')}>
-    <p class="dmorph__lead">When paired with the gear below, the bearer counts as a member of the matching alliance:</p>
+    <p class="dmorph__lead">When paired with the gear below, the carrier counts as a member of the matching alliance:</p>
     <ul class="dmorph__list" aria-label="Polymorphic Isomorph pairings">
       ${rows.map((r) => html`<li key=${r.bondId} class=${cx('dmorph__row', r.off && 'is-off', r.worn && 'is-worn')} data-bond=${r.bondId}
           title=${`${r.items.map((it) => it.name).join(', ')} → [${r.name}]${r.off ? ' (disabled this match)' : ''}`}>
@@ -203,7 +203,7 @@ export function MorphGrantLine({ item, off = null, carried = null }) {
   const isOff = isOffIn(off, item.giveBondId);
   const worn = grantedBonds(carried, (id) => data.lookup('items', id)).includes(item.giveBondId);
   return html`<p class=${cx('dhint', 'dhint--morph', worn && 'is-worn', isOff && 'is-off')} data-bond=${item.giveBondId}>
-    <${Icon} name="info" /><span>When equipped with ${morph.name}, the bearer counts as a member of [${bond.name}].${isOff ? html`<span class="dmorph__tag is-off">Disabled</span>` : null}${worn
+    <${Icon} name="info" /><span>When equipped with ${morph.name}, the carrier counts as a member of [${bond.name}].${isOff ? html`<span class="dmorph__tag is-off">Disabled</span>` : null}${worn
       ? html`<span class="dmorph__tag is-on">${isOff ? 'Paired' : 'Active'}</span>` : null}</span>
   </p>`;
 }

@@ -175,3 +175,40 @@ Mode-specific names settled in the review (the official wording wins where there
 | 盟约·辅助干员 | Alliance · Supporter Operator | the class is a *Supporter* |
 | 折桠 / 古米 | Branch / Gummy | the official Global names (the data's appellation is Cyrillic / stylised) |
 | AI 队友 names | AI·Warfarin, AI·Amiya, AI·Leizi, AI·Dobermann, AI·Kal'tsit, AI·Closure | `BOT_NAMES` in `server/lobby.js` |
+
+## Terms settled while translating the descriptions
+
+Gear and strategy texts, enemy abilities and the last operator skills (the official English wins where there is one).
+
+| 中文 | English | Note |
+|---|---|---|
+| 携带者 | carrier | the operator a piece of gear is equipped to (never *bearer* / *wearer*; *Flagbearer* is the official class name) |
+| 非精英 / 非精英领袖 | non-Elite / non-Elite, non-Leader | operators that are not promoted; enemies that are neither Elite nor Leader |
+| 友方 / 我方单位 | allied unit(s) | the player's side, from the enemy's text; an operator is an *allied operator* |
+| 失衡 / 失衡移动 | Shift / shifted | the official *shifted* of "Loses HP proportional to distance moved when shifted"; the forced-movement status |
+| 无敌 | Invulnerable | |
+| 不可阻挡 / 无法被阻挡 | Unblockable / cannot be blocked | |
+| 击落 | shot down | a flying unit brought to the ground |
+| 蓄力攻击 | charged attack | |
+| 二连击 / 三连击 / 十连击 | two-hit / three-hit / ten-hit combo | |
+| 可充能N次 | Can store N charge(s) | official wording of the skill table |
+| 屏障 / 护盾 | Barrier / Shield | the official *Barrier* (absorbs a set amount) and *Shield* (blocks N hits) |
+| 抵抗 | Status Resistance | `<$ba.buffres>`; the official term name |
+| 战栗 / 沉睡 / 诱导 / 法术脆弱 | Frighten / Sleep / Lure / Arts Fragility | official status terms |
+| 伤害减免 | Damage Reduction | `<$ba.dmgresistance>` |
+| 灼痕 | Cinder | official |
+| 生息演算 / 集成战略 | Reclamation Algorithm / Integrated Strategies | the other game modes (`<@ba.kw>`) |
+| 海嗣 / 深海猎人 | Seaborn / Abyssal Hunter | |
+| 替身 | Substitute | Specter the Unchained's stand-in |
+| 凛御银灰 / “风雪之眼” / “变革已至” | SilverAsh the Reignfrost / 'Eye of the Blizzard' / 'Change Has Come' | |
+| 假想敌：蚀裂 / 淤困 / 骨刺 / 黑云 / 再生 / 镜膜 | OpFor: Erosion / Mire / Bone Spur / Black Cloud / Rebirth / Mirror Film | the bounty enemies |
+| “斩胄之剑” / “破胄之锤” / 刺胄之弹 | 'Armor Cleaver' / 'Armor Crusher' / Armor Piercer | OpFor: Armor and its summons |
+| “碎铳之簧” / 【盲信之誓】 / 【末日布道】 | 'Gunshatter Spring' / [Vow of Blind Faith] / [Doomsday Sermon] | OpFor: Gun |
+| “余音” / 【金黄的悲号】 / 【暗色的喟叹】 | 'Lingering Tone' / [Golden Lament] / [Dusky Sigh] | OpFor: String and OpFor: Pipe (“断弦之音” 'Broken String Tone', “裂管之音” 'Cracked Pipe Tone') |
+| 【灭顶之灾】 / 【旧日的剑与锤】 / 【最终之罚】 | [Cataclysm] / [Sword and Hammer of Old] / [Final Punishment] | OpFor: Armor |
+| 【未尽的告解】 / 【未竟的祷祝】 | [Incomplete Confession] / [Unfinished Prayer] | |
+| 【莫非王土】 / 【王权号令】 / 【斥退】 | [Sovereign Domain] / [Royal Command] / [Rebuke] | Alistair |
+| 矿工游击队 / 指挥官 / 指令 | Miner Guerrillas / Commander / Order | the Army enemies |
+| 某种天命 | 'A Certain Destiny' | the "a certain …" pattern |
+| 频次护盾 | Hit-Count Shield | the Shield that breaks after N hits |
+| 教鞭 | Teacher's Pointer | |

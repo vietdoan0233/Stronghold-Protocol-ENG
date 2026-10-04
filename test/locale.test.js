@@ -462,11 +462,12 @@ describe('coverage and sync (tools/locale.mjs)', () => {
     }
     assert.deepEqual(coverage(['nope']), []);
   });
-  // The ratchet: a file listed here is translated in full. A data rebuild that adds or rewords Chinese display text fails
-  // here until the table has it (node tools/locale.mjs coverage --list).
-  const COMPLETE = ['bands', 'bonds', 'choices', 'config', 'effects', 'emotes', 'factions', 'garrisons', 'items'];
-  test('the files that are translated in full stay translated in full', () => {
-    for (const r of coverage(COMPLETE)) assert.deepEqual(r.missing.map((m) => m.zh), [], `${r.file}: display text without English`);
+  // The ratchet: every data file is translated in full. A data rebuild that adds or rewords Chinese display text fails here
+  // until the table has it (node tools/locale.mjs coverage --list).
+  test('every data file stays translated in full', () => {
+    const rows = coverage(LOCALE_FILES);
+    assert.equal(rows.length, LOCALE_FILES.length, 'a locale file without a data file');
+    for (const r of rows) assert.deepEqual(r.missing.map((m) => m.zh), [], `${r.file}: display text without English`);
   });
   test('planSync only copies translations that agree across tables', () => {
     const { adds, conflicts } = planSync();

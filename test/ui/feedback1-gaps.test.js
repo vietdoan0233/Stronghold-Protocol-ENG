@@ -160,7 +160,7 @@ describe('§21.26 1 — 变形同构体 on the cards', () => {
     const v = ItemDetail({ item: items[ISO], piece: null, editable: false, onDestroy() {}, offBonds: funny });
     const sec = [...walk(v)].find((x) => x.type?.name === 'Section' && x.props.title === 'Talent');
     assert.ok(sec, 'a 天赋 section (the item text points at its 天赋栏)');
-    assert.match(textOf(v), /When paired with the gear below, the bearer counts as a member of the matching alliance:/);
+    assert.match(textOf(v), /When paired with the gear below, the carrier counts as a member of the matching alliance:/);
     const rows = byClass(v, 'dmorph__row');
     assert.equal(rows.length, 14);
     const off = rows.filter((r) => hasClass(r, 'is-off'));
@@ -187,7 +187,7 @@ describe('§21.26 1 — 变形同构体 on the cards', () => {
     const grant = byClass(equip, 'dhint--morph');
     assert.equal(grant.length, 1, 'the 维式重锤 row');
     assert.ok(hasClass(grant[0], 'is-worn'));
-    assert.match(textOf(grant[0]), /When equipped with 变形同构体, the bearer counts as a member of \[维多利亚\]\..*Active/);
+    assert.match(textOf(grant[0]), /When equipped with 变形同构体, the carrier counts as a member of \[维多利亚\]\..*Active/);
     // worn with a bond the mode switches off: 已搭配 (Paired) + 本局禁用 (Disabled), never 生效中 (Active)
     const lat = ChessDetail({ chess: chess[WEARER], piece: { ...piece, items: [{ uid: 2, id: ISO }, { uid: 4, id: LATERANO_CLIP }] }, editable: false, bonds: [], offBonds: funny, loadout: null });
     const latRow = byClass(lat.find((b) => b?.key === 'equip'), 'dmorph__row').find((r) => hasClass(r, 'is-worn'));
@@ -207,7 +207,7 @@ describe('§21.26 1 — 变形同构体 on the cards', () => {
     const card = ItemDetail({ item: items[HAMMER], piece: null, editable: false, onDestroy() {}, offBonds: funny });
     const line = byClass(card, 'dhint--morph');
     assert.equal(line.length, 1);
-    assert.match(textOf(line[0]), /^When equipped with 变形同构体, the bearer counts as a member of \[维多利亚\]\.$/);
+    assert.match(textOf(line[0]), /^When equipped with 变形同构体, the carrier counts as a member of \[维多利亚\]\.$/);
     assert.ok(!hasClass(line[0], 'is-worn'));
     const clip = byClass(ItemDetail({ item: items[LATERANO_CLIP], piece: null, editable: false, onDestroy() {}, offBonds: funny }), 'dhint--morph');
     assert.ok(hasClass(clip[0], 'is-off'));

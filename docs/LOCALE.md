@@ -94,5 +94,5 @@ It only adds missing keys. The mode-specific text (alliances, strategies, gear, 
 translated by hand and reviewed against the glossary and the official terms.
 
 After a data rebuild: `node tools/locale.mjs coverage --list`, `harvest --write` for whatever the official English now covers,
-translate the rest, `check`. `test/locale.test.js` keeps a list of the files that are translated in full (`COMPLETE`): a
-rebuild that adds or rewords Chinese display text in one of them fails until the table has it.
+translate the rest, `check`. Every table is translated in full and `test/locale.test.js` keeps it that way (the coverage ratchet): a
+rebuild that adds or rewords Chinese display text fails until the table has it.
