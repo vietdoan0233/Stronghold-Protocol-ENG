@@ -12,6 +12,7 @@ import { applyLocale, collectSources, parseLocaleTable, localeUrl, hasLocaleTabl
 import { createDataStore, RETRY_DELAYS_MS } from '../public/js/data.js';
 import { richTextPlain } from '../public/js/ui/richText.js';
 import { checkEntry, checkTables, coverage, planSync, readTable, serializeTable } from '../tools/locale.mjs';
+import { chessSubtitle } from '../public/js/ui/loadoutModel.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const readJson = (p) => JSON.parse(readFileSync(path.join(ROOT, p), 'utf8'));
@@ -465,5 +466,38 @@ describe('coverage and sync (tools/locale.mjs)', () => {
     const { adds, conflicts } = planSync();
     assert.deepEqual(conflicts, [], 'a text translated two ways in two tables');
     for (const a of adds) assert.ok(a.en && a.zh && a.file);
+  });
+});
+
+describe('operator names (phase 2)', () => {
+  const data = readJson('data/chess.json');
+  const table = parseLocaleTable(readJson('public/locales/en/chess.json'));
+  const out = applyLocale(clone(data), table);
+  const names = new Map(Object.entries(out).map(([id, r]) => [data[id].name, { en: r.name, appellation: data[id].appellation }]));
+
+  test('every one of the 122 operators is shown under an English name (the official Global name)', () => {
+    assert.equal(names.size, 122);
+    for (const [zh, { en }] of names) assert.ok(en && !/[\u4e00-\u9fff]/.test(en), `${zh} → ${en}`);
+  });
+
+  test('the name is the data\'s own English appellation, except where that is not English or not official', () => {
+    const EXCEPTIONS = {
+      古米: 'Gummy', // appellation "Гум" (stylised); Gummy is the official Global name
+      折桠: 'Branch', // appellation "Веточки"; the Chinese server is ahead of Global (charId char_4207_branch)
+      '盟约·辅助干员': 'Alliance Support Operator', // appellation "Alliance/Supportive Opertator" (a typo in the data)
+      甄选干员: 'Selected Operator', // the loadout slot placeholder: no appellation at all
+    };
+    for (const [zh, { en, appellation }] of names) {
+      if (zh in EXCEPTIONS) { assert.equal(en, EXCEPTIONS[zh], zh); continue; }
+      assert.equal(en.toLowerCase(), String(appellation).toLowerCase(), `${zh}: ${en} vs appellation ${appellation}`);
+    }
+  });
+
+  test('chessSubtitle: the small line under the name only shows an appellation that adds something', () => {
+    assert.equal(chessSubtitle({ name: 'Insider', appellation: 'Insider' }), '', 'repeats the name');
+    assert.equal(chessSubtitle({ name: 'Gummy', appellation: 'Гум' }), '', 'stylised, non-Latin');
+    assert.equal(chessSubtitle({ name: '隐现', appellation: 'Insider' }), 'Insider', 'the name is still Chinese (no table): the appellation helps');
+    assert.equal(chessSubtitle({ name: 'X' }), '');
+    assert.equal(chessSubtitle(null), '');
   });
 });
