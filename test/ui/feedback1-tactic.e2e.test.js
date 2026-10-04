@@ -55,13 +55,13 @@ describe('战术决策: the same card twice (mock harness, headless Chrome)', { 
       await page.waitForSelector('.spov__grid .spcard', { timeout: 20000 });
       await sleep(600);
       const head = await page.$eval('.spov__title', (e) => e.textContent);
-      assert.ok(head.includes('战术决策') && head.includes('进行协同调整，做好迎战准备。'), `the official header: ${head}`);
+      assert.ok(head.includes('Tactical Decision') && head.includes('Make coordinated adjustments and prepare for battle.'), `the official header: ${head}`);
       // the teammate p4 has taken the first 补给 (slot 0)
       await page.evaluate(() => { const S = globalThis.__MOCK__.S(); S.pub.sp = { ...S.pub.sp, picks: { p4: 0 }, turn: 'p1' }; globalThis.__MOCK__.pushPublic(); });
       await sleep(300);
       let c = await cards(page);
       assert.equal(c.length, 6);
-      assert.deepEqual(c.map((x) => x.name), ['补给', '补给', '谢拉格驰援', '列装', '莫斯提马的盟誓', '升华']);
+      assert.deepEqual(c.map((x) => x.name), ['Supply', 'Supply', 'Kjerag Reinforcement', 'Outfitting', "Mostima's Oath", 'Sublimation']);
       assert.deepEqual([c[0].team, c[0].desc, Math.round(c[0].w)], [c[1].team, c[1].desc, Math.round(c[1].w)], 'the same face');
       assert.ok(c[0].team && /2.*次刷新/.test(c[0].desc), `补给: ${c[0].desc}`);
       assert.ok(c[0].taken && c[0].badge && c[0].disabled, 'the first twin: taken, with the taker\'s avatar');

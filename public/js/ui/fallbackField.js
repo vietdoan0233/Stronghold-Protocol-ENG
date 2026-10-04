@@ -118,6 +118,13 @@ export function createFallbackView(host, opts = {}) {
   const handPos = (L, idx) => ({ x: idx * L.tile, y: (L.rows + 0.6) * L.tile });
   const tempPos = (L, idx) => ({ x: (GEO.TEMP_C0 + idx) * L.tile, y: (L.rows + 1.72) * L.tile });
 
+  /** A battle unit's name in the shown language (the data store's record of its defId; the sim's own name is the original Chinese). */
+  function unitName(info) {
+    const id = String(info.defId || '');
+    const rec = info.side === 'enemy' ? lookup('enemies', id) : id.startsWith('token_') ? lookup('tokens', id) : lookup('chess', id);
+    return rec?.name || info.name || '?';
+  }
+
   // ---- pieces (prep) ---------------------------------------------------------------------------------------
   function pieceArt(p) {
     const mm = m();
@@ -246,7 +253,7 @@ export function createFallbackView(host, opts = {}) {
         style=${`transform:translate(${px - size / 2}px,${py - size / 2}px);width:${size}px;height:${size}px`}
         onPointerDown=${(e) => { if (e.button === 0) emit('pieceClick', { unitId: id, uid: info.uid ?? null, unit: info, button: 0, clientX: e.clientX, clientY: e.clientY }); }}
         onContextMenu=${(e) => { e.preventDefault(); emit('pieceClick', { unitId: id, uid: info.uid ?? null, unit: info, button: 2, clientX: e.clientX, clientY: e.clientY }); }}>
-      <div class="ff-unit__art">${src ? html`<img src=${src} alt="" draggable=${false} />` : html`<span>${[...(info.name || '?')][0]}</span>`}</div>
+      <div class="ff-unit__art">${src ? html`<img src=${src} alt="" draggable=${false} />` : html`<span>${[...unitName(info)][0]}</span>`}</div>
       <div class="ff-unit__bars"><i class="hp" style=${`width:${hpPct}%`}></i>${!enemy && spMax > 0 ? html`<i class="sp" style=${`width:${spPct}%`}></i>` : null}</div>
     </div>`;
   }

@@ -230,8 +230,8 @@ describe('GitHub issue #8 item 1: 本局信息 in the strategy draft (real serve
     assert.deepEqual((await intents(page)).slice(req0), [], 'no intent while looking');
 
     // the draft still works: highlight another strategy, confirm
-    await press(p, '.dband', '阿米娅');
-    assert.equal(await selBand(page), '阿米娅');
+    await press(p, '.dband', 'Amiya');
+    assert.equal(await selBand(page), 'Amiya');
     await press(p, '.draft-detail__btns .btn--primary', 'Confirm Selection');
     const s1 = await waitSt(page, (s) => s.phase !== 'BAND_DRAFT', 'the draft to end');
     assert.equal(s1.bandId, 'band_amiya');
@@ -322,7 +322,7 @@ describe('GitHub issue #8 item 1: 本局信息 in the strategy draft (real serve
     assert.equal(await selBand(picker.page), selP, 'the highlighted band survived the dialog');
     assert.deepEqual((await intents(picker.page)).slice(reqP).filter((t) => t !== 'g.bandFocus'), [], 'nothing but the draft\'s own focus report');
     assert.equal(await dialogOpen(waiter.page), true, 'the waiting player is still looking');
-    await press(picker, '.dband', '阿米娅');
+    await press(picker, '.dband', 'Amiya');
     await press(picker, '.draft-detail__btns .btn--primary', 'Confirm Selection');
     await waitSt(picker.page, (s) => !!s.bandId, `${picker.name}: picked`);
 
@@ -357,7 +357,7 @@ describe('GitHub issue #8 item 1: 本局信息 in the strategy draft (real serve
       assert.deepEqual(await readInfo(ph.page, '.minfo-dlg'), briefs.get(ph), `${w}×${h}: the dialog = the briefing`);
       const phStatus = await ph.page.$eval('[data-testid="match-info-status"]', (el) => el.textContent.trim());
       if (ph === last) assert.match(phStatus, /^Your turn to decide\s*\d+s$/);
-      else assert.equal(phStatus, 'Selected “阿米娅”, waiting for other Doctors');
+      else assert.equal(phStatus, 'Selected “Amiya”, waiting for other Doctors');
       await shot(ph.page, `coop-phone-dialog-${w}`);
       // a finger swipe up the body brings the banned operators into view
       const bodyPt = await centre(ph.page, '.minfo-dlg .modal__body');
@@ -391,7 +391,7 @@ describe('GitHub issue #8 item 1: 本局信息 in the strategy draft (real serve
     // the player who already picked keeps its dialog open; the last picker confirms a free strategy (阿米娅 is 队友已选) —
     // the end of the draft takes the open dialog away with the screen
     await openDialog(done);
-    await press(last, '.dband', '华法琳');
+    await press(last, '.dband', 'Warfarin');
     await press(last, '.draft-detail__btns .btn--primary', 'Confirm Selection');
     for (const p of [a, b]) {
       const s = await waitSt(p.page, (x) => x.phase !== 'BAND_DRAFT', `${p.name}: the draft to end`);

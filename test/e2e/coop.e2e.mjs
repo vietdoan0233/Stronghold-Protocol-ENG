@@ -1076,7 +1076,7 @@ describe('browser E2E against the real server', { skip: !ENABLED && 'needs Chrom
           // the nth free strategy, skipping 老鲤 (【得闲饮茶】 holds the funds of rounds 1–2 back until round 3: a human on
           // it has nothing to deploy in the first battles, and the round-1 facing chain needs board operators)
           const bandName = await c.page.evaluate((nth) => {
-            const free = [...document.querySelectorAll('.dband:not(.is-taken)')].filter((el) => el.querySelector('.dband__name')?.textContent.trim() !== '老鲤');
+            const free = [...document.querySelectorAll('.dband:not(.is-taken)')].filter((el) => el.querySelector('.dband__name')?.textContent.trim() !== 'Lee');
             const el = free[nth] || free[0];
             el?.scrollIntoView({ block: 'nearest' });
             return el?.querySelector('.dband__name')?.textContent.trim() || null;
