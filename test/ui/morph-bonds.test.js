@@ -144,7 +144,7 @@ const textOf = (v) => {
 };
 
 describe('变形同构体 — what the popup and the card show', () => {
-  test('the popup: On Field 3 and Members 3/11 — the wearer lit, tagged Isomer, titled Polymorphic Isomer', () => {
+  test('the popup: On Field 3 and Members 3/11 — the wearer lit, tagged Isomorph, titled Polymorphic Isomorph', () => {
     const priv = privWith({ board: [{ ...piece(VIC[0]), row: 9, col: 3 }, { ...piece(VIC[1]), row: 9, col: 4 }, { ...piece(WEARER, [ISO, HAMMER]), row: 9, col: 5 }] });
     const entry = { bondId: 'victoriaShip', count: 3, active: true, tier: 1, layers: 0, thresholds: [3, 6], countsHand: false };
     const v = BondPopup({ bondId: 'victoriaShip', entry, priv, onClose() {} });
@@ -154,8 +154,8 @@ describe('变形同构体 — what the popup and the card show', () => {
     const iso = [...walk(v)].filter((x) => hasClass(x, 'bpop__member') && hasClass(x, 'is-granted'));
     assert.equal(iso.length, 1);
     assert.ok(hasClass(iso[0], 'is-on'));
-    assert.match(iso[0].props.title, /Polymorphic Isomer/);
-    assert.ok([...walk(iso[0])].some((x) => hasClass(x, 'bpop__iso') && textOf(x) === 'Isomer'));
+    assert.match(iso[0].props.title, /Polymorphic Isomorph/);
+    assert.ok([...walk(iso[0])].some((x) => hasClass(x, 'bpop__iso') && textOf(x) === 'Isomorph'));
   });
 
   test('the card\'s bond chips: the granted bond with its count, dashed and tagged; resolveDetail hands a teammate unit\'s items on', () => {
@@ -166,7 +166,7 @@ describe('变形同构体 — what the popup and the card show', () => {
     assert.deepEqual(chips.map((x) => x.props['data-bond']), ['lateranoShip', 'swiftShip', 'victoriaShip']);
     const vic = chips[2];
     assert.ok(hasClass(vic, 'is-granted') && hasClass(vic, 'is-active'));
-    assert.match(vic.props.title, /维多利亚 \(Polymorphic Isomer\): 3\/6 on the field/);
+    assert.match(vic.props.title, /维多利亚 \(Polymorphic Isomorph\): 3\/6 on the field/);
     assert.ok(!hasClass(chips[0], 'is-granted'));
     const d = resolveDetail({ kind: 'unit', unit: { id: 7, side: 'ally', ownerId: 'p2', defId: WEARER, items: [ISO, HAMMER] } }, new Map());
     assert.deepEqual(d.unitItems, [ISO, HAMMER]);

@@ -25,6 +25,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { LOCALE_FILES, collectSources, TEXT_KEYS } from '../public/js/locale.js';
 import { richTextPlain } from '../public/js/ui/richText.js';
+import { bountyText, isMultiRoundBounty } from '../server/match/choices.js';
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export const DATA_DIR = join(ROOT, 'data');
@@ -65,10 +66,37 @@ export function serializeTable(table, order) {
   return out.join('\n');
 }
 
+/**
+ * Display texts the SERVER derives from the data and sends to the clients (server/display.js looks them up in the same
+ * tables), though no data field holds them: a multi-round bounty card's text rewritten to the battles it lasts
+ * (server/match/choices.js bountyText), taken from the effect's markup text. They are table keys of the data file that
+ * holds the card, like any other source.
+ * @returns {Map<string, Set<string>>} source text → field names
+ */
+export function derivedSources(file, json = readJson(dataPath(file))) {
+  const out = new Map();
+  if (file !== 'choices') return out;
+  const effects = existsSync(dataPath('effects')) ? readJson(dataPath('effects')) : {};
+  for (const c of (json.cards && json.cards.bounty) || []) {
+    if (!isMultiRoundBounty(c)) continue;
+    const raw = effects[c.effectId] && effects[c.effectId].descRaw;
+    const text = typeof raw === 'string' ? bountyText(raw, c) : raw;
+    if (typeof text === 'string' && text !== raw) out.set(text, new Set(['descRaw']));
+  }
+  return out;
+}
+
+/** collectSources of a data file plus its derivedSources (what a table may — and has to — translate). */
+export function sourcesOf(file, json = readJson(dataPath(file))) {
+  const out = collectSources(json);
+  for (const [zh, keys] of derivedSources(file, json)) if (!out.has(zh)) out.set(zh, keys);
+  return out;
+}
+
 /** Write a table of a data file in its canonical form (serializeTable). */
 export function writeTable(file, table) {
   mkdirSync(LOCALE_DIR, { recursive: true });
-  writeFileSync(tablePath(file), serializeTable(table, [...collectSources(readJson(dataPath(file))).keys()]));
+  writeFileSync(tablePath(file), serializeTable(table, [...sourcesOf(file).keys()]));
 }
 
 // ===== validation ================================================================================================
@@ -129,7 +157,7 @@ export function checkTables({ terms = false } = {}) {
   for (const file of LOCALE_FILES) {
     if (!existsSync(tablePath(file))) continue;
     const t = readTable(file);
-    const sources = collectSources(readJson(dataPath(file)));
+    const sources = sourcesOf(file);
     for (const [zh, en] of Object.entries(t.strings)) {
       const where = `${file}: ${JSON.stringify(zh).slice(0, 70)}`;
       if (!sources.has(zh)) errors.push(`${where} — no display field of data/${file}.json has this text (renamed or reworded in a rebuild?)`);
@@ -153,7 +181,7 @@ export function checkTables({ terms = false } = {}) {
 /** @returns {{ file: string, total: number, done: number, missing: Array<{ zh: string, keys: string[] }>, missingChars: number }[]} */
 export function coverage(files = LOCALE_FILES) {
   return files.filter((f) => existsSync(dataPath(f))).map((file) => {
-    const sources = collectSources(readJson(dataPath(file)));
+    const sources = sourcesOf(file);
     const { strings } = readTable(file);
     const missing = [...sources].filter(([zh]) => !(zh in strings)).map(([zh, keys]) => ({ zh, keys: [...keys] }));
     return { file, total: sources.size, done: sources.size - missing.length, missing, missingChars: missing.reduce((a, m) => a + m.zh.length, 0) };
@@ -177,7 +205,7 @@ export function planSync() {
   for (const file of LOCALE_FILES) {
     if (!existsSync(dataPath(file))) continue;
     const t = tables.get(file) || readTable(file);
-    for (const zh of collectSources(readJson(dataPath(file))).keys()) {
+    for (const zh of sourcesOf(file).keys()) {
       if (zh in t.strings) continue;
       const opts = have.get(zh);
       if (!opts) continue;

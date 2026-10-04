@@ -39,6 +39,7 @@ import { boardOrder, parseKey, tileKey } from './board.js';
 import { pieceBonds as bondsOfPiece } from './bondsMeta.js';
 import { registerAllMeta } from '../sim/content/index.js';
 import { registerBuiltins } from './builtinMeta.js';
+import { L } from '../display.js';
 
 export const HOOKS = Object.freeze([
   'onRoundStart', 'onIncome', 'onPrepStart', 'onPrepEnd', 'onGain', 'onSold', 'onRefresh', 'onPrice', 'onBuy',
@@ -591,7 +592,7 @@ export function makeCtx(m, ps, source, hook, ev = null) {
     toast: (text, kind = 'info') => m.toast(ps, kind, String(text)),
     ticker: (text) => m.tickerText(String(text)),
     /** CHAR_GIFT broadcast to this player: "{0}博士给你赠送了{1}". */
-    giftTicker: (fromName, chessId) => { const c = gd.chess(chessId); m.tickerFor('CHAR_GIFT', [String(fromName), c ? c.name : String(chessId)], { to: ps.playerId }); },
+    giftTicker: (fromName, chessId) => { const c = gd.chess(chessId); m.tickerFor('CHAR_GIFT', [String(fromName), c ? L(c.name) : String(chessId)], { to: ps.playerId }); },
 
     // ---- team
     teammates: () => m.alivePlayers().filter((p) => p !== ps).map((p) => makeCtx(m, p, source, hook, null)),

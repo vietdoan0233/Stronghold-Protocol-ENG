@@ -484,7 +484,7 @@ describe('operator names (phase 2)', () => {
     const EXCEPTIONS = {
       古米: 'Gummy', // appellation "Гум" (stylised); Gummy is the official Global name
       折桠: 'Branch', // appellation "Веточки"; the Chinese server is ahead of Global (charId char_4207_branch)
-      '盟约·辅助干员': 'Alliance Support Operator', // appellation "Alliance/Supportive Opertator" (a typo in the data)
+      '盟约·辅助干员': 'Alliance · Supporter Operator', // appellation "Alliance/Supportive Opertator" (a typo in the data); the class is a Supporter
       甄选干员: 'Selected Operator', // the loadout slot placeholder: no appellation at all
     };
     for (const [zh, { en, appellation }] of names) {

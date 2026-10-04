@@ -198,7 +198,7 @@ test('#9 hand and temp full: a re-orientation that would push 狼群 out is refu
   // range (rows 8–10, cols 9–12) leaves the wolf out: it leaves the board — no illegal placement reaches the battle
   assert.deepEqual(move(m, vigil.uid, board(9, 9), 'RIGHT'), { ok: true });
   assert.equal(ps.board.get('11,5'), undefined, 'outside her range with nowhere to go: removed');
-  assert.ok(toasts.some((t) => t.includes('狼群') && t.includes('下回合返还')), toasts.join(' / '));
+  assert.ok(toasts.some((t) => t.includes('Wolfpack') && t.includes('returning next round')), toasts.join(' / '));
   assert.equal(ps.battleInput().units.filter((u) => u.kind === 'token').length, 0);
   checkInvariants(m);
   // …and its stack comes back at the next round start (grantTokensFor, "干员所属召唤物会于下一回合返还")

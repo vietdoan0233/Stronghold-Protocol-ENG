@@ -411,7 +411,7 @@
     "会使用爆破物，能对我方单位造成大量物理伤害": "Can use explosives to deal heavy Physical damage to allied units",
     "生命值降至一半以下时炸药包的使用数量增加": "Uses more explosives when HP is under 50%",
     "对<@eb.key>生命上限最高</>单位造成大量物理伤害。对<@eb.key>生命上限最低</>单位大幅降低攻击力并造成法术伤害": "Deals massive physical damage to the Operator with the <@eb.key>highest Max HP</>; greatly decreases the ATK of, and deals continuous Arts damage to the Operator with the <@eb.key>lowest Max HP</>",
-    "鼠王": "Rat King",
+    "鼠王": "'Rat King'",
     "【唱沙】对场上生命上限最高单位及其十字范围内所有目标造成大量物理伤害": "[Singing Sands] Targets a unit with the highest Max HP, dealing heavy physical damage to the target and nearby allied units within a cross area",
     "【沙狱】使场上生命上限最低的单位及其周围目标攻击力降低且持续受到法术伤害": "[Sand Tomb] Targets a unit with the lowest Max HP, continuously inflicting Arts damage to the target and nearby allies, also reducing their ATK",
     "出场时拥有能够吸收大量法术伤害的屏障，屏障存在时防御力大幅增加": "Appears with a Barrier that can absorb a large amount of Arts damage, gains significantly increased DEF while Barrier is active",

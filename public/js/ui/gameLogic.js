@@ -169,13 +169,13 @@ export function phaseBanner(phase, pub) {
   }
 }
 
-/** Label of the prep capsule ("休息一下" in the original). */
+/** Label of the prep capsule ("休息一下" in the original — the Rest Phase). */
 export function prepCapsuleLabel(phase) {
   if (phase === PHASE.SP_DRAFT) return 'Draft Phase';
   if (phase === PHASE.ROUND_START) return 'Round Start';
   if (phase === PHASE.BATTLE_CHECK) return 'Protocol Start';
   if (phase === PHASE.SETTLE) return 'Round Settlement';
-  return 'Take a Break';
+  return 'Rest Phase';
 }
 
 // ---- countdown -------------------------------------------------------------------------------------

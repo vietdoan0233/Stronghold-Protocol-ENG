@@ -132,11 +132,11 @@ export function BondPopup({ bondId, entry, priv, banned = [], onClose, onMember,
       <div class="bpop__members">
         ${members.map((mb) => html`<button key=${mb.id} type="button" class=${cx('bpop__member', mb.onBoard && 'is-on', mb.owned && !mb.onBoard && 'is-owned', mb.banned && 'is-banned', mb.granted && 'is-granted')}
             onClick=${() => onMember?.(mb.id, mb.granted && Array.isArray(mb.items) ? mb.items : null)} data-granted=${mb.granted ? '1' : null}
-            title=${`${mb.name}${mb.granted ? ' (Polymorphic Isomer: counts as a member of this alliance)' : ''}${mb.banned ? ' (disabled this match)' : mb.onBoard ? ' (on the field)' : mb.owned ? ' (in Reserve)' : ''}`}>
+            title=${`${mb.name}${mb.granted ? ' (Polymorphic Isomorph: counts as a member of this alliance)' : ''}${mb.banned ? ' (disabled this match)' : mb.onBoard ? ' (on the field)' : mb.owned ? ' (in Reserve)' : ''}`}>
           <${UnitThumb} kind="chess" id=${mb.id} size="sm" dim=${!mb.owned || mb.banned} />
           <span class="bpop__mname">${mb.name}</span>
           ${mb.banned ? html`<span class="bpop__ban"><${Icon} name="close" /></span>` : null}
-          ${mb.granted ? html`<span class="bpop__iso" aria-hidden="true">Isomer</span>` : null}
+          ${mb.granted ? html`<span class="bpop__iso" aria-hidden="true">Isomorph</span>` : null}
         </button>`)}
       </div>
     </section>

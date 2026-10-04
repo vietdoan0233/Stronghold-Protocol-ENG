@@ -62,8 +62,9 @@
 //   cards with `team: true` apply to the picker AND every alive teammate ("若存在其他队友则他们也获得").
 
 import { weightedPick } from './waves.js';
+import { L } from '../display.js';
 
-export const FAMILY_NAMES = { bounty: '悬赏决策', supply: '道具补给', shop: '机密商店', tactic: '战术决策' };
+export const FAMILY_NAMES = { bounty: 'Bounty Draft', supply: 'Item Supply', shop: 'Secret Shop', tactic: 'Tactical Decision' };
 
 /**
  * Battles a multi-round bounty card lasts (data `rounds` 99, official text "之后 / 后续的<@ba.vdown>每场</>作战":
@@ -404,8 +405,8 @@ function buildCards(gd, rng, family, n, sch, { stageId = null, bondAvailable = n
 
 /** Public card view. */
 export function cardView(c) {
-  const v = { idx: c.idx, kind: c.kind, id: c.id, name: c.name, desc: c.desc, tier: c.tier ?? null };
-  if (c.kind === 'bounty') Object.assign(v, { descRaw: c.descRaw ?? null, coin: c.coin, payout: c.payout, rounds: c.rounds, enemyKey: c.enemyKey, count: c.count });
+  const v = { idx: c.idx, kind: c.kind, id: c.id, name: L(c.name), desc: L(c.desc), tier: c.tier ?? null };
+  if (c.kind === 'bounty') Object.assign(v, { descRaw: L(c.descRaw ?? null), coin: c.coin, payout: c.payout, rounds: c.rounds, enemyKey: c.enemyKey, count: c.count });
   if (c.kind === 'item') v.price = 0;
   if (c.kind === 'tactic') Object.assign(v, { team: c.team, tacticKind: c.tacticKind });
   return v;

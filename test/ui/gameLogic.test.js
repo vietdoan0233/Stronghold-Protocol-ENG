@@ -70,7 +70,7 @@ describe('phases', () => {
     assert.equal(phaseBanner(PHASE.COMBAT, {}).title, 'Combat Start');
     assert.equal(phaseBanner(PHASE.ROUND_START, { round: 7 }).title, 'Round 7');
     assert.equal(phaseBanner(PHASE.SETTLE, {}), null);
-    assert.equal(prepCapsuleLabel(PHASE.PREP), 'Take a Break');
+    assert.equal(prepCapsuleLabel(PHASE.PREP), 'Rest Phase');
     // the Unite banner lists the helpers (a nameless one reads "Doctor"); without any it says who defends
     const uni = { players: [{ playerId: 'a', seat: 0, name: 'Amiya' }, { playerId: 'b', seat: 1 }], unite: { helpers: ['a', 'b'] } };
     assert.equal(phaseBanner(PHASE.UNITE, uni).sub, 'Uniting: Amiya, Doctor');

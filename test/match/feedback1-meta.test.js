@@ -328,7 +328,7 @@ test('#4 hand and temp full: the gained operator follows the no-room rule of eve
   assert.equal(m.pool.left(t2), left2 + 1, 'its copy went back to the pool');
   assert.ok(!ps.allChess().some((p) => p.id === t3), 'no slot anywhere: the gained operator is not kept');
   assert.equal(m.pool.left(t3), left0, 'its copy went back to the pool (PlayerState.acquireChess)');
-  assert.ok(toasts.includes('整备区已满，获得的干员已返还'), 'the toast of any gained operator with no room');
+  assert.ok(toasts.includes('Reserve is full; the operator you gained was returned to the pool'), 'the toast of any gained operator with no room');
   // the cell found no slot and no gained operator to stay on: destroyed with a log warning, as in a merge
   assert.equal(ownedItems(ps, CELL).length, 0);
   assert.ok(h.logs.warn.some((w) => w.includes(`returned item ${CELL} destroyed (no space)`)), 'logged');

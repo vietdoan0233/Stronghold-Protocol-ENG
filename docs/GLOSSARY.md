@@ -113,7 +113,7 @@ runtime messages. When a term is missing, add it here **in the same commit** tha
 | 特训敌人 | Special Training enemies |
 | 层 / 层数 | layer(s) |
 | 休整期结束 | end of the Rest Phase |
-| 变形同构体 | Polymorphic Isomer |
+| 变形同构体 | Polymorphic Isomorph |
 | 突变细胞 | Mutant Cells |
 | 维式重锤 | Vice Hammer |
 | 已满 | full |
@@ -160,3 +160,18 @@ Nervous Impairment · 凋亡损伤 Necrosis Damage · 侵蚀损伤 Corrosion Dam
 Operators / enemies (official): 巫恋 **Shamare**, 锏 **Degenbrecher**, 伺夜 **Vigil**, 洛洛 **Rockrock**, 野鬃 **Wild Mane**,
 角峰 **Cardigan**, 假想敌：胄/铳/管 **OpFor: Armor / Gun / Pipe**, 掠海漂移体 **Skimming Sea Drifter**, 深池逐火
 **Dublinn Flamechaser**, 鸭爵 **Duck Lord**, 流泪小子 **Crying Thief**, 圆仔 **Fatty**.
+
+Mode-specific names settled in the review (the official wording wins where there is one):
+
+| 中文 | English | Note |
+|---|---|---|
+| 阻隔工事 / 障碍物 | Roadblock | the crates enemies break through; official en_US. *Barricade* is the official name of a different device (封阻物) |
+| 射击台 | Firing Platform | |
+| 战栗 / 战栗维式重锤 | Frighten / Frighten Vice Hammer | the official status term |
+| 变形同构体 / 变形同构 | Polymorphic Isomorph / Polymorphic Isomorphism | 同构 is *Isomorphic* officially ("Isomorphic Fragment") |
+| 画卷 | Picture Scroll | the item; the enemy 诗画卷轴 is the official *Painting Scroll* |
+| 通关奖励 | Pro Gamer | the official name of the same strategy effect (act1v) |
+| “鼠王” | 'Rat King' | the official enemy name keeps its quotes |
+| 盟约·辅助干员 | Alliance · Supporter Operator | the class is a *Supporter* |
+| 折桠 / 古米 | Branch / Gummy | the official Global names (the data's appellation is Cyrillic / stylised) |
+| AI 队友 names | AI·Warfarin, AI·Amiya, AI·Leizi, AI·Dobermann, AI·Kal'tsit, AI·Closure | `BOT_NAMES` in `server/lobby.js` |

@@ -178,7 +178,7 @@ export function MorphPairings({ off = null, carried = null }) {
   const wearer = Array.isArray(carried);
   return html`<div class=${cx('dmorph', wearer && 'is-wearer')}>
     <p class="dmorph__lead">When paired with the gear below, the bearer counts as a member of the matching alliance:</p>
-    <ul class="dmorph__list" aria-label="Polymorphic Isomer pairings">
+    <ul class="dmorph__list" aria-label="Polymorphic Isomorph pairings">
       ${rows.map((r) => html`<li key=${r.bondId} class=${cx('dmorph__row', r.off && 'is-off', r.worn && 'is-worn')} data-bond=${r.bondId}
           title=${`${r.items.map((it) => it.name).join(', ')} → [${r.name}]${r.off ? ' (disabled this match)' : ''}`}>
         <span class="dmorph__bond">[${r.name}]</span>
@@ -241,7 +241,7 @@ export function BondChips({ bondIds, bonds = [], onBond = null, off = null, gran
       const active = !isOff && (e ? !!e.active : tier > 0);
       const next = nextThreshold(count, th);
       const cap = next ?? th[th.length - 1] ?? null;
-      const isoTag = iso.has(id) ? ' (Polymorphic Isomer)' : '';
+      const isoTag = iso.has(id) ? ' (Polymorphic Isomorph)' : '';
       // the count holds 调和's +1 (the server's bond entry says so, DESIGN §21.26)
       const harmonyTag = !isOff && Number.isInteger(e?.harmony) && e.harmony > 0 ? ` (incl. Harmony +${e.harmony})` : '';
       const label = isOff ? briefingBondTip(rec?.name || id, 'off')
@@ -250,12 +250,12 @@ export function BondChips({ bondIds, bonds = [], onBond = null, off = null, gran
         ? html`
         <${BondGlyph} bondId=${id} class="dbond__icon" />
         <span class="dbond__name">${rec?.name || id}</span>
-        ${iso.has(id) ? html`<span class="dbond__iso">Isomer</span>` : null}
+        ${iso.has(id) ? html`<span class="dbond__iso">Isomorph</span>` : null}
         <span class="dbond__off">Disabled</span>`
         : html`
         <${BondGlyph} bondId=${id} class="dbond__icon" />
         <span class="dbond__name">${rec?.name || id}</span>
-        ${iso.has(id) ? html`<span class="dbond__iso">Isomer</span>` : null}
+        ${iso.has(id) ? html`<span class="dbond__iso">Isomorph</span>` : null}
         <span class=${cx('dbond__count', 'num', next == null && count > 0 && 'is-max')}>${count}${cap != null ? html`<small>/${cap}</small>` : null}</span>
         ${th.length ? html`<span class="dbond__tiers" aria-hidden="true">${th.map((_, i) => html`<i key=${i} class=${i < tier ? 'on' : ''}></i>`)}</span>` : null}`;
       const cls = cx('dbond', active && 'is-active', isOff && 'is-off', rec?.isCore && 'is-core', iso.has(id) && 'is-granted');

@@ -69,7 +69,7 @@ describe('#6 the server names its offers (m.private shop.rewardOffer source / la
     const offer = ps.privateView().shop.rewardOffer;
     assert.ok(offer, 'an offer after the level-up');
     assert.equal(offer.source, 'special');
-    assert.equal(offer.label, '定向投放', 'the strategy\'s effect name');
+    assert.equal(offer.label, 'Targeted Delivery', 'the strategy\'s effect name');
     assert.equal(offer.tier, null, 'items carry their own tiers');
     assert.equal(offer.slots.length, 3);
     assert.equal(new Set(offer.slots.map((s) => s.id)).size, 3, 'three different items');
@@ -95,7 +95,7 @@ describe('#6 the server names its offers (m.private shop.rewardOffer source / la
     assert.equal(ps.privateView().shop.rewardOffer.queued, 1, 'one more waits behind it');
     assert.deepEqual(m.handle('p_0', { t: 'g.reward', idx: 0 }), OK);
     const second = ps.privateView().shop.rewardOffer;
-    assert.ok(second && second.label === '定向投放' && second.slots.length === 3 && second.slots.every((s) => !s.sold), 'the second offer, all free to pick');
+    assert.ok(second && second.label === 'Targeted Delivery' && second.slots.length === 3 && second.slots.every((s) => !s.sold), 'the second offer, all free to pick');
     assert.equal(second.queued, 0);
     assert.deepEqual(m.handle('p_0', { t: 'g.reward', idx: 2 }), OK);
     assert.equal(ps.privateView().shop.rewardOffer, null);
@@ -108,7 +108,7 @@ describe('#6 the server names its offers (m.private shop.rewardOffer source / la
     m.round = 2;
     m.dispatch(ps, 'onRoundStart', { round: 2 });
     let offer = ps.privateView().shop.rewardOffer;
-    assert.ok(offer && offer.source === 'special' && offer.label === '见者有份', JSON.stringify(offer));
+    assert.ok(offer && offer.source === 'special' && offer.label === 'Share for All', JSON.stringify(offer));
     assert.equal(offer.slots.length, 2);
     assert.ok(offer.slots.every((s) => s.kind === 'item'));
     ps.offers.length = 0;
@@ -118,7 +118,7 @@ describe('#6 the server names its offers (m.private shop.rewardOffer source / la
     const pager = giveItem(m, ps, PAGER);
     assert.deepEqual(m.handle('p_0', { t: 'g.equip', itemUid: pager.uid, targetUid: op.uid }), OK);
     offer = ps.privateView().shop.rewardOffer;
-    assert.ok(offer && offer.source === 'special' && offer.label === '寻呼模块', JSON.stringify(offer));
+    assert.ok(offer && offer.source === 'special' && offer.label === 'Pager Module', JSON.stringify(offer));
     assert.ok(offer.slots.length >= 1 && offer.slots.every((s) => s.kind === 'chess'));
     ps.offers.length = 0;
     // the promotion reward
@@ -147,7 +147,7 @@ describe('#6 the server names its offers (m.private shop.rewardOffer source / la
     assert.ok(texts.join('').includes('+1'), `the pill says +1 (${texts.join(' | ')})`);
     assert.deepEqual(m.handle('p_0', { t: 'g.reward', idx: 0 }), OK);
     offer = ps.privateView().shop.rewardOffer;
-    assert.ok(offer.source === 'special' && offer.label === '定向投放' && offer.queued === 0, JSON.stringify(offer));
+    assert.ok(offer.source === 'special' && offer.label === 'Targeted Delivery' && offer.queued === 0, JSON.stringify(offer));
     assert.equal(offerHeader(offer).more, null);
     m.dispose();
   });

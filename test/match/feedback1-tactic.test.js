@@ -110,7 +110,7 @@ test('战术决策 seeded (co-op 绝境 R11, seed 30): 补给 twice — two card
   const { idx: ib, ...vb } = cardView(b);
   assert.deepEqual([ia, ib], at);
   assert.deepEqual(va, vb, 'the same card face');
-  assert.deepEqual(va, { kind: 'tactic', id: 'allybuff_select_4', name: '补给', desc: byName('补给')[0].desc, tier: null, team: true, tacticKind: 'ally' });
+  assert.deepEqual(va, { kind: 'tactic', id: 'allybuff_select_4', name: 'Supply', desc: byName('补给')[0].desc, tier: null, team: true, tacticKind: 'ally' });
 });
 
 test('战术决策 solo 绝境 R11: three ally cards, a repeat sometimes [ASSUMED: solo extrapolated from co-op]', () => {
