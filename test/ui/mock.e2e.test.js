@@ -317,7 +317,7 @@ describe('in-match UI (mock harness, headless Chrome)', { skip: !ENABLED && 'set
     await sleep(200);
     await page.mouse.move((btn.left + btn.right) / 2, (btn.top + btn.bottom) / 2);
     await sleep(600);
-    assert.match(await page.$eval('.tooltip.is-shown', (el) => el.textContent), /本局信息/);
+    assert.match(await page.$eval('.tooltip.is-shown', (el) => el.textContent), /Match Info/);
     assert.deepEqual(problems, []);
     await page.close();
   });
@@ -332,7 +332,7 @@ describe('in-match UI (mock harness, headless Chrome)', { skip: !ENABLED && 'set
       const { page, problems } = await open('phase=PREP', { render });
       await page.waitForFunction(() => !!globalThis.__SP_VIEW__, { timeout: 15000 });
       assert.equal(await camera(page), 'prep');
-      assert.deepEqual(await sprite(page, '.enemybtn'), { sprite: 'btn_check_enemy', label: '敌方情报', disabled: 'false' });
+      assert.deepEqual(await sprite(page, '.enemybtn'), { sprite: 'btn_check_enemy', label: 'Enemy Intel', disabled: 'false' });
       assert.equal((await sprite(page, '.gtop__iconbtn')).sprite, 'btn_check_player_normal');
       assert.ok(await page.$('.shopbar:not(.is-collapsed), .shopbar'), 'shop bar shown');
       const cards0 = await page.$$eval('.shopbar__cards .scard', (els) => els.length);
@@ -401,8 +401,8 @@ describe('in-match UI (mock harness, headless Chrome)', { skip: !ENABLED && 'set
     await p2.page.click('.gtop__iconbtn');
     await p2.page.waitForSelector('.edrawer');
     const tabs = await p2.page.$$eval('.edrawer .tabs__tab', (els) => els.map((el) => el.textContent.trim()));
-    assert.deepEqual(tabs, ['本局信息', '敌方情报']);
-    assert.equal(await p2.page.$eval('.edrawer .tabs__tab.is-active', (el) => el.textContent.trim()), '本局信息', 'info first');
+    assert.deepEqual(tabs, ['Match Info', 'Enemy Intel']);
+    assert.equal(await p2.page.$eval('.edrawer .tabs__tab.is-active', (el) => el.textContent.trim()), 'Match Info', 'info first');
     await p2.page.click('.edrawer .tabs__tab:nth-child(2)');
     await p2.page.waitForSelector('.edrawer .erow');
     await p2.page.click('.gtop__iconbtn');
@@ -561,7 +561,7 @@ describe('in-match UI (mock harness, headless Chrome)', { skip: !ENABLED && 'set
   for (const [w, h] of [[1920, 1080], [1366, 768]]) {
     test(`toasts clear the top bar capsule; the reconnect banner clears the view switcher (${w}×${h})`, async () => {
       let { page, problems } = await open('phase=PREP', { w, h });
-      await page.evaluate(() => import('/js/ui/toasts.js').then((m) => m.toast('整备区已满', 'error')));
+      await page.evaluate(() => import('/js/ui/toasts.js').then((m) => m.toast('Reserve is full', 'error')));
       await sleep(500);
       const toastR = await rectOf(page, '.toast');
       const cap = await rectOf(page, '.gtop__center');
@@ -579,7 +579,7 @@ describe('in-match UI (mock harness, headless Chrome)', { skip: !ENABLED && 'set
       assert.ok(!overlaps(banner, await rectOf(page, '.gtop__center')), 'banner clear of the capsule');
       const hit = await page.evaluate((x, y) => !!document.elementFromPoint(x, y)?.closest('.vswitch'), (vs.left + vs.right) / 2, (vs.top + vs.bottom) / 2);
       assert.ok(hit, 'the switcher stays clickable');
-      await page.evaluate(() => import('/js/ui/toasts.js').then((m) => m.toast('连接中断', 'error')));
+      await page.evaluate(() => import('/js/ui/toasts.js').then((m) => m.toast('Connection lost', 'error')));
       await sleep(500);
       assert.ok(!overlaps(await rectOf(page, '.toast'), banner), 'toasts stack below the banner');
       assert.deepEqual(problems, []);
@@ -594,8 +594,8 @@ describe('in-match UI (mock harness, headless Chrome)', { skip: !ENABLED && 'set
     await sleep(500);
     const watched = await page.$$eval('.team__row.is-watched .team__name', (els) => els.map((e) => e.textContent));
     assert.ok(!watched.includes('Doctor·B') && !watched.includes('灰烬'), `other pair not marked watched (${watched})`);
-    assert.match(await page.$eval('.toast', (el) => el.textContent), /另一组/);
-    assert.equal(await page.$eval('.vswitch__label', (el) => el.textContent), '全景');
+    assert.match(await page.$eval('.toast', (el) => el.textContent), /other pair/);
+    assert.equal(await page.$eval('.vswitch__label', (el) => el.textContent), 'Panorama');
     assert.deepEqual(problems, []);
     await page.close();
   });
@@ -620,7 +620,7 @@ describe('in-match UI (mock harness, headless Chrome)', { skip: !ENABLED && 'set
     await page.evaluate(() => globalThis.__MOCK__.mutate((S) => { S.priv.funds = 40; }));
     await sleep(100);
     const before = await mockState(page);
-    await page.click('.gtop__iconbtn[aria-label="本局信息"]');
+    await page.click('.gtop__iconbtn[aria-label="Match Info"]');
     await page.waitForSelector('.edrawer');
     for (const k of ['KeyR', 'KeyF', 'KeyD', 'Space']) { await page.keyboard.press(k); await sleep(150); }
     const s = await mockState(page);

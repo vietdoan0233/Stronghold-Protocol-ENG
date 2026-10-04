@@ -114,8 +114,8 @@ export function selectRoute(s) {
 export function sessionResetNotice(prev, playerId) {
   const prevId = prev?.me?.playerId;
   if (prevId == null || prevId === playerId) return null;
-  if (prev?.match?.public || prev?.room?.inMatch) return '服务器会话已重置，上一局模拟已结束';
-  if (prev?.room) return '服务器会话已重置，已返回大厅';
+  if (prev?.match?.public || prev?.room?.inMatch) return 'The server session was reset; the previous simulation has ended';
+  if (prev?.room) return 'The server session was reset; you are back in the lobby';
   return null;
 }
 

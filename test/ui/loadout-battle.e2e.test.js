@@ -47,32 +47,32 @@ describe('user playtest #2 item 1 — loadout chosen in the UI fights in the loc
       await c.click('.lobby-screen [data-testid="loadout-open"]');
       await c.page.waitForSelector('.lo .lo-card', { visible: true, timeout: 15000 });
       await c.click('.lo-search input');
-      await c.page.keyboard.type('野鬃');
+      await c.page.keyboard.type('Wild Mane'); // 野鬃 (the page shows the English overlay names)
       await c.page.waitForFunction(() => document.querySelectorAll('.lo-card').length === 1, { timeout: 5000 });
       await c.click('.lo-card');
       await c.click('.lo-detail .lo-skill[data-skill="0"]');
       await c.click('.lo-detail .lo-mod[data-module="none"]');
       await c.page.waitForFunction(() => document.querySelector('.lo-skill.is-on[data-skill="0"]') && document.querySelector('.lo-mod.is-on[data-module="none"]'), { timeout: 3000 });
-      await c.page.waitForFunction(() => /已同步/.test(document.querySelector('.lo-sync')?.textContent || ''), { timeout: 8000 });
+      await c.page.waitForFunction(() => /Synced/.test(document.querySelector('.lo-sync')?.textContent || ''), { timeout: 8000 });
       await c.shot('overlay');
       await c.page.keyboard.press('Escape');
       await c.page.waitForFunction(() => !document.querySelector('.lo'), { timeout: 3000 });
 
       // 2) a solo 标准 match: the briefing's m.private carries the loadout
-      await c.click('.mode-card', '独立模拟');
-      await c.click('.diff-card', '标准模拟');
-      await c.click('.create-box button', '开始独立模拟');
+      await c.click('.mode-card', 'Solo Simulation');
+      await c.click('.diff-card', 'Standard Simulation');
+      await c.click('.create-box button', 'Start Solo Simulation');
       await c.waitFor((s) => !!s.room, 'solo room');
-      if (!(await c.st()).phase) await c.click('.room-bar__right button', '开始模拟', { timeout: 20000 });
+      if (!(await c.st()).phase) await c.click('.room-bar__right button', 'Start Simulation', { timeout: 20000 });
       await c.waitFor((s) => s.phase === 'INFO_CHECK', 'briefing', 30000);
       const lo = await c.page.evaluate(() => globalThis.__SP__.store.get().match.private?.loadout ?? null);
       assert.deepEqual(lo, { [BASE]: { skill: 0, module: 'none' } }, 'the match received the loadout');
-      await c.click('.brief__foot .btn--primary', '准备就绪');
+      await c.click('.brief__foot .btn--primary', 'Ready');
       await c.waitFor((s) => s.phase === 'BAND_DRAFT', 'band draft', 30000);
       await sleep(500);
       assert.deepEqual(await untimed(c), { deadline: false, shown: 0 }, 'item 11: the solo strategy draft is untimed');
       await c.click('.dband', null, { nth: 1 });
-      await c.click('.draft-detail__btns .btn--primary', '确认选择');
+      await c.click('.draft-detail__btns .btn--primary', 'Confirm Selection');
       await c.waitFor((s) => s.phase === 'PREP' && !s.ready && s.hand > 0, 'prep with the starter kit', 60000);
       await sleep(1800); // camera flight + pieces
       assert.deepEqual(await untimed(c), { deadline: false, shown: 0 }, 'item 11: solo prep is untimed');

@@ -339,7 +339,7 @@ old score ignored the enemy); Beacon went on the best operator (it destroys its 
 funds a third copy in the shop needed. Changes (server/match/bot.js header, META §1.5): refresh-vs-buy by the shop odds
 of completing held pairs, the freeze for an unaffordable third copy, merges before level-ups, a committed focus /
 second bond (a teammate's main bond read from its bond strip), armour-aware DPS, bounty picks by expected value from
-the exposure model, item carriers by effect, Cantabile banking its interest capital, a tactician's reinforcements inside its range.
+the exposure model, item carriers by effect, Cannot banking its interest capital, a tactician's reinforcements inside its range.
 Same seeds (1–40) old → new, the match's default rehearsal (3):
 
 | config | wins | rounds passed | LP left | leaks / match | bounty enemies leaked | merges / bot | elites at R13 |
@@ -353,7 +353,7 @@ Peril leaks per alive bot in R12 / R13: solo 8.0 / 9.2 → 5.7 / 4.8, co-op 20.5
 are bound by the drafts, not the pick: in 223 of the 312 co-op Peril bounty picks no card still on offer had a kill
 chance ≥ 0.5 (solo 22 of 80), and only 5 picks (solo 0) took a card below 0.5 while one ≥ 0.5 was on offer — re-measure
 after the bounty-half fix (player report #2). Strategies played alone (solo Peril, seeds 201–220, forced with `--band`):
-Cantabile 9 → 14 wins of 20, Quintus 9 → 11, Dobermann 8 → 9 (keeping an unused Teaching Pointer vs dropping it: 11 vs 11 wins over 24 Dobermann
+Cannot 9 → 14 wins of 20, Quintus 9 → 11, Dobermann 8 → 9 (keeping an unused Teaching Pointer vs dropping it: 11 vs 11 wins over 24 Dobermann
 matches — kept, as it costs nothing but a hand slot). Decision time per bot prep is unchanged (one thread, back to back
 on a quiet host, seeds 1–6, solo Peril / co-op Peril; the rehearsal included): wall clock p50 / p95 94 / 191 → 89 / 205 ms
 and 86 / 175 → 83 / 162 ms, CPU 131 / 314 → 124 / 329 ms and 97 / 209 → 91 / 188 ms; the heuristics alone (CPU) 31 / 74

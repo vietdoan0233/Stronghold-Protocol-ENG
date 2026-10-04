@@ -126,8 +126,8 @@ describe('6: 机变 cards (道具补给 / 机密商店 / 悬赏 / 战术) show t
     assert.ok(badge, 'the taker\'s badge');
     assert.equal(children(badge).length, 1, 'avatar only');
     assert.equal(children(badge)[0].type?.name, 'PlayerAvatar');
-    assert.equal(badge.props.title, 'P2 已选择');
-    assert.match(taken[0].props['aria-label'], /，P2已选择$/);
+    assert.equal(badge.props.title, 'Selected by P2');
+    assert.match(taken[0].props['aria-label'], /, selected by P2$/);
     const armed = [...walk(ChoiceView({ pub: { players, deadline: 0 }, sp, myId: 'me', solo: false, armed: 0 }))];
     assert.ok(armed.some((n) => hasClass(n, 'spcard__confirm')));
   });

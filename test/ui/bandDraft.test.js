@@ -274,10 +274,10 @@ describe('UI: one countdown and the highlighted band (user playtest #4 item 4)',
     assert.equal(draftSelection(null, { bands, taken: new Map(), myPick: null, myTurn: false }), 'band_bldsk');
     assert.equal(draftSelection(null, { bands, taken: new Map([['band_bldsk', ['a']]]), myPick: null, myTurn: true }), 'band_amiya');
     assert.equal(draftSelection('band_bldsk', { bands, taken: new Map([['band_bldsk', ['a']]]), myPick: null, myTurn: true }), 'band_amiya', 'taken on my turn ⇒ the default');
-    assert.match(draftTip({ timed: true, turnSeconds: 30, autoName: '华法琳' }), /每位博士有 30 秒，超时将自动选择当前选中的「华法琳」/);
-    assert.match(draftTip({ timed: true, turnSeconds: 30, autoName: '阿米娅', selected: false }), /超时将自动选择「阿米娅」$/);
-    assert.equal(draftTip({ timed: true, turnSeconds: 30, autoName: null }), '联合模拟在选择策略时可以进行一次跳过；每位博士有 30 秒');
-    assert.equal(draftTip({ timed: false, autoName: '华法琳' }), '联合模拟在选择策略时可以进行一次跳过；本局不限时');
+    assert.match(draftTip({ timed: true, turnSeconds: 30, autoName: '华法琳' }), /each Doctor has 30 s, and if time runs out, the currently selected “华法琳” is picked automatically/);
+    assert.match(draftTip({ timed: true, turnSeconds: 30, autoName: '阿米娅', selected: false }), /if time runs out, “阿米娅” is picked automatically$/);
+    assert.equal(draftTip({ timed: true, turnSeconds: 30, autoName: null }), 'In Alliance Simulation you can skip once while choosing a strategy; each Doctor has 30 s');
+    assert.equal(draftTip({ timed: false, autoName: '华法琳' }), 'In Alliance Simulation you can skip once while choosing a strategy; no time limit this match');
   });
 
   test('a single human with AI teammates: the draft is untimed (soloUntimed), keeps the co-op order and its skip', () => {

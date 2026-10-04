@@ -103,10 +103,10 @@ describe('2: 机变 cards take two taps (select → confirm), like buying in the
     assert.equal(cards.length, 3);
     assert.deepEqual(cards.map((c) => hasClass(c, 'is-armed')), [false, true, false]);
     assert.equal(cards[1].props['aria-pressed'], 'true');
-    assert.match(cards[1].props['aria-label'], /已选中，再次点击确认/);
-    assert.equal(textOf(nodes.find((n) => hasClass(n, 'spcard__confirm'))), '确认选择再次点击');
+    assert.match(cards[1].props['aria-label'], /selected, click again to confirm/);
+    assert.equal(textOf(nodes.find((n) => hasClass(n, 'spcard__confirm'))), 'Confirm SelectionClick again');
     const btn = nodes.find((n) => n.type === Button);
-    assert.ok(btn && textOf(btn.props.children).includes('确认选择'), 'the header confirm');
+    assert.ok(btn && textOf(btn.props.children).includes('Confirm Selection'), 'the header confirm');
     btn.props.onClick();
     assert.equal(confirmed, 1);
     cards[0].props.onClick();
@@ -118,16 +118,16 @@ describe('2: 机变 cards take two taps (select → confirm), like buying in the
     const idle = [...walk(ChoiceView({ pub: { players: [] }, sp: s, ...me }))];
     assert.ok(!idle.some((n) => hasClass(n, 'spcard__confirm')));
     assert.ok(!idle.some((n) => n.type === Button));
-    assert.match(textOf(idle.find((n) => hasClass(n, 'spov__sub'))), /点击卡牌选中，再次点击确认/);
+    assert.match(textOf(idle.find((n) => hasClass(n, 'spov__sub'))), /Click a card to select it, click again to confirm/);
   });
 
   test('3: an untimed 机变 (solo, a single human) shows no clock and says so; a timed one keeps its countdown', () => {
     const timed = [...walk(ChoiceView({ pub: { players: [], deadline: Date.now() + 9000 }, sp: sp(), ...me }))];
     assert.ok(timed.some((n) => n.type?.name === 'Countdown'));
-    assert.match(textOf(timed.find((n) => hasClass(n, 'spov__sub'))), /倒计时结束后仍未选定将自动分配/);
+    assert.match(textOf(timed.find((n) => hasClass(n, 'spov__sub'))), /If nothing is chosen when the countdown ends, one is assigned automatically/);
     const lone = [...walk(ChoiceView({ pub: { players: [], deadline: 0 }, sp: sp({ untimed: true }), ...me }))];
     assert.ok(!lone.some((n) => n.type?.name === 'Countdown'), 'a single human\'s co-op draft: untimed');
-    assert.match(textOf(lone.find((n) => hasClass(n, 'spov__sub'))), /无时间限制/);
+    assert.match(textOf(lone.find((n) => hasClass(n, 'spov__sub'))), /no time limit/);
   });
 
   test('the overlay keeps the selection itself and drops it on Esc / a tap elsewhere (source contract)', () => {
@@ -171,13 +171,13 @@ describe('7: the detail card shows live stats against the base', () => {
 
   test('liveStat: the live value with its difference and the base in the title; the record value without live stats', () => {
     const live = { atk: 1042, interval: 0.95, res: 12.5, base: { atk: 501, interval: 1.05, res: 10 } };
-    assert.deepEqual(liveStat(live, 'atk', 501), { v: '1,042', tone: 'up', sub: '+541', title: '基础 501' });
+    assert.deepEqual(liveStat(live, 'atk', 501), { v: '1,042', tone: 'up', sub: '+541', title: 'Base 501' });
     const iv = liveStat(live, 'interval', 1.05, (v) => `${v.toFixed(2)}s`);
-    assert.deepEqual(iv, { v: '0.95s', tone: 'up', sub: '−0.10', title: '基础 1.05s' });
+    assert.deepEqual(iv, { v: '0.95s', tone: 'up', sub: '−0.10', title: 'Base 1.05s' });
     assert.equal(liveStat(live, 'res', 10, String).sub, '+2.5');
     assert.deepEqual(liveStat(null, 'atk', 501), { v: '501', tone: null, sub: null, title: undefined });
     assert.equal(liveStat(null, 'atk', null).v, '—');
-    assert.deepEqual(liveStat({ atk: 501, base: { atk: 501 } }, 'atk', 501), { v: '501', tone: null, sub: null, title: '基础 501' });
+    assert.deepEqual(liveStat({ atk: 501, base: { atk: 501 } }, 'atk', 501), { v: '501', tone: null, sub: null, title: 'Base 501' });
   });
 
   test('a rendered card: live values coloured, the 实时 / 开战时 tag, the battle HP bar from the live HP', async () => {
@@ -196,23 +196,23 @@ describe('7: the detail card shows live stats against the base', () => {
     assert.equal(stats.props['data-live'], 'battle');
     const cells = [...walk(stats, new Set(['Stat', 'LiveTag']))].filter((n) => hasClass(n, 'dstat'));
     const cell = (k) => cells.find((n) => textOf(n).startsWith(k));
-    assert.ok(hasClass(cell('生命上限'), 'is-up'));
-    assert.ok(hasClass(cell('攻击'), 'is-down') && !hasClass(cell('攻击间隔'), 'is-down'));
-    assert.ok(hasClass(cell('攻击间隔'), 'is-up'), 'a shorter interval is a buff');
-    assert.ok(!hasClass(cell('防御'), 'is-up') && !hasClass(cell('防御'), 'is-down'), 'unchanged');
-    assert.ok(textOf(stats).includes('实时'));
+    assert.ok(hasClass(cell('Max HP'), 'is-up'));
+    assert.ok(hasClass(cell('ATK'), 'is-down') && !hasClass(cell('Atk Interval'), 'is-down'));
+    assert.ok(hasClass(cell('Atk Interval'), 'is-up'), 'a shorter interval is a buff');
+    assert.ok(!hasClass(cell('DEF'), 'is-up') && !hasClass(cell('DEF'), 'is-down'), 'unchanged');
+    assert.ok(textOf(stats).includes('Live'));
     const head = blocks.find((b) => b.key === 'head');
     const hp = [...walk(head)].find((n) => hasClass(n, 'dhp'));
     assert.ok(textOf(hp).includes(`300 / ${live.maxHp.toLocaleString('en-US')}`), 'the live HP');
     // the prep preview: 开战时, no HP bar
     const prep = ChessDetail({ chess: c, piece: null, editable: false, bonds: [], loadout: null, live: { ...live, src: 'prep' } });
-    assert.ok(textOf(prep.find((b) => b.key === 'stats')).includes('开战时'));
+    assert.ok(textOf(prep.find((b) => b.key === 'stats')).includes('At Battle Start'));
     assert.ok(![...walk(prep.find((b) => b.key === 'head'))].some((n) => hasClass(n, 'dhp')));
     // no live stats: the record's numbers, no tag
     const plain = ChessDetail({ chess: c, piece: null, editable: false, bonds: [], loadout: null });
     const pstats = plain.find((b) => b.key === 'stats');
     assert.ok(!hasClass(pstats, 'is-live'));
-    assert.ok(!textOf(pstats).includes('实时') && !textOf(pstats).includes('开战时'));
+    assert.ok(!textOf(pstats).includes('Live') && !textOf(pstats).includes('At Battle Start'));
   });
 
   test('the game screen feeds it: g.unitStats for an own board unit in prep (newest answer only), the local sim in battle', () => {
@@ -246,7 +246,7 @@ describe('1 / 5: the bench stays reachable on a notched phone; effect-only items
     assert.ok(special?.shopExcluded && cell?.shopExcluded, 'items.json marks them');
     const plain = data.list('items').find((i) => i.itemType === 'EQUIP' && !i.shopExcluded && !i.isGolden);
     const note = (item) => [...walk(ItemDetail({ item, piece: null, editable: false }))].find((n) => hasClass(n, 'dhint--source'));
-    assert.match(textOf(note(special)), /调度中心不出售 · 获取途径：维多利亚盟约每25层 \/ 洛洛的定制品/);
+    assert.match(textOf(note(special)), /Not sold at the Dispatch Center · Source: 维多利亚盟约每25层 \/ 洛洛的定制品/);
     assert.match(textOf(note(cell)), /昆图斯/);
     assert.equal(note(plain), undefined, 'a shop item has no such line');
   });

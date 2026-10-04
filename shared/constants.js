@@ -10,7 +10,7 @@ export const ROOM_CODE_LEN = 4;
 export const NAME_MAX_LEN = 12;
 
 export const DIFFICULTIES = ['FUNNY', 'NORMAL', 'HARD', 'ABYSS'];
-export const DIFFICULTY_NAMES = { FUNNY: '标准模拟', NORMAL: '险境模拟', HARD: '绝境模拟', ABYSS: '终极模拟' };
+export const DIFFICULTY_NAMES = { FUNNY: 'Standard Simulation', NORMAL: 'Hazard Simulation', HARD: 'Peril Simulation', ABYSS: 'Ultimate Simulation' };
 export const DIFFICULTY_COLORS = { FUNNY: '#f6a329', NORMAL: '#e85a1a', HARD: '#e73118', ABYSS: '#ff0024' };
 
 // modeId in data/config.json = `mode_${type}_${difficulty.toLowerCase()}` with type single|multi
@@ -34,9 +34,9 @@ export const PHASE = Object.freeze({
 });
 
 export const PHASE_NAMES = {
-  LOBBY: '等待中', INFO_CHECK: '确认本局信息', BAND_DRAFT: '选择策略', BATTLE_CHECK: '协议启动',
-  ROUND_START: '回合开始', SP_DRAFT: '机变阶段', PREP: '休整期', COMBAT: '作战中', UNITE: '联防阶段',
-  SETTLE: '结算', FINAL_ASSAULT: '最终攻势', HIDDEN_CORE: '隐秘核心', RESULT: '模拟结束',
+  LOBBY: 'Waiting', INFO_CHECK: 'Confirm Match Info', BAND_DRAFT: 'Choose Strategy', BATTLE_CHECK: 'Protocol Start',
+  ROUND_START: 'Round Start', SP_DRAFT: 'Draft Phase', PREP: 'Rest Phase', COMBAT: 'In Combat', UNITE: 'Unite Phase',
+  SETTLE: 'Settlement', FINAL_ASSAULT: 'Final Assault', HIDDEN_CORE: 'Hidden Core', RESULT: 'Simulation Over',
 };
 
 // Board geometry on the 19x21 stage grid (row 0 = bottom). See DESIGN §3.
@@ -137,12 +137,16 @@ export const ERR = Object.freeze({
 });
 
 export const ERR_TEXT = {
-  BAD_MSG: '无效的请求', RATE: '操作过于频繁', NOT_IN_ROOM: '你不在房间中', ROOM_NOT_FOUND: '未找到该同盟密钥对应的房间',
-  ROOM_FULL: '房间已满', ROOM_STARTED: '模拟已开始', NOT_HOST: '只有房主可以操作', NOT_READY: '仍有玩家未就绪',
-  WRONG_PHASE: '当前阶段无法进行该操作', NO_FUNDS: '资金不足', HAND_FULL: '整备区已满', BOARD_FULL: '已达到部署上限',
-  BAD_TILE: '无法部署在该位置', BAD_TARGET: '无效的目标', SOLD_OUT: '已售出', MAX_LEVEL: '调度中心已达最高等级',
-  NOT_YOUR_TURN: '尚未轮到你', ALREADY: '已完成该操作', TEMP_NOT_EMPTY: '临时整备区不为空', ELIMINATED: '你已被淘汰',
-  INTERNAL: '服务器内部错误',
+  BAD_MSG: 'Invalid request', RATE: 'Too many actions; please slow down', NOT_IN_ROOM: 'You are not in a room',
+  ROOM_NOT_FOUND: 'No room found for this alliance key',
+  ROOM_FULL: 'The room is full', ROOM_STARTED: 'The simulation has already started', NOT_HOST: 'Only the host can do that',
+  NOT_READY: 'Some players are not ready yet',
+  WRONG_PHASE: 'That action is not available in the current phase', NO_FUNDS: 'Not enough Funds', HAND_FULL: 'Reserve is full',
+  BOARD_FULL: 'Deployment limit reached',
+  BAD_TILE: "Can't deploy on that tile", BAD_TARGET: 'Invalid target', SOLD_OUT: 'Sold', MAX_LEVEL: 'Dispatch Center is at max level',
+  NOT_YOUR_TURN: 'It is not your turn yet', ALREADY: 'Already done', TEMP_NOT_EMPTY: 'Temporary Reserve is not empty',
+  ELIMINATED: 'You have been eliminated',
+  INTERNAL: 'Internal server error',
 };
 
 // ---- Emotes (交流, research 09 §4) -----------------------------------------------------------------------------

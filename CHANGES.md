@@ -53,7 +53,7 @@ Nations use the official Terra spellings: 炎 **Yan**, 萨尔贡 Sargon, 维多�
 **Operator and enemy names** use the official Arknights Global names. They were resolved by joining on the
 globally-stable `charId` / `enemyId` (e.g. `char_4137_udflow` → Underflow) and verified against the
 official English game data (`enemy_handbook_table.json`) and the Terra wiki. A few that are easy to get
-wrong: 巫恋 = **Magallan**, 锏 = **Degenbrecher**, 伺夜 = **Vigil**, 洛洛 = **Rockrock**, 野鬃 = **Wild
+wrong: 巫恋 = **Shamare** (not Magallan, who is 麦哲伦), 锏 = **Degenbrecher**, 伺夜 = **Vigil**, 洛洛 = **Rockrock**, 野鬃 = **Wild
 Mane**, 角峰 = **Cardigan**, 假想敌：胄/铳/管 = **OpFor: Armor/Gun/Pipe**, 掠海漂移体 = **Skimming Sea
 Drifter**, 深池逐火 = **Dublinn Flamechaser**, 鸭爵 = **Duck Lord**, 流泪小子 = **Crying Thief**,
 圆仔 = **Fatty**.

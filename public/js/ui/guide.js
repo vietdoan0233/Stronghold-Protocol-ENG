@@ -16,18 +16,18 @@ const cx = (...p) => p.flat().filter(Boolean).join(' ');
 
 /** Page catalogue in reading order (titles transcribed from the pages). */
 export const GUIDE_CHAPTERS = [
-  { id: 'home', name: '基础规则', micro: 'BASICS', pages: [
-    ['autochess_home_1', '卫戍协议已运行'], ['autochess_home_2', '攻防战'], ['autochess_home_3', '休整期 · 区域'],
-    ['autochess_home_4', '休整期 · 资金与调度'], ['autochess_home_5', '机变阶段'], ['autochess_home_6', '限时战斗'],
-    ['autochess_home_7', '作战期'], ['autochess_home_8', '协同战斗'], ['autochess_home_9', '盟约'],
+  { id: 'home', name: 'Basic Rules', micro: 'BASICS', pages: [
+    ['autochess_home_1', 'Stronghold Protocol Is Running'], ['autochess_home_2', 'Offense and Defense'], ['autochess_home_3', 'Rest Phase · Areas'],
+    ['autochess_home_4', 'Rest Phase · Funds and Dispatch'], ['autochess_home_5', 'Draft Phase'], ['autochess_home_6', 'Timed Combat'],
+    ['autochess_home_7', 'Combat Phase'], ['autochess_home_8', 'Cooperative Combat'], ['autochess_home_9', 'Alliances'],
   ] },
-  { id: 'shop', name: '调度手册', micro: 'HANDBOOK', pages: [
-    ['autochess_shop_1', '调度手册'], ['autochess_shop_2', '干员晋级'], ['autochess_shop_3', '加成情况'],
-    ['autochess_shop_4', '卫戍能力'], ['autochess_shop_5', '盟约'], ['autochess_shop_6', '助战及自选编队'],
+  { id: 'shop', name: 'Dispatch Manual', micro: 'HANDBOOK', pages: [
+    ['autochess_shop_1', 'Dispatch Manual'], ['autochess_shop_2', 'Operator Promotion'], ['autochess_shop_3', 'Bonus Overview'],
+    ['autochess_shop_4', 'Garrison Abilities'], ['autochess_shop_5', 'Alliances'], ['autochess_shop_6', 'Support Operators and Custom Squads'],
   ] },
-  { id: 'handbook', name: '进阶图鉴', micro: 'ADVANCED', pages: [
-    ['autochess_handbook_1', '敌人类型'], ['autochess_handbook_2', '盟约激活与叠加'], ['autochess_handbook_3', '追加盟约'],
-    ['autochess_handbook_4', '策略与轮选'],
+  { id: 'handbook', name: 'Advanced Handbook', micro: 'ADVANCED', pages: [
+    ['autochess_handbook_1', 'Enemy Types'], ['autochess_handbook_2', 'Alliance Activation and Stacking'], ['autochess_handbook_3', 'Add-on Alliances'],
+    ['autochess_handbook_4', 'Strategies and Turn-Based Picks'],
   ] },
 ];
 
@@ -58,9 +58,9 @@ export function openGuide(page = 0) {
 export const closeGuide = () => guideStore.set({ open: false });
 
 /** Standard 玩法说明 trigger button. */
-export function GuideButton({ class: cls, size = 'sm', variant = 'ghost', label = '玩法说明', square = false }) {
+export function GuideButton({ class: cls, size = 'sm', variant = 'ghost', label = 'How to Play', square = false }) {
   return html`<${Button} variant=${variant} size=${size} icon="book" square=${square} class=${cx('guide-btn', cls)}
-    onClick=${() => openGuide(0)} title="玩法说明" aria-label="玩法说明">${square ? null : label}<//>`;
+    onClick=${() => openGuide(0)} title="How to Play" aria-label="How to Play">${square ? null : label}<//>`;
 }
 
 function preload(url) {
@@ -75,9 +75,9 @@ function preload(url) {
 function TipsFallback() {
   const tips = (Array.isArray(data.get('config')?.tips) ? data.get('config').tips : []).map((t) => t?.tip).filter(Boolean);
   return html`<div class="guide__tips">
-    <${MicroLabel} tone="mint">TIPS // 模拟要点</${MicroLabel}>
+    <${MicroLabel} tone="mint">SIMULATION TIPS</${MicroLabel}>
     <ol>${tips.map((t, i) => html`<li key=${i}>${t}</li>`)}</ol>
-    ${!tips.length ? html`<p class="t-lo">暂无说明内容</p>` : null}
+    ${!tips.length ? html`<p class="t-lo">No guide content available yet</p>` : null}
   </div>`;
 }
 
@@ -124,13 +124,13 @@ export function GuideHost() {
   const firstOf = (ci) => pages.findIndex((p) => p.chapter === ci);
   const isLoaded = cur && loaded.has(cur.url);
   return html`<div class="guide" role="presentation" onMouseDown=${(e) => { if (e.target === e.currentTarget) closeGuide(); }}>
-    <div class="guide__box brackets" role="dialog" aria-modal="true" aria-label="玩法说明" tabindex="-1" ref=${boxRef}>
+    <div class="guide__box brackets" role="dialog" aria-modal="true" aria-label="How to Play" tabindex="-1" ref=${boxRef}>
       <header class="guide__head">
         <div class="guide__titles">
           <${MicroLabel} tone="mint">HOW TO PLAY // STRONGHOLD PROTOCOL</${MicroLabel}>
-          <h2 class="guide__title">玩法说明</h2>
+          <h2 class="guide__title">How to Play</h2>
         </div>
-        ${n ? html`<nav class="guide__chapters" aria-label="章节">
+        ${n ? html`<nav class="guide__chapters" aria-label="Chapters">
           ${GUIDE_CHAPTERS.map((ch, ci) => {
             const at = firstOf(ci);
             if (at < 0) return null;
@@ -139,18 +139,18 @@ export function GuideHost() {
             </button>`;
           })}
         </nav>` : null}
-        <button type="button" class="guide__close" aria-label="关闭" title="关闭 (Esc)" onClick=${closeGuide}><${Icon} name="close" /></button>
+        <button type="button" class="guide__close" aria-label="Close" title="Close (Esc)" onClick=${closeGuide}><${Icon} name="close" /></button>
       </header>
 
       ${n ? html`<div class="guide__stage">
-        <button type="button" class="guide__nav guide__prev" aria-label="上一页" onClick=${() => go(i - 1)}><${Icon} name="chevronLeft" /></button>
+        <button type="button" class="guide__nav guide__prev" aria-label="Previous page" onClick=${() => go(i - 1)}><${Icon} name="chevronLeft" /></button>
         <div class=${cx('guide__page', isLoaded && 'is-loaded')}>
           ${cur && !failed.has(cur.url) ? html`<img key=${cur.url} src=${cur.url} alt=${cur.title} draggable=${false}
             onLoad=${() => setLoaded((s) => new Set(s).add(cur.url))}
-            onError=${() => setFailed((s) => new Set(s).add(cur.url))} />` : html`<div class="guide__missing"><${Icon} name="info" />该页面暂时无法显示</div>`}
+            onError=${() => setFailed((s) => new Set(s).add(cur.url))} />` : html`<div class="guide__missing"><${Icon} name="info" />This page cannot be displayed right now</div>`}
           ${!isLoaded && cur && !failed.has(cur.url) ? html`<span class="guide__loading"><${Spinner} size="md" /></span>` : null}
         </div>
-        <button type="button" class="guide__nav guide__next" aria-label="下一页" onClick=${() => go(i + 1)}><${Icon} name="chevronRight" /></button>
+        <button type="button" class="guide__nav guide__next" aria-label="Next page" onClick=${() => go(i + 1)}><${Icon} name="chevronRight" /></button>
       </div>` : html`<div class="guide__stage guide__stage--text"><${TipsFallback} /></div>`}
 
       ${n ? html`<footer class="guide__foot">
@@ -158,7 +158,7 @@ export function GuideHost() {
           <span class="guide__chtag">${chapter?.name || ''}</span>
           <b class="guide__ptitle">${cur?.title || ''}</b>
         </div>
-        <div class="guide__dots" role="tablist" aria-label="页码">
+        <div class="guide__dots" role="tablist" aria-label="Pages">
           ${pages.map((p, k) => html`<button key=${p.key} type="button" role="tab" aria-selected=${k === i ? 'true' : 'false'} title=${p.title}
             class=${cx('guide__dot', k === i && 'is-on', k > 0 && pages[k - 1].chapter !== p.chapter && 'is-first')} onClick=${() => go(k)}></button>`)}
         </div>

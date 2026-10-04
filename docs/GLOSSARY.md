@@ -157,6 +157,6 @@ Nervous Impairment · 凋亡损伤 Necrosis Damage · 侵蚀损伤 Corrosion Dam
 
 ## Names that are easy to get wrong
 
-Operators / enemies (official): 巫恋 **Magallan**, 锏 **Degenbrecher**, 伺夜 **Vigil**, 洛洛 **Rockrock**, 野鬃 **Wild Mane**,
+Operators / enemies (official): 巫恋 **Shamare**, 锏 **Degenbrecher**, 伺夜 **Vigil**, 洛洛 **Rockrock**, 野鬃 **Wild Mane**,
 角峰 **Cardigan**, 假想敌：胄/铳/管 **OpFor: Armor / Gun / Pipe**, 掠海漂移体 **Skimming Sea Drifter**, 深池逐火
 **Dublinn Flamechaser**, 鸭爵 **Duck Lord**, 流泪小子 **Crying Thief**, 圆仔 **Fatty**.

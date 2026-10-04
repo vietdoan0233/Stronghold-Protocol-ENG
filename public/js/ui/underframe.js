@@ -32,6 +32,9 @@ import { GEO } from '../../../shared/constants.js';
 
 const cx = (...p) => p.flat().filter(Boolean).join(' ');
 
+/** "3 Funds" / "1 Fund": an amount of the shop's currency for a tooltip. */
+const fundsText = (n) => `${n} ${n === 1 ? 'Fund' : 'Funds'}`;
+
 /** Runner glyph of 撤退 (a figure leaving through a door; original shape). */
 function RetreatGlyph() {
   return html`<svg class="uframe__glyph" viewBox="0 0 24 24" aria-hidden="true">
@@ -85,25 +88,25 @@ export function Underframe({ view, uid = null, row, col, actions, name = '', bus
   const half = s * 1.05;
   const stop = (e) => e.stopPropagation();
   return html`<div class="uframe" data-uid=${uid} style=${`left:${g.x}px;top:${g.y}px;width:${half * 2}px;height:${half * 2}px`} role="group"
-      aria-label=${`${name || '单位'} 操作`}>
+      aria-label=${`${name || 'Unit'} actions`}>
     <svg class="uframe__dia" viewBox="-110 -110 220 220" aria-hidden="true">
       <path class="uframe__outer" d="M0 -100 L100 0 L0 100 L-100 0 Z" />
       <path class="uframe__corner" d="M-100 0 L-86 -14 M-100 0 L-86 14 M100 0 L86 -14 M100 0 L86 14 M0 -100 L-14 -86 M0 -100 L14 -86 M0 100 L-14 86 M0 100 L14 86" />
     </svg>
     ${actions.retreat ? html`<button type="button" class="uframe__btn uframe__btn--retreat" disabled=${busy} onPointerDown=${stop}
-        onClick=${(e) => { stop(e); onRetreat?.(); }} title="撤退至整备区" aria-label="撤退">
-      <${RetreatGlyph} /><span class="uframe__label">撤退</span>
+        onClick=${(e) => { stop(e); onRetreat?.(); }} title="Retreat to the Reserve" aria-label="Retreat">
+      <${RetreatGlyph} /><span class="uframe__label">Retreat</span>
     </button>` : null}
     ${actions.sell != null ? html`<button type="button" class="uframe__btn uframe__btn--sell" disabled=${busy} onPointerDown=${stop}
-        onClick=${(e) => { stop(e); onSell?.(); }} title=${`出售（+${actions.sell} 资金）`} aria-label=${`出售，获得 ${actions.sell} 资金`}>
+        onClick=${(e) => { stop(e); onSell?.(); }} title=${`Sell (+${fundsText(actions.sell)})`} aria-label=${`Sell for ${fundsText(actions.sell)}`}>
       <${PlateIcon} sprite="icon_sell" glyph="sell" tone="sell" />
-      <span class="uframe__label">出售</span>
+      <span class="uframe__label">Sell</span>
       <${HexBadge} value=${`+${actions.sell}`} tone="gold" size="sm" class="uframe__price" />
     </button>` : null}
     ${actions.destroy ? html`<button type="button" class=${cx('uframe__btn', 'uframe__btn--destroy')} disabled=${busy} onPointerDown=${stop}
-        onClick=${(e) => { stop(e); onDestroy?.(); }} title="销毁道具" aria-label="销毁">
+        onClick=${(e) => { stop(e); onDestroy?.(); }} title="Destroy Item" aria-label="Destroy">
       <${PlateIcon} sprite="icon_destory" glyph="trash" tone="destroy" />
-      <span class="uframe__label">销毁</span>
+      <span class="uframe__label">Destroy</span>
     </button>` : null}
   </div>`;
 }
@@ -143,8 +146,8 @@ export function tempRowFrame(a, b, { labelW = 0, gap = 8, vw = Infinity } = {}) 
  */
 export function tempRowRule(ready) {
   return ready
-    ? '已准备就绪后进入的单位保留到下个休整期，届时仍在此处的将被销毁（取消准备则在本休整期结束时销毁）'
-    : '放入整备区或战场、配发或使用后才能准备；休整期结束时仍在此处的将被销毁';
+    ? 'Units that arrive after you ready up are kept until the next Rest Phase, then destroyed if still here (if you Cancel Ready, they are destroyed at the end of this Rest Phase).'
+    : 'You can ready up only after placing units in the Reserve or on the battlefield, or equipping or using them; anything still here when the Rest Phase ends will be destroyed.';
 }
 
 /**
@@ -163,11 +166,11 @@ export function TempRowNotice({ view, count, items = 0, label = true, ready = fa
   const pts = f.quad.map((p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
   const pad = rem * 0.1;
   const style = f.side === 'left' ? `left:${(f.left - pad).toFixed(1)}px;top:${f.y.toFixed(1)}px` : `left:${(f.right + pad).toFixed(1)}px;top:${f.y.toFixed(1)}px`;
-  const what = items > 0 && items === count ? '件道具' : '个单位';
+  const what = items > 0 && items === count ? (count === 1 ? 'item' : 'items') : (count === 1 ? 'unit' : 'units');
   return html`<div class="tempnote" aria-hidden="false" data-testid="temp-notice">
     <svg class="tempnote__frame" aria-hidden="true"><polygon points=${pts} /></svg>
     ${label ? html`<div class=${`tempnote__label is-${f.side}`} style=${style} role="status">
-      <b class="tempnote__title"><${Icon} name="warn" />临时整备区 <span class="num">${count}</span> ${what}待处理</b>
+      <b class="tempnote__title"><${Icon} name="warn" /><span class="num">${count}</span> ${what} waiting in the Temporary Reserve</b>
       <span class="tempnote__rule">${tempRowRule(ready)}</span>
     </div>` : null}
   </div>`;

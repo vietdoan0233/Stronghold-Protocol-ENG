@@ -249,7 +249,7 @@ export function FacingWheel({ view, row, col, grid, name = '', onPreview, onComm
 
   const outside = !!drag && !!dir;
   const box = half * 2;
-  return html`<div class=${cx('fwheel', drag && 'is-pressed', dir && `is-${dir.toLowerCase()}`)} role="dialog" aria-label=${`选择${name ? `「${name}」的` : ''}朝向`}
+  return html`<div class=${cx('fwheel', drag && 'is-pressed', dir && `is-${dir.toLowerCase()}`)} role="dialog" aria-label=${`Choose facing${name ? ` for “${name}”` : ''}`}
       onPointerDown=${onDown} onPointerMove=${onMove} onPointerUp=${onUp} onPointerCancel=${onPointerCancel}
       onContextMenu=${(e) => { e.preventDefault(); onCancel(); }}>
     ${g ? html`<${Stripes} tiles=${tiles} view=${view} row=${row} col=${col} />` : null}
@@ -264,12 +264,12 @@ export function FacingWheel({ view, row, col, grid, name = '', onPreview, onComm
         ${DIRS.map((d) => html`<${Chevron} key=${d} dir=${d} on=${dir === d} />`)}
       </svg>
       <button type="button" class="fwheel__cancel" onPointerDown=${(e) => e.stopPropagation()}
-        onClick=${(e) => { e.stopPropagation(); onCancel(); }} aria-label="点击取消">
+        onClick=${(e) => { e.stopPropagation(); onCancel(); }} aria-label="Click to Cancel">
         <${LocalSprite} name="cancel_icon" class="fwheel__x" fallback=${html`<span class="fwheel__x fwheel__x--txt">✕</span>`} />
-        <span>点击取消</span>
+        <span>Click to Cancel</span>
       </button>
-      ${outside ? html`<span class="fwheel__tip" role="status">拖回中心区域取消</span>` : null}
-      <span class="fwheel__sr" aria-live="polite">${dir ? `朝向：${DIR_LABEL[dir]}` : ''}</span>
+      ${outside ? html`<span class="fwheel__tip" role="status">Drag back to the center to cancel</span>` : null}
+      <span class="fwheel__sr" aria-live="polite">${dir ? `Facing: ${DIR_LABEL[dir]}` : ''}</span>
     </div>` : null}
   </div>`;
 }

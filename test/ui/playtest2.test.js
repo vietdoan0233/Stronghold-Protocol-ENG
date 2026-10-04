@@ -52,7 +52,7 @@ describe('6: the enemy pen only with the pen camera', () => {
 
   test('the 🔍◀◀ back button of the pen view is the one labelled 返回战场', () => {
     const b = checkButtons({ pen: true, penAvail: true, infoOpen: false });
-    assert.equal(b.left.tip, '返回战场');
+    assert.equal(b.left.tip, 'Back to Battlefield');
     assert.equal(b.left.back, true);
   });
 });
@@ -254,7 +254,7 @@ describe('§16: chessLoadout (m.private.loadout → skill / module shown)', () =
     const g = chessLoadout(gold, lo, get);
     assert.equal(g.skill.skillId, 'sk_0');
     assert.equal(g.module.none, true);
-    assert.equal(g.module.name, '未装备模组');
+    assert.equal(g.module.name, 'No module equipped');
     assert.equal(g.defaultModule, false);
     const y = chessLoadout(gold, { c_a: { skill: 2, module: 'uniequip_y' } }, get);
     assert.deepEqual([y.module.id, y.module.name, y.module.typeName, y.defaultSkill], ['uniequip_y', '模组Y', 'XYZ-Y', true]);

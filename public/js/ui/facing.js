@@ -28,8 +28,8 @@ export const DIR_VEC = Object.freeze({
   LEFT: Object.freeze({ dr: 0, dc: -1 }),
 });
 
-/** Chinese label (for aria / tooltips). */
-export const DIR_LABEL = Object.freeze({ UP: '上', RIGHT: '右', DOWN: '下', LEFT: '左' });
+/** Direction label (for aria / tooltips). */
+export const DIR_LABEL = Object.freeze({ UP: 'Up', RIGHT: 'Right', DOWN: 'Down', LEFT: 'Left' });
 
 /** Normalise any direction spelling ('up', 'Right', 1/−1 facing) to UP|RIGHT|DOWN|LEFT; unknown → `fallback`. */
 export function normDir(d, fallback = DEFAULT_DIR) {

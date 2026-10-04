@@ -92,12 +92,12 @@ export function dismissToast(id) {
  * @returns {string}
  */
 export function describeError(err) {
-  if (!err) return '发生未知错误';
+  if (!err) return 'An unknown error occurred';
   if (typeof err === 'string') return ERR_TEXT[err] || err;
   if (err.code && ERR_TEXT[err.code]) return ERR_TEXT[err.code];
   if (typeof err.message === 'string' && err.message) return err.message;
   if (typeof err.msg === 'string' && err.msg) return err.msg;
-  return '发生未知错误';
+  return 'An unknown error occurred';
 }
 
 /**

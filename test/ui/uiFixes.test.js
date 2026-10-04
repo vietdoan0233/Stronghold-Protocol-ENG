@@ -141,9 +141,12 @@ describe('briefing bond labels', () => {
     assert.deepEqual([...sets.drawn].sort(), ['a', 'b']);
     assert.deepEqual([...sets.off], ['s']);
     const tip = briefingBondTip('坚守', 'drawn', 2);
-    assert.match(tip, /部分盟约所含干员阵容不完整/);
-    assert.doesNotMatch(tip, /本局禁用/);
-    assert.match(briefingBondTip('坚守', 'off', 0), /本局禁用/);
+    assert.match(tip, /incomplete operator roster/);
+    assert.equal(tip, "坚守: incomplete operator roster (2 operators can't appear)");
+    assert.equal(briefingBondTip('坚守', 'drawn', 1), "坚守: incomplete operator roster (1 operator can't appear)");
+    assert.equal(briefingBondTip('坚守', 'drawn', 0), '坚守: incomplete operator roster');
+    assert.doesNotMatch(tip, /disabled this match/);
+    assert.match(briefingBondTip('坚守', 'off', 0), /disabled this match/);
     assert.equal(briefingBondTip('坚守', null, 0), '坚守');
     // older payloads: disabledBonds minus the static list
     assert.deepEqual([...disabledBondSets({ disabledBonds: ['a', 's'] }, ['s']).drawn], ['a']);
@@ -165,8 +168,9 @@ describe('watch targets and the view switcher', () => {
     ],
   };
   test('the other pair of a Final Assault and eliminated teammates are refused client-side', () => {
-    assert.match(watchTarget(pub.players[2], pub, 'me').reason, /另一组/);
-    assert.match(watchTarget(pub.players[3], pub, 'me').reason, /淘汰/);
+    assert.equal(watchTarget(pub.players[2], pub, 'me').reason, "Can't view the other pair's battlefield");
+    assert.match(watchTarget(pub.players[3], pub, 'me').reason, /eliminated/);
+    assert.equal(watchTarget(null, pub, 'me').reason, 'Invalid target');
     assert.deepEqual(watchTarget(pub.players[1], pub, 'me'), { fieldId: 'b1' });
     // an eliminated spectator may watch any boss field
     const dead = { ...pub, players: pub.players.map((p) => (p.playerId === 'me' ? { ...p, alive: false, fieldId: null } : p)), fields: [pub.fields[1]] };
@@ -182,8 +186,8 @@ describe('watch targets and the view switcher', () => {
       fields: [{ fieldId: 'n:ai_1', kind: 'normal', players: ['ai_1'], live: false }, { fieldId: 'n:p3', kind: 'normal', players: ['p3'], live: true }],
     };
     assert.equal(switcherLabel(cpub, 'n:ai_1', 'me', true), 'AI·华法琳');
-    assert.equal(switcherLabel(cpub, null, 'me', true), '观战');
-    assert.equal(switcherLabel(cpub, null, 'me', false), '自己');
+    assert.equal(switcherLabel(cpub, null, 'me', true), 'Spectating');
+    assert.equal(switcherLabel(cpub, null, 'me', false), 'You');
   });
 });
 
@@ -223,20 +227,20 @@ describe('illegal drops say why', () => {
   const ctx = placementContext({ priv, stage: DATA.stages.act2autochess_m01, editable: true, getChess, getToken, getItem });
   test('reasons for board tiles, lanes and the temporary bench; none for the own slot', () => {
     const melee = [...ctx.deploy.melee].map((k) => k.split(',').map(Number)).find(([r, c]) => !(r === 9 && c === 3));
-    assert.equal(dropFailureReason(ctx, 2, { row: melee[0], col: melee[1], area: 'board' }), '已达到部署上限');
-    assert.equal(dropFailureReason(ctx, 3, { row: melee[0], col: melee[1], area: 'board' }), '请将装备拖拽至干员身上');
-    assert.equal(dropFailureReason(ctx, 2, { row: GEO.TEMP_ROW, col: GEO.TEMP_C0, area: 'temp', idx: 0 }), '临时整备区无法放入单位');
+    assert.equal(dropFailureReason(ctx, 2, { row: melee[0], col: melee[1], area: 'board' }), 'Deployment limit reached');
+    assert.equal(dropFailureReason(ctx, 3, { row: melee[0], col: melee[1], area: 'board' }), 'Drag gear onto an operator');
+    assert.equal(dropFailureReason(ctx, 2, { row: GEO.TEMP_ROW, col: GEO.TEMP_C0, area: 'temp', idx: 0 }), "Units can't be placed in the Temporary Reserve");
     assert.equal(dropFailureReason(ctx, 2, { row: GEO.HAND_ROW, col: 0, area: 'hand', idx: 0 }), null, 'own slot');
     assert.equal(dropFailureReason(ctx, 2, { row: 3, col: 5, area: null }), null, 'far from the board');
     const lane = [9, 10, 11, 12].flatMap((r) => [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((c) => [r, c])).find(([r, c]) => c < GEO.FIELD.c0);
-    assert.equal(dropFailureReason(ctx, 2, { row: lane[0], col: lane[1], area: null }), '无法部署在该位置');
+    assert.equal(dropFailureReason(ctx, 2, { row: lane[0], col: lane[1], area: null }), "Can't deploy on that tile");
   });
   test('a melee operator on a never-deployable tile is not told to use the ground', () => {
     const blocked = [];
     for (let r = GEO.FIELD.r0; r <= GEO.FIELD.r1; r++) for (let c = GEO.FIELD.c0; c <= GEO.FIELD.c1; c++) if (!ctx.deploy.ranged.has(tileKey(r, c))) blocked.push([r, c]);
     assert.ok(blocked.length > 0);
     const free = { ...ctx, count: 0 };
-    assert.equal(canPlace(free, 2, { area: 'board', row: blocked[0][0], col: blocked[0][1] }).reason, '无法部署在该位置');
+    assert.equal(canPlace(free, 2, { area: 'board', row: blocked[0][0], col: blocked[0][1] }).reason, "Can't deploy on that tile");
   });
 });
 
@@ -249,10 +253,10 @@ describe('full hand: shop and promotion cards', () => {
   const o = { priv: privFull, editable: true, getChess, getItem };
   test('a card that needs a slot is blocked with 整备区已满; one completing a merge is not', () => {
     assert.equal(handFull(privFull), true);
-    assert.equal(shopBlockReason('buy', { ...o, slot: { kind: 'chess', id: other, price: 1 } }), '整备区已满');
+    assert.equal(shopBlockReason('buy', { ...o, slot: { kind: 'chess', id: other, price: 1 } }), 'Reserve is full');
     assert.equal(completesMerge(privFull, { kind: 'chess', id: MELEE }, o), true);
     assert.equal(shopBlockReason('buy', { ...o, slot: { kind: 'chess', id: MELEE, price: 1 } }), null);
-    assert.equal(shopBlockReason('reward', { ...o, slot: { kind: 'chess', id: other, price: 0 } }), '整备区已满');
+    assert.equal(shopBlockReason('reward', { ...o, slot: { kind: 'chess', id: other, price: 0 } }), 'Reserve is full');
     // the hand is filled with a mergeable equipment: buying another copy merges instead of needing a slot
     assert.equal(shopBlockReason('buy', { ...o, slot: { kind: 'item', id: 'chess_item_1_01_e_a', price: 1 } }), null);
     const notFull = { ...privFull, hand: privFull.hand.map((p, i) => (i === 5 ? null : p)) };
@@ -263,8 +267,9 @@ describe('full hand: shop and promotion cards', () => {
 describe('solo exit text and htm vnodes', () => {
   test('the solo quit text does not promise a settlement', async () => {
     const { EXIT_TEXT } = await import('../../public/js/ui/matchChrome.js');
-    assert.doesNotMatch(EXIT_TEXT.soloQuit, /直接结算/);
-    assert.match(EXIT_TEXT.soloQuit, /返回大厅/);
+    assert.doesNotMatch(EXIT_TEXT.soloQuit, /settled directly|straight to (the )?settlement/i);
+    assert.match(EXIT_TEXT.soloQuit, /returns you to the lobby/);
+    assert.match(EXIT_TEXT.soloQuit, /no settlement/);
   });
 
   test('static templates give fresh vnodes (no shared, DOM-holding cached vnode)', async () => {

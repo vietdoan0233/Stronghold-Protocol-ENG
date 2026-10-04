@@ -146,12 +146,12 @@ async function coopMatch(P, base, { bots = 1, prefix }) {
   const guest = new Client(P, base, 'guest', { prefix: `${prefix}-phone`, w: 756, h: 366 });
   await host.open();
   await host.enter('凯尔希');
-  await host.click('.mode-card', '同盟模拟');
-  await host.click('.diff-card', '标准模拟');
-  await host.click('.create-box button', '创建同盟');
+  await host.click('.mode-card', 'Alliance Simulation');
+  await host.click('.diff-card', 'Standard Simulation');
+  await host.click('.create-box button', 'Create Alliance');
   const room = (await host.waitFor((s) => !!s.room?.code, 'room created')).room;
   for (let i = 0; i < bots; i++) {
-    await host.click('button', '添加 AI 队友');
+    await host.click('button', 'Add AI Teammate');
     await sleep(600);
   }
   await guest.open(`?room=${room.code}`);
@@ -165,13 +165,13 @@ async function coopMatch(P, base, { bots = 1, prefix }) {
     return !!s.room?.seats?.find((x) => x && x.playerId === s.me.playerId)?.ready;
   });
   for (let i = 0; i < 6 && !(await guestReady()); i++) {
-    await guest.click('.room-bar__right button', '准备就绪', { optional: true, timeout: 3000 });
+    await guest.click('.room-bar__right button', 'Ready', { optional: true, timeout: 3000 });
     await sleep(600);
   }
   assert.ok(await guestReady(), 'guest ready');
-  await host.click('.room-bar__right button', '开始模拟', { timeout: 20000 });
+  await host.click('.room-bar__right button', 'Start Simulation', { timeout: 20000 });
   for (const c of [host, guest]) await c.waitFor((s) => s.phase === 'INFO_CHECK', 'briefing', 30000);
-  for (const c of [host, guest]) await c.click('.brief__foot .btn--primary', '准备就绪');
+  for (const c of [host, guest]) await c.click('.brief__foot .btn--primary', 'Ready');
   for (const c of [host, guest]) await c.waitFor((s) => s.phase !== 'INFO_CHECK', 'band draft', 40000);
   const picked = new Set();
   const t0 = Date.now();
@@ -182,7 +182,7 @@ async function coopMatch(P, base, { bots = 1, prefix }) {
       if (picked.has(c.label) || s.draft?.turn !== s.me) continue;
       await c.click('.dband:not(.is-taken)', null, { nth: c === host ? 2 : 5 });
       await sleep(200);
-      await c.click('.draft-detail__btns .btn--primary', '确认选择');
+      await c.click('.draft-detail__btns .btn--primary', 'Confirm Selection');
       picked.add(c.label);
     }
     await sleep(250);
@@ -213,7 +213,7 @@ async function watchMate(c, name) {
   }, name);
   assert.ok(pt, `${c.label}: ${name}'s row`);
   await c.page.mouse.click(pt.x, pt.y);
-  assert.ok(await c.click('.team__ob', '前往查看', { timeout: 4000, optional: true }), `${c.label}: 前往查看 on ${name}`);
+  assert.ok(await c.click('.team__ob', 'Go Watch', { timeout: 4000, optional: true }), `${c.label}: Go Watch on ${name}`);
 }
 
 /** Every player's name and bond ids (count, layers or active), the field listing, the 联防 helpers. */
@@ -241,9 +241,9 @@ describe('DESIGN §20.15 — the bond strip shows the watched teammate\'s bonds 
     try {
       await host.open();
       await host.enter('凯尔希');
-      await host.click('.mode-card', '同盟模拟');
-      await host.click('.diff-card', '标准模拟');
-      await host.click('.create-box button', '创建同盟');
+      await host.click('.mode-card', 'Alliance Simulation');
+      await host.click('.diff-card', 'Standard Simulation');
+      await host.click('.create-box button', 'Create Alliance');
       const room = (await host.waitFor((s) => !!s.room?.code, 'room created')).room;
       await guest.open(`?room=${room.code}`);
       await guest.enter('阿米娅');
@@ -253,13 +253,13 @@ describe('DESIGN §20.15 — the bond strip shows the watched teammate\'s bonds 
         return !!s.room?.seats?.find((x) => x && x.playerId === s.me.playerId)?.ready;
       });
       for (let i = 0; i < 6 && !(await guestReady()); i++) {
-        await guest.click('.room-bar__right button', '准备就绪', { optional: true, timeout: 3000 });
+        await guest.click('.room-bar__right button', 'Ready', { optional: true, timeout: 3000 });
         await sleep(600);
       }
       assert.ok(await guestReady(), 'guest ready');
-      await host.click('.room-bar__right button', '开始模拟', { timeout: 20000 });
+      await host.click('.room-bar__right button', 'Start Simulation', { timeout: 20000 });
       for (const c of [host, guest]) await c.waitFor((s) => s.phase === 'INFO_CHECK', 'briefing', 30000);
-      for (const c of [host, guest]) await c.click('.brief__foot .btn--primary', '准备就绪');
+      for (const c of [host, guest]) await c.click('.brief__foot .btn--primary', 'Ready');
       for (const c of [host, guest]) await c.waitFor((s) => s.phase !== 'INFO_CHECK', 'band draft', 40000);
       const picked = new Set();
       const t0 = Date.now();
@@ -270,7 +270,7 @@ describe('DESIGN §20.15 — the bond strip shows the watched teammate\'s bonds 
           if (picked.has(c.label) || s.draft?.turn !== s.me) continue;
           await c.click('.dband:not(.is-taken)', null, { nth: c === host ? 2 : 5 });
           await sleep(200);
-          await c.click('.draft-detail__btns .btn--primary', '确认选择');
+          await c.click('.draft-detail__btns .btn--primary', 'Confirm Selection');
           picked.add(c.label);
         }
         await sleep(250);
@@ -289,7 +289,7 @@ describe('DESIGN §20.15 — the bond strip shows the watched teammate\'s bonds 
       let st = await stripOf(host);
       assert.deepEqual([st.owner, st.other, st.bonds], [null, false, hostOwn.ids], 'prep, own board: the host\'s own bonds');
       await host.click('.team__row:not(.is-self) .team__btn', null, { nth: 0 });
-      assert.ok(await host.click('.team__ob', '前往查看', { optional: true, timeout: 3000 }), 'host: 前往查看 in prep');
+      assert.ok(await host.click('.team__ob', 'Go Watch', { optional: true, timeout: 3000 }), 'host: Go Watch in prep');
       await host.page.waitForSelector('.gm__watching', { timeout: 6000 });
       await host.page.waitForFunction(() => document.querySelector('.gm__bonds .bstrip')?.getAttribute('data-owner') === '阿米娅', { timeout: 6000 });
       st = await stripOf(host);
@@ -300,13 +300,13 @@ describe('DESIGN §20.15 — the bond strip shows the watched teammate\'s bonds 
       await host.click(`.gm__bonds .bslot[data-bond="${st.bonds[0]}"] .bond`, null, { any: true });
       await host.page.waitForSelector('.bpop[data-owner="阿米娅"]', { timeout: 4000 });
       const pop = await host.page.evaluate(() => ({ owner: document.querySelector('.bpop__owner')?.textContent || '', facts: document.querySelector('.bpop__facts')?.textContent || '' }));
-      assert.match(pop.owner, /阿米娅.*的盟约/);
+      assert.match(pop.owner, /阿米娅.*'s alliances/);
       await host.shot('prep-scout');
       await host.page.keyboard.press('Escape');
-      await host.click('.gm__watching button', '返回自己');
+      await host.click('.gm__watching button', 'Back to My Battlefield');
       await host.page.waitForFunction(() => !document.querySelector('.gm__bonds .bstrip')?.getAttribute('data-owner'), { timeout: 6000 });
       st = await stripOf(host);
-      assert.deepEqual([st.owner, st.bonds], [null, hostOwn.ids], '返回自己: the host\'s own bonds again');
+      assert.deepEqual([st.owner, st.bonds], [null, hostOwn.ids], 'Back to My Battlefield: the host\'s own bonds again');
 
       // ---- Final Assault: the pair field's halves (the guest on the user's phone, 756×366 CSS px) ----------------------
       await guest.page.setViewport({ width: 756, height: 366 });
@@ -333,7 +333,7 @@ describe('DESIGN §20.15 — the bond strip shows the watched teammate\'s bonds 
       assert.ok(chip, 'host: a card of the guest\'s operator and its bond chip');
       const guestNow = await bondsOf(host, '阿米娅');
       assert.equal(chip.owner, '阿米娅', `全景: the guest's unit chip opens the guest's popup (${JSON.stringify(chip)})`);
-      assert.match(chip.tag, /阿米娅.*的盟约/);
+      assert.match(chip.tag, /阿米娅.*'s alliances/);
       assert.equal(chip.count, guestNow.counts[chip.bondId] ?? '0', `the guest's member count (${JSON.stringify({ chip, guestNow })})`);
       if (!chip.off) assert.equal(chip.chipCount, chip.count, 'the chip and its popup agree');
       if (Number(chip.count) > 0) assert.ok(chip.on >= 1, `the guest's operators in play are listed as members (${JSON.stringify(chip)})`);
@@ -343,11 +343,11 @@ describe('DESIGN §20.15 — the bond strip shows the watched teammate\'s bonds 
       await closeCard(host);
       /** Step the ‹ › pill to `key` ('L' | 'ALL' | 'R') from 全景. */
       const toLayer = async (c, key) => {
-        const arrow = key === 'L' ? '左侧战场' : '右侧战场';
+        const arrow = key === 'L' ? 'Left half' : 'Right half';
         if (key !== 'ALL') await c.click(`.chud__layers .vswitch__arrow[aria-label="${arrow}"]`);
         await sleep(500);
       };
-      const back = async (c, key) => { if (key !== 'ALL') await c.click(`.chud__layers .vswitch__arrow[aria-label="${key === 'L' ? '右侧战场' : '左侧战场'}"]`); await sleep(400); };
+      const back = async (c, key) => { if (key !== 'ALL') await c.click(`.chud__layers .vswitch__arrow[aria-label="${key === 'L' ? 'Right half' : 'Left half'}"]`); await sleep(400); };
       const partnerSide = hostSide === 'L' ? 'R' : 'L';
       await toLayer(host, partnerSide);
       await host.page.waitForFunction(() => document.querySelector('.gm__bonds .bstrip')?.getAttribute('data-owner') === '阿米娅', { timeout: 4000 });
@@ -434,7 +434,7 @@ describe('DESIGN §20.15 — the bond strip shows the watched teammate\'s bonds 
       // 全景: helper 1's bonds, tagged — not the leaker's own
       await ownerIs(guest, h1);
       let st = await stripOf(guest);
-      assert.deepEqual([st.owner, st.other, st.bonds, st.pill], [h1, true, mv.bonds[h1], '全景'], 'leaker on 全景: helper 1');
+      assert.deepEqual([st.owner, st.other, st.bonds, st.pill], [h1, true, mv.bonds[h1], 'Panorama'], 'leaker on 全景: helper 1');
       await sleep(800);
       await guest.shot('overview');
       // the host (helper 1 or 2) on 全景: its own bonds
@@ -454,7 +454,7 @@ describe('DESIGN §20.15 — the bond strip shows the watched teammate\'s bonds 
         await guest.shot(`picked-${name === mv.names[u.players[0]] ? 'helper1' : 'helper2'}`);
       }
       // 返回战场: no refused g.watch (no own field in 联防), the 联防 view stays with a helper's bonds
-      await guest.click('.chud__layers .chud__back', '返回战场');
+      await guest.click('.chud__layers .chud__back', 'Back to Battlefield');
       await sleep(1200);
       st = await stripOf(guest);
       assert.ok(st.owner === h1 || st.owner === h2, `back: still a helper's bonds (${st.owner})`);
@@ -539,7 +539,7 @@ describe('DESIGN §20.15 — the bond strip shows the watched teammate\'s bonds 
         await sleep(1500); // the phase banner of the fresh screen
         await host.shot('reloaded');
         // 返回战场 → the own bonds, untagged
-        await host.click('.chud__observe .chud__back', '返回战场');
+        await host.click('.chud__observe .chud__back', 'Back to Battlefield');
         await host.page.waitForFunction(() => !document.querySelector('.gm__bonds .bstrip')?.getAttribute('data-owner'), { timeout: 8000 });
         st = await stripOf(host);
         assert.deepEqual([st.owner, st.observe], [null, null], 'back: own bonds, no observing pill');
@@ -581,7 +581,7 @@ describe('DESIGN §20.15 — the bond strip shows the watched teammate\'s bonds 
       const first = mv.names[pair.players[0]];
       await ownerIs(guest, first);
       let st = await stripOf(guest);
-      assert.deepEqual([st.owner, st.bonds, st.pill], [first, mv.bonds[first], '全景'], 'auto-observed pair, 全景: the first player (never the spectator\'s own)');
+      assert.deepEqual([st.owner, st.bonds, st.pill], [first, mv.bonds[first], 'Panorama'], 'auto-observed pair, 全景: the first player (never the spectator\'s own)');
       await guest.shot('auto');
       // a card's bond chip (review): the strip follows the first player, the SECOND player's operator's chip opens the
       // second player's bond (labelled, their count — the number the chip shows), the strip stays on the first

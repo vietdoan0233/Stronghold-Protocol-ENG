@@ -106,13 +106,13 @@ function SeatCard({ seat, index, room, facts, myId, busy, onAddBot, onRemoveBot 
       <header class="seat__head"><span class="seat__no num">P${index + 1}</span><${MicroLabel}>SEAT ${String(index + 1).padStart(2, '0')}<//></header>
       <div class="seat__art seat__art--empty">
         <div class="seat__radar" aria-hidden="true"></div>
-        <span class="seat__wait">等待博士加入</span>
+        <span class="seat__wait">Waiting for a Doctor to join</span>
         <${MicroLabel}>AWAITING DOCTOR<//>
       </div>
       <footer class="seat__foot">
         ${canAdd
-          ? html`<${Button} variant="secondary" size="sm" icon="robot" block=${true} loading=${busy === `add`} onClick=${onAddBot}>添加 AI 队友<//>`
-          : html`<span class="seat__state t-dim">空位</span>`}
+          ? html`<${Button} variant="secondary" size="sm" icon="robot" block=${true} loading=${busy === `add`} onClick=${onAddBot}>Add AI Teammate<//>`
+          : html`<span class="seat__state t-dim">Empty Seat</span>`}
       </footer>
     </article>`;
   }
@@ -126,27 +126,27 @@ function SeatCard({ seat, index, room, facts, myId, busy, onAddBot, onRemoveBot 
     <header class="seat__head">
       <span class="seat__no num">P${index + 1}</span>
       <${MicroLabel}>SEAT ${String(index + 1).padStart(2, '0')}<//>
-      ${isHostSeat ? html`<span class="seat__host"><${Icon} name="crown" />创建者</span>` : null}
+      ${isHostSeat ? html`<span class="seat__host"><${Icon} name="crown" />Host</span>` : null}
     </header>
     <div class="seat__art">
       <div class="seat__stripes" aria-hidden="true"></div>
       <${AvatarFrame} size="xl" name=${seat.name} seat=${index} bot=${seat.isBot} self=${isMe} ready=${state === 'ready'} offline=${offline} />
-      ${seat.isBot ? html`<span class="seat__bot-label"><${Icon} name="robot" />AI 队友</span>` : null}
+      ${seat.isBot ? html`<span class="seat__bot-label"><${Icon} name="robot" />AI Teammate</span>` : null}
     </div>
     <div class="seat__who">
-      <span class="seat__name">${seat.name || '博士'}</span>
-      ${isMe ? html`<span class="seat__you">你</span>` : null}
+      <span class="seat__name">${seat.name || 'Doctor'}</span>
+      ${isMe ? html`<span class="seat__you">You</span>` : null}
     </div>
     <${MicroLabel}>${seat.isBot ? 'AUTONOMOUS UNIT' : `DOCTOR #${doctorNo(seat.playerId)}`}<//>
     <footer class="seat__foot">
       <span class=${`seat__state seat__state--${state}`}>
-        ${state === 'ready' ? html`<${Icon} name="check" />已就绪`
-          : state === 'offline' ? html`<${Icon} name="wifiOff" />连接中断`
-          : state === 'host' ? html`<${Icon} name="crown" />待命中`
-          : html`<${Icon} name="hourglass" />准备中`}
+        ${state === 'ready' ? html`<${Icon} name="check" />Ready`
+          : state === 'offline' ? html`<${Icon} name="wifiOff" />Connection Lost`
+          : state === 'host' ? html`<${Icon} name="crown" />On Standby`
+          : html`<${Icon} name="hourglass" />Preparing`}
       </span>
-      ${seat.isBot && facts.isHost ? html`<${Tooltip} text="移除该 AI 队友">
-        <${Button} variant="ghost" size="sm" square=${true} icon="close" loading=${busy === `rm${index}`} onClick=${() => onRemoveBot(index)} aria-label="移除 AI 队友" />
+      ${seat.isBot && facts.isHost ? html`<${Tooltip} text="Remove this AI teammate">
+        <${Button} variant="ghost" size="sm" square=${true} icon="close" loading=${busy === `rm${index}`} onClick=${() => onRemoveBot(index)} aria-label="Remove AI teammate" />
       <//>` : null}
     </footer>
   </article>`;
@@ -155,15 +155,15 @@ function SeatCard({ seat, index, room, facts, myId, busy, onAddBot, onRemoveBot 
 function InviteBox({ code }) {
   const copy = async (what) => {
     const ok = await copyText(what === 'code' ? code : inviteLink(code));
-    if (ok) toast(what === 'code' ? `已复制同盟密钥 ${code}` : '已复制邀请链接', 'success');
-    else toast('复制失败，请手动复制', 'warn');
+    if (ok) toast(what === 'code' ? `Alliance key ${code} copied` : 'Invite link copied', 'success');
+    else toast('Copy failed. Please copy it manually.', 'warn');
   };
   return html`<div class="invite brackets">
-    <div class="invite__label"><${Icon} name="key" /><span>同盟密钥</span><${MicroLabel}>ALLIANCE KEY<//></div>
-    <div class="invite__code num selectable" aria-label=${`同盟密钥 ${code}`}>${[...String(code)].map((ch, i) => html`<span key=${i}>${ch}</span>`)}</div>
+    <div class="invite__label"><${Icon} name="key" /><span>Alliance Key</span><${MicroLabel}>ALLIANCE KEY<//></div>
+    <div class="invite__code num selectable" aria-label=${`Alliance key ${code}`}>${[...String(code)].map((ch, i) => html`<span key=${i}>${ch}</span>`)}</div>
     <div class="invite__btns">
-      <${Button} size="sm" icon="copy" onClick=${() => copy('code')}>复制密钥<//>
-      <${Button} size="sm" icon="link" onClick=${() => copy('link')}>复制链接<//>
+      <${Button} size="sm" icon="copy" onClick=${() => copy('code')}>Copy Key<//>
+      <${Button} size="sm" icon="link" onClick=${() => copy('link')}>Copy Link<//>
     </div>
   </div>`;
 }
@@ -172,14 +172,14 @@ function DifficultyPicker({ room, isHost, busy, onPick }) {
   if (!isHost) {
     return html`<div class="dpick dpick--ro">
       <${DifficultyTag} difficulty=${room.difficulty} size="lg" code=${difficultyInfo(room.mode, room.difficulty).code} />
-      <span class="t-dim">由创建者选择</span>
+      <span class="t-dim">Set by the Host</span>
     </div>`;
   }
-  return html`<div class="dpick" role="radiogroup" aria-label="模拟难度">
+  return html`<div class="dpick" role="radiogroup" aria-label="Simulation Difficulty">
     ${DIFFICULTIES.map((d) => html`<button key=${d} type="button" role="radio" aria-checked=${room.difficulty === d ? 'true' : 'false'}
         class=${`dpick__opt${room.difficulty === d ? ' is-active' : ''}`} style=${`--d-color:${DIFFICULTY_COLORS[d]}`}
         disabled=${!!busy} onClick=${() => room.difficulty !== d && onPick(d)}>
-      <${DifficultyIcon} difficulty=${d} />${DIFFICULTY_NAMES[d].replace('模拟', '')}
+      <${DifficultyIcon} difficulty=${d} />${DIFFICULTY_NAMES[d].replace(/ Simulation$/, '')}
     </button>`)}
   </div>`;
 }
@@ -203,7 +203,7 @@ export function RoomScreen() {
 
   const run = async (kind, fn) => {
     if (inFlight.current) return;
-    if (!online) { toast('连接中断，请稍候重试', 'warn'); return; }
+    if (!online) { toast('Connection lost. Please try again in a moment.', 'warn'); return; }
     inFlight.current = true;
     setBusy(kind);
     try { await fn(); } catch (err) { toastError(err); } finally {
@@ -221,7 +221,7 @@ export function RoomScreen() {
     if (inFlight.current) return;
     const othersHere = facts.humans.some((s) => s.playerId !== me.playerId);
     if (facts.isHost && othersHere) {
-      const ok = await confirmDialog({ title: '离开同盟', text: '你是同盟的创建者，离开后创建者身份将移交或同盟解散。确定离开吗？', okText: '离开', danger: true });
+      const ok = await confirmDialog({ title: 'Leave Alliance', text: 'You are the Host of this alliance. If you leave, the Host role will be handed over or the alliance will be disbanded. Are you sure you want to leave?', okText: 'Leave', danger: true });
       if (!ok) return;
     }
     inFlight.current = true;
@@ -239,35 +239,35 @@ export function RoomScreen() {
   };
 
   const statusLine = !online
-    ? html`<span class="t-orange"><${Icon} name="wifiOff" />连接中断，正在重连…</span>`
+    ? html`<span class="t-orange"><${Icon} name="wifiOff" />Connection lost, reconnecting…</span>`
     : !coop
-      ? html`<span class="t-mint">*模拟协议已就绪，准许进入模拟</span>`
+      ? html`<span class="t-mint">*Simulation protocol ready, entry authorized</span>`
     : facts.isHost
       ? facts.canStart
-        ? html`<span class="t-mint">*同盟人数达标，准许进入模拟</span>`
-        : html`<span class="t-lo">等待所有博士准备就绪</span>`
+        ? html`<span class="t-mint">*Alliance requirements met, entry authorized</span>`
+        : html`<span class="t-lo">Waiting for all Doctors to be ready</span>`
       : myReady
-        ? html`<span class="t-mint">已就绪 · 等待创建者开始模拟</span>`
-        : html`<span class="t-lo">准备就绪后，创建者即可开始模拟</span>`;
+        ? html`<span class="t-mint">Ready · Waiting for the Host to start the simulation</span>`
+        : html`<span class="t-lo">Once you are ready, the Host can start the simulation</span>`;
 
   return html`<div class="screen room-screen">
     <header class="topbar">
       <div class="topbar__left">
-        <${Tooltip} text="离开同盟" placement="bottom">
-          <${Button} variant="danger" size="lg" square=${true} icon="exit" loading=${busy === 'leave'} onClick=${leave} aria-label="离开同盟" />
+        <${Tooltip} text="Leave Alliance" placement="bottom">
+          <${Button} variant="danger" size="lg" square=${true} icon="exit" loading=${busy === 'leave'} onClick=${leave} aria-label="Leave Alliance" />
         <//>
         <div class="room-ping">
           <${PingPill} ms=${conn.ping} online=${online} />
-          <${MicroLabel}>当前延迟<//>
+          <${MicroLabel}>Latency<//>
         </div>
         <${GuideButton} class="room-guide" variant="secondary" />
       </div>
       <div class="topbar__center">
         <${MicroLabel} tone="mint">${coop ? 'ALLIANCE LOBBY' : 'SOLO SIMULATION'}<//>
-        <h1 class="topbar__title">${coop ? '同盟模拟' : '独立模拟'}<span class="topbar__sep"></span><${DifficultyTag} difficulty=${room.difficulty} size="lg" /></h1>
+        <h1 class="topbar__title">${coop ? 'Alliance Simulation' : 'Solo Simulation'}<span class="topbar__sep"></span><${DifficultyTag} difficulty=${room.difficulty} size="lg" /></h1>
       </div>
       <div class="topbar__right">
-        ${coop ? html`<${InviteBox} code=${room.code} />` : html`<div class="solo-note"><${MicroLabel}>SINGLE OPERATOR<//><span>仅限 1 名博士</span></div>`}
+        ${coop ? html`<${InviteBox} code=${room.code} />` : html`<div class="solo-note"><${MicroLabel}>SINGLE OPERATOR<//><span>Limited to 1 Doctor</span></div>`}
       </div>
     </header>
 
@@ -280,20 +280,20 @@ export function RoomScreen() {
         <p>${info.desc}</p>
         <ul>
           ${info.effects.map((e) => html`<li key=${e}>${e}</li>`)}
-          <li>共 <b class="num">${info.rounds}</b> 回合${info.hidden ? '，满足条件时进入隐秘核心' : ''}</li>
-          <li>独立模拟中休整期与机变阶段不限时</li>
+          <li><b class="num">${info.rounds}</b> rounds in total${info.hidden ? ', plus the Hidden Core when its conditions are met' : ''}</li>
+          <li>Rest Phase and Draft Phase are untimed in Solo Simulation</li>
         </ul>
       </aside>`}
     </main>
 
     <footer class="room-bar">
       <div class="room-bar__left">
-        <span class="room-bar__label">模拟难度<${MicroLabel}>DIFFICULTY<//></span>
+        <span class="room-bar__label">Simulation Difficulty<${MicroLabel}>DIFFICULTY<//></span>
         <${DifficultyPicker} room=${room} isHost=${facts.isHost} busy=${busy} onPick=${setDifficulty} />
       </div>
       <div class="room-bar__center">
         <div class="ready-count" hidden=${!coop}>
-          <span class="t-lo">已就绪</span>
+          <span class="t-lo">Ready</span>
           <b class="num">${facts.readyHumans}</b><span class="num t-dim">/${facts.humans.length}</span>
           <span class="ready-count__icons" aria-hidden="true">
             ${facts.humans.map((s) => html`<${Icon} key=${s.playerId} name="user" class=${facts.isReady(s) ? 'is-on' : ''} />`)}
@@ -304,11 +304,11 @@ export function RoomScreen() {
       <div class="room-bar__right">
         <${LoadoutButton} from="room" size="lg" class="room-loadout" />
         ${facts.isHost
-          ? html`<${Tooltip} text=${facts.canStart ? null : '仍有博士未准备就绪'}>
-              <${Button} variant="primary" size="xl" icon="play" loading=${busy === 'start'} disabled=${!facts.canStart || !online} onClick=${start}>开始模拟<//>
+          ? html`<${Tooltip} text=${facts.canStart ? null : 'Not all Doctors are ready yet'}>
+              <${Button} variant="primary" size="xl" icon="play" loading=${busy === 'start'} disabled=${!facts.canStart || !online} onClick=${start}>Start Simulation<//>
             <//>`
           : html`<${Button} variant=${myReady ? 'primary' : 'secondary'} size="xl" icon=${myReady ? 'check' : 'hourglass'} active=${myReady}
-              loading=${busy === 'ready'} disabled=${!online || !facts.mine} onClick=${toggleReady}>${myReady ? '已就绪' : '准备就绪'}<//>`}
+              loading=${busy === 'ready'} disabled=${!online || !facts.mine} onClick=${toggleReady}>Ready<//>`}
       </div>
     </footer>
   </div>`;

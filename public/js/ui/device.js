@@ -154,7 +154,7 @@ export function FullscreenButton({ class: cls = '' }) {
     return () => { d.removeEventListener('fullscreenchange', upd); d.removeEventListener('webkitfullscreenchange', upd); };
   }, []);
   if (!ok) return null;
-  const label = on ? '退出全屏' : '全屏';
+  const label = on ? 'Exit Fullscreen' : 'Fullscreen';
   return html`<button type="button" class=${`fsbtn tapx ${cls}`} aria-label=${label} title=${label} aria-pressed=${on ? 'true' : 'false'}
       onClick=${() => fullscreen.toggle()}>
     <${Icon} name=${on ? 'collapse' : 'expand'} />

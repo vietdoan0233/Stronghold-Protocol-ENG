@@ -419,7 +419,7 @@ export async function createFieldView(host, options = {}) {
   canvas.style.height = '100%';
   canvas.style.touchAction = 'none';
   canvas.style.userSelect = 'none';
-  canvas.setAttribute('aria-label', '战场');
+  canvas.setAttribute('aria-label', 'Battlefield');
   canvas.style.position = 'relative';
   canvas.style.zIndex = '1';
   host.appendChild(canvas);

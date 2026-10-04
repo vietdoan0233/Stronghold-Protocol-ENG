@@ -131,8 +131,10 @@ describe('2: the own LP drops live while the battle runs', () => {
       assert.deepEqual([r.pending, r.shown, r.base], [0, 40, null], phase);
     }
     assert.deepEqual(liveLp(null, { phase: PHASE.COMBAT, round: 3, lp: undefined, leaks: 2 }), { base: null, pending: 0, shown: null, unite: false, left: null });
-    assert.match(pendingTip(30, 3), /结算时扣除 3 点/);
-    assert.match(pendingTip(30, 10, { unite: true }), /联防中/);
+    assert.match(pendingTip(30, 3), /3 enemies have reached the Protection Objective this round\. Deducted at settlement: −3 \(max 10 per round\)/);
+    assert.match(pendingTip(30, 1), /1 enemy has reached the Protection Objective/, 'one enemy: singular');
+    assert.match(pendingTip(30, 10), /10\+ enemies have reached/, 'at the cap: "N+"');
+    assert.match(pendingTip(30, 10, { unite: true }), /Uniting/);
     assert.equal(pendingTip(30, 0), null);
   });
 
@@ -162,10 +164,10 @@ describe('2: the own LP drops live while the battle runs', () => {
     const val = [...walk(v)].find((n) => hasClass(n, 'lp__val'));
     assert.equal(textOf(val), '21');
     assert.equal(v.props.title, 'x');
-    const unite = LpTower({ value: 5, pending: 9, note: '联防中' });
+    const unite = LpTower({ value: 5, pending: 9, note: 'Uniting' });
     assert.equal(textOf([...walk(unite)].find((n) => hasClass(n, 'lp__val'))), '0', 'clamped');
     assert.equal(textOf([...walk(unite)].find((n) => hasClass(n, 'lp__pend'))), '−5');
-    assert.equal(textOf([...walk(unite)].find((n) => hasClass(n, 'lp__note'))), '联防中');
+    assert.equal(textOf([...walk(unite)].find((n) => hasClass(n, 'lp__note'))), 'Uniting');
     assert.equal(textOf(LpTower({ value: null, pending: 3 })), '--');
   });
 
@@ -206,13 +208,14 @@ describe('3: the temp overflow row (临时整备区)', () => {
   test('the ready button shows why it is refused, under it, not only on hover', () => {
     const p = priv([{ uid: 1, kind: 'item', id: 'x' }, { uid: 2, kind: 'chess', id: 'y' }, null, null, null]);
     assert.deepEqual(tempInfo(p), { count: 2, items: 1 });
-    assert.match(tempReadyReason(p), /^临时整备区还有 2 个单位：/);
+    assert.match(tempReadyReason(p), /^2 units are still in the Temporary Reserve\. /);
     assert.ok(tempReadyReason(p).includes(TEMP_RULE));
-    assert.match(TEMP_RULE, /休整期结束时.*销毁/, 'says what happens at the end of the prep');
+    assert.match(TEMP_RULE, /Rest Phase ends.*destroyed/, 'says what happens at the end of the prep');
+    assert.match(tempReadyReason(priv([{ uid: 1, kind: 'chess', id: 'y' }, null, null, null, null])), /^1 unit is still in the Temporary Reserve\. /, 'one unit: singular');
     const v = ReadyToggle({ priv: p, onToggle() {}, readyCount: 1, total: 4 });
     const why = [...walk(v)].find((n) => hasClass(n, 'readywrap__why'));
     assert.ok(why, 'visible reason');
-    assert.equal(textOf(why), '临时整备区 2 个单位待处理');
+    assert.equal(textOf(why), '2 units waiting in the Temporary Reserve');
     const btn = [...walk(v)].find((n) => n.type === 'button');
     assert.equal(btn.props.disabled, true);
     // empty temp: no reason, enabled
@@ -240,10 +243,10 @@ describe('3: the temp overflow row (临时整备区)', () => {
   });
 
   test('the row\'s label matches the server\'s due rule (PlayerState tempDue): destroyed at this prep\'s end unless ready — then kept through the next prep', () => {
-    assert.match(tempRowRule(false), /才能准备；休整期结束时仍在此处的将被销毁$/);
+    assert.match(tempRowRule(false), /or equipping or using them; anything still here when the Rest Phase ends will be destroyed\.$/);
     // Ready is refused while the row holds pieces: what lies there while ready arrived after it (due at the next prep)
-    assert.match(tempRowRule(true), /保留到下个休整期/);
-    assert.match(tempRowRule(true), /取消准备则在本休整期结束时销毁/);
+    assert.match(tempRowRule(true), /kept until the next Rest Phase/);
+    assert.match(tempRowRule(true), /if you Cancel Ready, they are destroyed at the end of this Rest Phase/);
   });
 
   test('the game screen frames the row only on the own prep board while it holds pieces (source contract)', () => {
@@ -286,7 +289,7 @@ describe('8: 特质 right under the detail card\'s header', () => {
     // the garrison block itself: the 特质 label, the trigger chip and the description
     const gb = blocks[1].type(blocks[1].props);
     assert.ok(hasClass(gb, 'dgarrison'));
-    assert.ok(textOf(gb).includes('特质'));
+    assert.ok(textOf(gb).includes('Garrison Trait'));
     assert.ok(textOf(gb).includes(g.eventTypeDesc));
     const rich = [...walk(gb)].find((n) => n.props?.text != null);
     assert.equal(rich.props.text, g.descRaw || g.desc);
@@ -343,7 +346,7 @@ describe('9: busy indicators and data loading', () => {
   });
 
   test('a busy button keeps its icon and gets a delayed sweeping bar — no spinning ring', () => {
-    const v = Button({ loading: true, icon: 'play', children: '继续作战' });
+    const v = Button({ loading: true, icon: 'play', children: 'Resume Combat' });
     assert.equal(v.props.disabled, true);
     assert.equal(v.props['aria-busy'], 'true');
     const nodes = [...walk(v)];
@@ -371,7 +374,7 @@ describe('9: busy indicators and data loading', () => {
     const nodes = [...walk(v)];
     const busyCards = nodes.filter((n) => hasClass(n, 'spcard') && hasClass(n, 'is-busy'));
     assert.equal(busyCards.length, 1);
-    assert.equal(textOf(nodes.find((n) => hasClass(n, 'spcard__busy'))), '选择中');
+    assert.equal(textOf(nodes.find((n) => hasClass(n, 'spcard__busy'))), 'Selecting…');
     assert.ok(!nodes.some((n) => n.type === Spinner), 'no spinner over the card text');
     // the pick landed (m.public) while the request still waits for its reply
     const landed = ChoiceView({ pub: { players: [] }, sp: { ...sp, pickOf: new Map([['me', 1]]), cards: [sp.cards[0], { ...sp.cards[1], takenBy: 'me' }] }, myId: 'me', solo: true, busyIdx: 1 });

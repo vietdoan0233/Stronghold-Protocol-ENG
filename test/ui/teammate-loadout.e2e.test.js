@@ -44,9 +44,9 @@ describe('DESIGN §16 — a teammate\'s unit shows its owner\'s loadout (real se
     try {
       await host.open();
       await host.enter('凯尔希');
-      await host.click('.mode-card', '同盟模拟');
-      await host.click('.diff-card', '标准模拟');
-      await host.click('.create-box button', '创建同盟');
+      await host.click('.mode-card', 'Alliance Simulation');
+      await host.click('.diff-card', 'Standard Simulation');
+      await host.click('.create-box button', 'Create Alliance');
       const room = (await host.waitFor((s) => !!s.room?.code, 'room created')).room;
       await guest.open(`?room=${room.code}`);
       await guest.enter('阿米娅');
@@ -56,12 +56,12 @@ describe('DESIGN §16 — a teammate\'s unit shows its owner\'s loadout (real se
       await guest.click('[data-testid="loadout-open"]');
       await guest.page.waitForSelector('.lo .lo-card', { visible: true, timeout: 15000 });
       await guest.click('.lo-search input');
-      await guest.page.keyboard.type('野鬃');
+      await guest.page.keyboard.type('Wild Mane'); // 野鬃 (the page shows the English overlay names)
       await guest.page.waitForFunction(() => document.querySelectorAll('.lo-card').length === 1, { timeout: 5000 });
       await guest.click('.lo-card');
       await guest.click('.lo-detail .lo-skill[data-skill="0"]');
       await guest.click('.lo-detail .lo-mod[data-module="none"]');
-      await guest.page.waitForFunction(() => /已同步/.test(document.querySelector('.lo-sync')?.textContent || ''), { timeout: 8000 });
+      await guest.page.waitForFunction(() => /Synced/.test(document.querySelector('.lo-sync')?.textContent || ''), { timeout: 8000 });
       await guest.page.keyboard.press('Escape');
       await guest.page.waitForFunction(() => !document.querySelector('.lo'), { timeout: 3000 });
 
@@ -72,16 +72,16 @@ describe('DESIGN §16 — a teammate\'s unit shows its owner\'s loadout (real se
       });
       for (let i = 0; i < 5 && !(await guestReady()); i++) {
         await sleep(500);
-        await guest.click('.room-bar__right button', '准备就绪', { optional: true, timeout: 3000 });
+        await guest.click('.room-bar__right button', 'Ready', { optional: true, timeout: 3000 });
         await sleep(500);
       }
       assert.ok(await guestReady(), 'guest ready');
-      await host.click('.room-bar__right button', '开始模拟', { timeout: 20000 });
+      await host.click('.room-bar__right button', 'Start Simulation', { timeout: 20000 });
       for (const c of [host, guest]) await c.waitFor((s) => s.phase === 'INFO_CHECK', 'briefing', 30000);
       const loOf = (c) => c.page.evaluate(() => globalThis.__SP__.store.get().match.private?.loadout ?? null);
       assert.deepEqual(await loOf(guest), { [BASE]: { skill: 0, module: 'none' } }, 'the guest\'s match loadout');
       assert.deepEqual(await loOf(host), {}, 'the host fights with the defaults');
-      for (const c of [host, guest]) await c.click('.brief__foot .btn--primary', '准备就绪');
+      for (const c of [host, guest]) await c.click('.brief__foot .btn--primary', 'Ready');
       // the draft first (a client still in the briefing would count as done without picking: its turn then runs out —
       // Match.BAND_TURN_SECONDS, 30 s each since user playtest #4 item 4)
       for (const c of [host, guest]) await c.waitFor((s) => s.phase !== 'INFO_CHECK', 'band draft', 40000);
@@ -94,7 +94,7 @@ describe('DESIGN §16 — a teammate\'s unit shows its owner\'s loadout (real se
           if (picked.has(c.label) || s.draft?.turn !== s.me) continue;
           await c.click('.dband:not(.is-taken)', null, { nth: c === host ? 2 : 5 });
           await sleep(200);
-          await c.click('.draft-detail__btns .btn--primary', '确认选择');
+          await c.click('.draft-detail__btns .btn--primary', 'Confirm Selection');
           picked.add(c.label);
         }
         await sleep(250);
@@ -114,7 +114,7 @@ describe('DESIGN §16 — a teammate\'s unit shows its owner\'s loadout (real se
 
       // the host scouts the guest (前往查看) — the scouting m.field carries the guest's loadout
       await host.click('.team__row:not(.is-self) .team__btn', null, { nth: 0 });
-      assert.ok(await host.click('.team__ob', '前往查看', { optional: true, timeout: 3000 }), 'host: 前往查看 in prep');
+      assert.ok(await host.click('.team__ob', 'Go Watch', { optional: true, timeout: 3000 }), 'host: Go Watch in prep');
       await host.page.waitForSelector('.gm__watching', { timeout: 6000 });
       const unit = await host.page.waitForFunction((uid) => {
         const f = globalThis.__SP__.store.get().match.field;

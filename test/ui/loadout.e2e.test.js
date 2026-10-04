@@ -99,7 +99,7 @@ describe('干员调配 overlay (real server, headless Chrome)', { skip: !ENABLED
     await assertBgLayer(page);
     await page.screenshot({ path: path.join(OUT, 'loadout-desktop.png') });
     // search → one card
-    await page.type('.lo-search input', '隐现');
+    await page.type('.lo-search input', 'Insider'); // 隐现 (the page shows the English overlay names)
     await page.waitForFunction(() => document.querySelectorAll('.lo-card').length === 1, { timeout: 5000 });
     await page.click('.lo-card');
     await page.waitForSelector('.lo-detail .lo-skill[data-skill="0"]', { visible: true });
@@ -110,7 +110,7 @@ describe('干员调配 overlay (real server, headless Chrome)', { skip: !ENABLED
     await page.waitForFunction(() => document.querySelector('.lo-skill.is-on[data-skill="0"]') && document.querySelector('.lo-mod.is-on[data-module="none"]'));
     const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('sp.pref.loadout')));
     assert.deepEqual(stored.entries, { [INSIDE]: { skill: 0, module: 'none' } });
-    await page.waitForFunction(() => /已同步/.test(document.querySelector('.lo-sync')?.textContent || ''), { timeout: 5000 });
+    await page.waitForFunction(() => /Synced/.test(document.querySelector('.lo-sync')?.textContent || ''), { timeout: 5000 });
     await page.screenshot({ path: path.join(OUT, 'loadout-detail.png') });
     // close (Esc), create a solo room, start
     await page.keyboard.press('Escape');
@@ -142,7 +142,7 @@ describe('干员调配 overlay (real server, headless Chrome)', { skip: !ENABLED
     await waitSt(page, (s) => s.phase === 'INFO_CHECK', 'briefing');
     await clickSel(page, '.brief [data-testid="loadout-open"]');
     await page.waitForSelector('.lo .lo-card', { visible: true, timeout: 15000 });
-    await page.type('.lo-search input', '隐现');
+    await page.type('.lo-search input', 'Insider'); // 隐现 (the page shows the English overlay names)
     await page.waitForFunction(() => document.querySelectorAll('.lo-card').length === 1, { timeout: 5000 });
     await page.click('.lo-card');
     await page.waitForSelector('.lo-detail .lo-skill[data-skill="0"]', { visible: true });
@@ -175,8 +175,8 @@ describe('干员调配 overlay (real server, headless Chrome)', { skip: !ENABLED
     await page.waitForSelector('.lo .lo-card', { visible: true, timeout: 15000 });
     // the briefing (and its countdown) is hidden under the overlay: the overlay carries the time left
     await page.waitForSelector('.lo-top .lo-deadline', { visible: true, timeout: 3000 });
-    assert.match(await page.$eval('.lo-top .lo-deadline', (el) => el.getAttribute('aria-label')), /剩余\d+秒/);
-    await page.type('.lo-search input', '隐现');
+    assert.match(await page.$eval('.lo-top .lo-deadline', (el) => el.getAttribute('aria-label')), /^\d+ seconds? left$/);
+    await page.type('.lo-search input', 'Insider'); // 隐现 (the page shows the English overlay names)
     await page.waitForFunction(() => document.querySelectorAll('.lo-card').length === 1, { timeout: 5000 });
     await page.click('.lo-card');
     await page.waitForSelector('.lo-detail .lo-skill[data-skill="0"]', { visible: true });
@@ -185,7 +185,7 @@ describe('干员调配 overlay (real server, headless Chrome)', { skip: !ENABLED
     await mate.page.evaluate(() => globalThis.__SP__.net.request('g.infoReady', {}));
     await page.evaluate(() => globalThis.__SP__.net.request('g.infoReady', {}));
     await page.waitForFunction(() => !document.querySelector('.lo'), { timeout: 5000 });
-    await page.waitForFunction(() => [...document.querySelectorAll('.toast__text')].some((e) => /下一局生效/.test(e.textContent)), { timeout: 5000 });
+    await page.waitForFunction(() => [...document.querySelectorAll('.toast__text')].some((e) => /take effect in the next match/.test(e.textContent)), { timeout: 5000 });
     const s = await st(page);
     assert.ok(!s.loadout || !s.loadout[INSIDE], 'the running match kept its locked loadout');
     const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('sp.pref.loadout')));
@@ -200,7 +200,7 @@ describe('干员调配 overlay (real server, headless Chrome)', { skip: !ENABLED
     const { ctx, page, problems } = await open();
     await clickSel(page, '.lobby-screen [data-testid="loadout-open"]');
     await page.waitForSelector('.lo .lo-card', { visible: true, timeout: 15000 });
-    await page.type('.lo-search input', '烛煌');
+    await page.type('.lo-search input', 'Blaze the Igniting Spark'); // 烛煌
     await page.waitForFunction(() => document.querySelectorAll('.lo-card').length === 1, { timeout: 5000 });
     await page.click('.lo-card');
     await page.waitForSelector('.lo-detail .lo-mod[data-module="none"]', { visible: true });
@@ -232,7 +232,7 @@ describe('干员调配 overlay (real server, headless Chrome)', { skip: !ENABLED
     await assertBgLayer(page);
     await page.screenshot({ path: path.join(OUT, 'loadout-phone.png') });
     // review fix: the shared Button / TextField shrink to 6–7 px text on phones — the overlay's own controls stay readable
-    // and tappable (返回, 全部恢复默认, the detail's 恢复默认, the search input)
+    // and tappable (Back, Reset All to Default, the detail's Reset to Default, the search input)
     const ctl = await page.evaluate(() => Object.fromEntries(['.lo-back', '.lo-top__right .btn', '.lo-dhead__reset', '.lo-search .field__input'].map((sel) => {
       const el = document.querySelector(sel);
       const b = el.getBoundingClientRect();
@@ -244,7 +244,7 @@ describe('干员调配 overlay (real server, headless Chrome)', { skip: !ENABLED
     }
     await page.tap('.lo-chip--t6');
     await page.waitForFunction(() => [...document.querySelectorAll('.lo-card')].every((c) => c.classList.contains('lo-card--t6')));
-    await page.tap('.lo-chip--prof[title="狙击"]');
+    await page.tap('.lo-chip--prof[title="Sniper"]');
     await page.waitForFunction(() => document.querySelectorAll('.lo-card').length >= 1);
     await page.tap('.lo-card');
     await page.waitForSelector('.lo-detail .lo-skill', { visible: true });

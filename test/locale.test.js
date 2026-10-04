@@ -8,9 +8,10 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { applyLocale, parseLocaleTable, localeUrl, hasLocaleTable, pickLocale, TEXT_KEYS, LOCALE_FILES, LOCALES, DEFAULT_LOCALE } from '../public/js/locale.js';
+import { applyLocale, collectSources, parseLocaleTable, localeUrl, hasLocaleTable, pickLocale, TEXT_KEYS, LOCALE_FILES, LOCALES, DEFAULT_LOCALE } from '../public/js/locale.js';
 import { createDataStore, RETRY_DELAYS_MS } from '../public/js/data.js';
 import { richTextPlain } from '../public/js/ui/richText.js';
+import { checkEntry, checkTables, coverage, planSync, readTable, serializeTable } from '../tools/locale.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const readJson = (p) => JSON.parse(readFileSync(path.join(ROOT, p), 'utf8'));
@@ -109,13 +110,30 @@ describe('applyLocale', () => {
     assert.equal(asc.desc, 'On defeat,\nthrows toxic fog');
   });
 
-  test('desc alone (no raw sibling) is looked up like any display field; a plain desc whose raw is untranslated keeps its text', () => {
+  test('desc alone (no raw sibling) is looked up like any display field; a plain desc that follows its raw never gets its own entry', () => {
     const a = { desc: '只有一句' };
     const b = { descRaw: '有<@ba.kw>标记</>', desc: '有标记' };
     applyLocale({ a, b }, table({ 只有一句: 'Only one line', 有标记: 'plain only' }));
     assert.equal(a.desc, 'Only one line');
     assert.equal(b.descRaw, '有<@ba.kw>标记</>', 'raw untranslated');
-    assert.equal(b.desc, 'plain only', 'its own entry applies');
+    assert.equal(b.desc, '有标记', 'its plain text follows the raw one: no half-translated record');
+    const c = { descRaw: '有<@ba.kw>标记</>', desc: '有标记' };
+    applyLocale({ c }, table({ '有<@ba.kw>标记</>': 'with <@ba.kw>markup</>' }));
+    assert.deepEqual(c, { descRaw: 'with <@ba.kw>markup</>', desc: 'with markup' });
+  });
+
+  test('collectSources: the display texts a table must translate, with the fields they occur under; derived plain texts are not among them', () => {
+    const json = {
+      a: { name: '炎', desc: '见此', descRaw: '见<@ba.vup>此</>', bondId: '炎', abilities: ['飞行', 'ascii'], tiers: [{ name: '炎', desc: '独立' }] },
+      b: { desc: '只有一句', descRaw: '另一句', profession: '近卫' },
+    };
+    const src = collectSources(json);
+    assert.deepEqual([...src.keys()].sort(), ['只有一句', '另一句', '炎', '独立', '见<@ba.vup>此</>', '飞行'].sort());
+    assert.deepEqual([...src.get('炎')].sort(), ['name']);
+    assert.deepEqual([...src.get('见<@ba.vup>此</>')], ['descRaw'], 'desc follows descRaw');
+    assert.deepEqual([...src.get('飞行')], ['abilities']);
+    assert.ok(src.has('只有一句') && src.has('另一句'), 'a desc that is not the stripped raw is its own entry');
+    assert.equal(collectSources(null).size, 0);
   });
 
   test('fallback: no table, an empty table, no match — nothing changes; idempotent; prototype-looking text is safe', () => {
@@ -310,6 +328,56 @@ describe('data store with a table', () => {
   });
 });
 
+describe('the validator (tools/locale.mjs checkEntry)', () => {
+  const E = (zh, en) => checkEntry(zh, en);
+  test('identical markup, placeholders, numbers, line breaks and conditions pass', () => {
+    assert.deepEqual(E('攻击力<@ba.vup>+15%</>，持续3秒\n<战斗中>每{0:0%}', 'ATK <@ba.vup>+15%</> for 3 seconds\n<In Battle> every {0:0%}'), { blocking: [], human: [], review: [] });
+  });
+  test('Chinese or full-width characters left, and a blank translation, are never acceptable', () => {
+    assert.ok(E('炎', 'Yan 炎').blocking.length);
+    assert.ok(E('炎', 'Yan，Sargon').blocking.length, 'a full-width comma');
+    assert.deepEqual(E('炎', ' ').blocking, ['blank']);
+  });
+  test('a lost {n:fmt} placeholder is never acceptable', () => {
+    assert.ok(E('提升{0:0%}', 'Increases by 0%').blocking.some((b) => /placeholders/.test(b)));
+    assert.ok(E('提升{0:0%}', 'Increases by {0:0%}').blocking.length === 0);
+  });
+  test('a number of the source that is missing from the English needs a person (stale official English: -15% vs -25%)', () => {
+    const r = E('每次治疗量降低15%', 'Healing reduced by 25% per bounce');
+    assert.ok(r.human.some((h) => /15/.test(h)), JSON.stringify(r));
+    assert.ok(E('阻挡数变为0', 'Cannot block enemies').human.length, 'a number written as a word is only accepted when listed under reviewed');
+  });
+  test('numbers the English adds (三个 → 3) and tag / condition / line-break differences are review items', () => {
+    assert.deepEqual(E('阻挡三个敌人', 'Blocks 3 enemies').review, ['the English has numbers the source writes in words']);
+    assert.ok(E('<@ba.vup>攻击</>', 'ATK').review.includes('markup tags differ'));
+    assert.ok(E('<替身>作战', 'Fights as a substitute').review.includes('<condition> markers differ'));
+    assert.ok(E('一\n二', 'one two').review.includes('line breaks differ'));
+    assert.deepEqual(E('3,600,000伤害', '3,600,000 damage'), { blocking: [], human: [], review: [] }, 'thousands separators do not matter');
+  });
+});
+
+describe('serializeTable', () => {
+  test('canonical text: data order first, orphans last, reviewed entries only for translated keys; round-trips', () => {
+    const table = { strings: { 乙: 'B', 甲: 'A', 孤: 'orphan', 丙: 'C' }, reviewed: { 乙: 'why', 没有: 'gone' } };
+    const text = serializeTable(table, ['甲', '乙', '丙']);
+    assert.equal(text, `{
+  "locale": "en",
+  "strings": {
+    "甲": "A",
+    "乙": "B",
+    "丙": "C",
+    "孤": "orphan"
+  },
+  "reviewed": {
+    "乙": "why"
+  }
+}
+`);
+    assert.deepEqual(JSON.parse(text).strings, { 甲: 'A', 乙: 'B', 丙: 'C', 孤: 'orphan' });
+    assert.ok(!serializeTable({ strings: { 甲: 'A' } }, ['甲']).includes('reviewed'));
+  });
+});
+
 describe('shipped tables (public/locales/en)', () => {
   const dir = path.join(ROOT, 'public/locales/en');
   const files = existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.json')) : [];
@@ -323,36 +391,29 @@ describe('shipped tables (public/locales/en)', () => {
     }
   });
 
-  test('every table is well formed (locale marker, string → string, no empty or identical entries)', () => {
+  test('every table is in canonical form (node tools/locale.mjs sync --write rewrites it): key order, one entry per line', () => {
     for (const f of files) {
-      const json = readJson(`public/locales/en/${f}`);
-      assert.equal(json.locale, 'en', f);
-      assert.ok(json.strings && typeof json.strings === 'object' && !Array.isArray(json.strings), f);
-      for (const [zh, en] of Object.entries(json.strings)) {
-        assert.equal(typeof en, 'string', `${f}: ${JSON.stringify(zh)}`);
-        assert.ok(en.trim(), `${f}: ${JSON.stringify(zh)} has a blank translation`);
-        assert.equal(/^\s/.test(en), /^\s/.test(zh), `${f}: ${JSON.stringify(zh)} → ${JSON.stringify(en)} (leading whitespace differs from the source)`);
-        assert.equal(/\s$/.test(en), /\s$/.test(zh), `${f}: ${JSON.stringify(zh)} → ${JSON.stringify(en)} (trailing whitespace differs from the source)`);
-        assert.notEqual(en, zh, `${f}: ${JSON.stringify(zh)} is its own translation`);
-        assert.ok(/[一-鿿぀-ヿ]/.test(zh), `${f}: key ${JSON.stringify(zh)} is not Chinese source text`);
-      }
+      const name = f.replace(/\.json$/, '');
+      const t = readTable(name);
+      const order = [...collectSources(readJson(`data/${name}.json`)).keys()];
+      assert.equal(readFileSync(path.join(dir, f), 'utf8'), serializeTable(t, order), `${f}: not canonical`);
     }
   });
 
-  test('every entry matches display text that exists in its data file (no orphan or stale keys)', () => {
+  test('every entry passes the validator: no Chinese left, tags / placeholders / numbers / line breaks / conditions kept (or reviewed), no stale or orphan keys, one translation per text across tables', () => {
+    const { errors } = checkTables();
+    assert.deepEqual(errors, []);
+  });
+
+  test('every table entry is a real translation (not its own source) of Chinese source text', () => {
     for (const f of files) {
       const json = readJson(`public/locales/en/${f}`);
-      const data = readJson(`data/${f}`);
-      const found = new Set();
-      const keys = new Set(TEXT_KEYS);
-      const walk = (v, key) => {
-        if (typeof v === 'string') { if (keys.has(key)) found.add(v); return; }
-        if (Array.isArray(v)) { for (const x of v) walk(x, key); return; }
-        if (v && typeof v === 'object') for (const [k, x] of Object.entries(v)) walk(x, k);
-      };
-      walk(data, '');
-      const orphans = Object.keys(json.strings).filter((zh) => !found.has(zh));
-      assert.deepEqual(orphans, [], `${f}: keys that no display field of data/${f} has (renamed / reworded in a rebuild?)`);
+      assert.equal(json.locale, 'en', f);
+      for (const [zh, en] of Object.entries(json.strings)) {
+        assert.equal(typeof en, 'string', `${f}: ${JSON.stringify(zh)}`);
+        assert.notEqual(en, zh, `${f}: ${JSON.stringify(zh)} is its own translation`);
+        assert.ok(/[\u4e00-\u9fff\u3040-\u30ff]/.test(zh), `${f}: key ${JSON.stringify(zh)} is not Chinese source text`);
+      }
     }
   });
 
@@ -370,5 +431,39 @@ describe('shipped tables (public/locales/en)', () => {
       };
       assert.deepEqual(strip(out, ''), strip(data, ''), `${f}: only display text may differ`);
     }
+  });
+
+  test('applied to the real data, every translated text shows its English, and the plain desc follows the markup one', () => {
+    for (const f of files) {
+      const name = f.replace(/\.json$/, '');
+      const t = parseLocaleTable(readJson(`public/locales/en/${f}`));
+      const data = applyLocale(readJson(`data/${name}.json`), t);
+      const walk = (v) => {
+        if (Array.isArray(v)) { v.forEach(walk); return; }
+        if (!v || typeof v !== 'object') return;
+        if (typeof v.descRaw === 'string' && typeof v.desc === 'string' && !/[\u4e00-\u9fff]/.test(v.descRaw)) {
+          assert.equal(v.desc.replace(/\r\n?/g, '\n'), richTextPlain(v.descRaw).replace(/\r\n?/g, '\n'), `${f}: desc must follow descRaw`);
+        }
+        Object.values(v).forEach(walk);
+      };
+      walk(data);
+    }
+  });
+});
+
+describe('coverage and sync (tools/locale.mjs)', () => {
+  test('coverage counts what the tables still lack; a complete file has nothing missing', () => {
+    const rows = coverage(['bonds', 'chess']);
+    for (const r of rows) {
+      assert.equal(r.done + r.missing.length, r.total);
+      assert.equal(r.missingChars, r.missing.reduce((a, m) => a + m.zh.length, 0));
+      for (const m of r.missing) assert.ok(/[\u4e00-\u9fff]/.test(m.zh) && m.keys.length > 0);
+    }
+    assert.deepEqual(coverage(['nope']), []);
+  });
+  test('planSync only copies translations that agree across tables', () => {
+    const { adds, conflicts } = planSync();
+    assert.deepEqual(conflicts, [], 'a text translated two ways in two tables');
+    for (const a of adds) assert.ok(a.en && a.zh && a.file);
   });
 });

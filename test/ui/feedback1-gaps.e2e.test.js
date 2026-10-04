@@ -112,7 +112,7 @@ describe('0.1.1 gaps: 变形同构体 pairings and 调和\'s +1 (mock harness, h
       await page.waitForSelector('.bpop .bpop__harmony', { timeout: 5000 });
       await page.screenshot({ path: path.join(OUT, `fb1-gaps-harmony-${name}.png`) });
       const facts = await page.$eval('.bpop .bpop__facts', (el) => el.textContent);
-      assert.match(facts, /在场\s*\d+\/\d+（含调和 \+1）/);
+      assert.match(facts, /On Field\s*\d+\/\d+ \(incl\. (?:Harmony|调和) \+1\)/);
       const note = await page.$eval('.bpop .bpop__hnote', (el) => parseFloat(getComputedStyle(el).fontSize));
       assert.ok(note >= (touch ? 8 : 11.5), `the note at ${note} px`);
       await page.evaluate(() => document.querySelector('.bpop .bpop__harmony')?.scrollIntoView({ block: 'center' }));
@@ -120,7 +120,7 @@ describe('0.1.1 gaps: 变形同构体 pairings and 调和\'s +1 (mock harness, h
       await page.screenshot({ path: path.join(OUT, `fb1-gaps-harmony-${name}-row.png`) });
       const row = await measure(page, '.bpop', '.bpop__harmony');
       assert.equal(row.rows.length, 1);
-      assert.match(row.rows[0].text, /^调和 \+1缪尔赛思 在场：核心盟约激活人数 \+1$/);
+      assert.match(row.rows[0].text, /^(?:Harmony|调和) \+1(?:Muelsyse|缪尔赛思) on the field: Core Alliance member count \+1$/);
       // (inside the popup's box; the popup's own few px of sideways overflow on phones predate this row)
       assert.ok(row.rows[0].inside, 'inside the popup');
       assert.ok(row.rows[0].font >= minFont, `font ${row.rows[0].font} px`);
@@ -154,8 +154,8 @@ describe('0.1.1 gaps: 变形同构体 pairings and 调和\'s +1 (mock harness, h
       }));
       assert.ok(cards.length >= 30, `${cards.length} strategies on offer`);
       assert.deepEqual(cards.filter((c) => c.tag).map((c) => c.id), ['band_paganini', 'band_clementia', 'band_mlynar'], 'only the three');
-      assert.ok(cards.filter((c) => c.tag).every((c) => c.off && c.tag === '本局禁用' && c.inside && c.font >= (touch ? 8 : 11.5)), JSON.stringify(cards.filter((c) => c.tag)));
-      assert.equal(cards.find((c) => c.id === 'band_paganini').title, '本局禁用【拉特兰】盟约，此策略效果可能无法发挥');
+      assert.ok(cards.filter((c) => c.tag).every((c) => c.off && c.tag === 'Disabled' && c.inside && c.font >= (touch ? 8 : 11.5)), JSON.stringify(cards.filter((c) => c.tag)));
+      assert.equal(cards.find((c) => c.id === 'band_paganini').title, 'Alliance disabled this match: [Laterano]. This strategy\'s effect may not apply.');
       await page.screenshot({ path: path.join(OUT, `fb1-gaps-draft-${name}.png`) });
       // its detail pane: the note, inside the pane; 确认选择 stays enabled (information only)
       await tap('.draft-grid .dband[data-band="band_paganini"]');
@@ -168,10 +168,10 @@ describe('0.1.1 gaps: 变形同构体 pairings and 调和\'s +1 (mock harness, h
         return { text: n.textContent.trim(), struck: n.querySelector('.draft-detail__offname')?.textContent, font: parseFloat(getComputedStyle(n).fontSize),
           inside: r.left >= p.left - 0.5 && r.right <= p.right + 0.5, confirm: btn ? { text: btn.textContent.trim(), disabled: btn.disabled } : null };
       });
-      assert.equal(note.text, '本局禁用【拉特兰】盟约，此策略效果可能无法发挥');
-      assert.equal(note.struck, '拉特兰');
+      assert.equal(note.text, 'Alliance disabled this match: [Laterano]. This strategy\'s effect may not apply.');
+      assert.equal(note.struck, 'Laterano');
       assert.ok(note.inside && note.font >= (touch ? 9 : 13.5), JSON.stringify(note));
-      assert.deepEqual(note.confirm, { text: '确认选择', disabled: false }, 'still selectable');
+      assert.deepEqual(note.confirm, { text: 'Confirm Selection', disabled: false }, 'still selectable');
       await page.screenshot({ path: path.join(OUT, `fb1-gaps-draft-${name}-detail.png`) });
       // a strategy tied to no switched-off bond: no note
       await tap('.draft-grid .dband[data-band="band_bldsk"]');
@@ -179,7 +179,7 @@ describe('0.1.1 gaps: 变形同构体 pairings and 调和\'s +1 (mock harness, h
       // picking 潘格尼尼 works like any strategy
       await tap('.draft-grid .dband[data-band="band_paganini"]');
       await tap('.draft-detail__btns button:last-child');
-      await page.waitForFunction(() => /已选择「潘格尼尼」/.test(document.querySelector('.draft-detail__status')?.textContent || ''), { timeout: 5000 });
+      await page.waitForFunction(() => /Selected “[^”]*”/.test(document.querySelector('.draft-detail__status')?.textContent || ''), { timeout: 5000 });
       assert.deepEqual(problems, []);
       await page.close();
     });

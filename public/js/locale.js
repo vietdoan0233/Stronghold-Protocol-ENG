@@ -18,9 +18,10 @@
 // applyLocale() walks a freshly parsed data file once and replaces the value of every display-text field (TEXT_KEYS)
 // that is a key of the table. Identifiers, ids, enums and numbers are never touched: only the keys below are looked at,
 // and only whole values are replaced (never a substring). Rich-text markup (`<@ba.vup>…</>`, `{0:0%}` placeholders —
-// ui/richText.js) lives inside the translated strings and must survive translation verbatim; test/locale.test.js checks
-// every entry for it. The plain `desc` of a record that also carries a markup `descRaw` is derived from the translated
-// `descRaw` (richTextPlain), exactly as the data build derives it, so the two can never disagree.
+// ui/richText.js) lives inside the translated strings and must survive translation verbatim; tools/locale.mjs checks
+// every entry for it. The plain `desc` of a record that also carries a markup `descRaw` is never translated on its own:
+// it follows its `descRaw` (richTextPlain of the translation, exactly how the data build derives it), so the two can
+// never disagree and a table needs only the markup text.
 
 import { richTextPlain } from './ui/richText.js';
 
@@ -55,7 +56,6 @@ const PLAIN_RAW = Object.freeze([['desc', 'descRaw'], ['moduleDesc', 'moduleDesc
 
 const TEXT_KEY_SET = new Set(TEXT_KEYS);
 const RAW_KEYS = new Set(PLAIN_RAW.map(([, raw]) => raw));
-const RAW_OF = new Map(PLAIN_RAW);
 
 /** URL of a language's table for a data file. @param {string} lang @param {string} name @param {string} [base] */
 export const localeUrl = (lang, name, base = '/locales/') => `${base}${lang}/${name}.json`;
@@ -81,67 +81,59 @@ export function parseLocaleTable(json, lang = DEFAULT_LOCALE) {
   return map;
 }
 
-/** The text a node's own `desc`-like field shows once its raw sibling is translated (newline normalised like the parser). */
-const plainOfSource = (raw) => richTextPlain(raw);
-
-/** The same without markup: the raw source's plain text equals the record's plain field, `\r\n` aside. */
-const sameText = (a, b) => a === b || a.replace(/\r\n?/g, '\n') === b.replace(/\r\n?/g, '\n');
+const NL = /\r\n?/g;
+/** The record's plain text is its raw text stripped of markup (`\r\n` aside) — the relation the data build guarantees. */
+const followsRaw = (raw, plain) => richTextPlain(raw).replace(NL, '\n') === plain.replace(NL, '\n');
 
 /**
- * Translate the display-text fields of one object in place.
+ * Walk one object's display fields. `look(source, key)` returns the English text or undefined.
  * @param {Record<string, any>} node
- * @param {Map<string, string>} table
+ * @param {(source: string, key: string) => string|undefined} look
  * @param {{ replaced: number }} stats
  */
-function localizeObject(node, table, stats) {
-  const keys = Object.keys(node);
-  // markup fields first: a translated `descRaw` also fixes its plain `desc` (derived, never looked up separately)
-  const derived = new Set();
-  for (const key of keys) {
-    if (!RAW_KEYS.has(key)) continue;
-    const raw = node[key];
-    if (typeof raw !== 'string') continue;
-    const en = table.get(raw);
-    if (en === undefined) continue;
-    node[key] = en;
-    stats.replaced++;
-    const plainKey = PLAIN_RAW.find(([, r]) => r === key)[0];
+function walkObject(node, look, stats) {
+  // a plain `desc` that follows its markup `descRaw` is never looked up itself: it is derived from the raw's translation
+  const done = new Set();
+  for (const [plainKey, rawKey] of PLAIN_RAW) {
+    const raw = node[rawKey];
     const plain = node[plainKey];
-    if (typeof plain === 'string' && sameText(plainOfSource(raw), plain)) {
-      node[plainKey] = richTextPlain(en);
-      derived.add(plainKey);
-      stats.replaced++;
-    }
+    if (typeof raw !== 'string' || typeof plain !== 'string' || !followsRaw(raw, plain)) continue;
+    done.add(plainKey).add(rawKey);
+    const en = look(raw, rawKey);
+    if (en === undefined) continue;
+    node[rawKey] = en;
+    node[plainKey] = richTextPlain(en);
+    stats.replaced += 2;
   }
-  for (const key of keys) {
+  for (const key of Object.keys(node)) {
     const v = node[key];
-    if (v === null || typeof v !== 'object' && typeof v !== 'string') continue;
     if (typeof v === 'string') {
-      if (!TEXT_KEY_SET.has(key) || RAW_KEYS.has(key) || derived.has(key)) continue;
-      const en = table.get(v);
+      if (!TEXT_KEY_SET.has(key) || done.has(key)) continue;
+      const en = look(v, key);
       if (en !== undefined) { node[key] = en; stats.replaced++; }
     } else if (Array.isArray(v)) {
+      const display = TEXT_KEY_SET.has(key);
       for (let i = 0; i < v.length; i++) {
         const el = v[i];
         if (typeof el === 'string') {
-          if (!TEXT_KEY_SET.has(key)) continue;
-          const en = table.get(el);
+          if (!display) continue;
+          const en = look(el, key);
           if (en !== undefined) { v[i] = en; stats.replaced++; }
         } else if (el && typeof el === 'object') {
-          localizeNode(el, table, stats);
+          walkNode(el, look, stats);
         }
       }
-    } else {
-      localizeNode(v, table, stats);
+    } else if (v && typeof v === 'object') {
+      walkNode(v, look, stats);
     }
   }
 }
 
-function localizeNode(node, table, stats) {
+function walkNode(node, look, stats) {
   if (Array.isArray(node)) {
-    for (const el of node) if (el && typeof el === 'object') localizeNode(el, table, stats);
+    for (const el of node) if (el && typeof el === 'object') walkNode(el, look, stats);
   } else {
-    localizeObject(node, table, stats);
+    walkObject(node, look, stats);
   }
 }
 
@@ -153,8 +145,29 @@ function localizeNode(node, table, stats) {
  */
 export function applyLocale(json, table) {
   if (!table || !table.size || !json || typeof json !== 'object') return json;
-  localizeNode(json, table, { replaced: 0 });
+  walkNode(json, (source) => table.get(source), { replaced: 0 });
   return json;
+}
+
+const HAN = /[\u4e00-\u9fff\u3040-\u30ff]/;
+
+/**
+ * The source texts a table has to translate for a data file: every display value (TEXT_KEYS) that holds Chinese and is
+ * looked up by applyLocale — a plain `desc` that follows its `descRaw` is not one (it is derived). For coverage tooling.
+ * @param {any} json parsed data/<name>.json
+ * @returns {Map<string, Set<string>>} source text → the field names it occurs under
+ */
+export function collectSources(json) {
+  const out = new Map();
+  const look = (source, key) => {
+    if (!HAN.test(source)) return undefined;
+    let keys = out.get(source);
+    if (!keys) out.set(source, (keys = new Set()));
+    keys.add(key);
+    return undefined;
+  };
+  if (json && typeof json === 'object') walkNode(json, look, { replaced: 0 });
+  return out;
 }
 
 /** The language to show: `?lang=zh` (debugging aid: the original Chinese data) turns the overlay off. @returns {string|null} */

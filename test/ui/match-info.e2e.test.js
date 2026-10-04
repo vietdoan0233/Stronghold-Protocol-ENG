@@ -180,10 +180,10 @@ describe('GitHub issue #8 item 1: 本局信息 in the strategy draft (real serve
     assert.deepEqual(greyedOf(brief), want.greyed, 'the briefing greys D ∪ the mode\'s inactive bonds');
     assert.deepEqual(brief.banned, want.names, 'the briefing\'s banned operators, by tier');
     assert.equal(brief.count, String(want.names.length));
-    assert.match(brief.legend, /或本模式禁用/);
+    assert.match(brief.legend, /or disabled in this mode/);
     await shot(page, 'solo-briefing');
 
-    await press(p, '.brief__foot .btn--primary', '准备就绪');
+    await press(p, '.brief__foot .btn--primary', 'Ready');
     await waitSt(page, (s) => s.phase === 'BAND_DRAFT', 'band draft');
     await page.waitForSelector('[data-testid="match-info-open"]', { visible: true, timeout: 10000 });
     await shot(page, 'solo-draft');
@@ -195,14 +195,14 @@ describe('GitHub issue #8 item 1: 本局信息 in the strategy draft (real serve
     await openDialog(p);
     const dlg = await readInfo(page, '.minfo-dlg');
     assert.deepEqual(dlg, brief, 'the dialog shows exactly the briefing\'s bonds, badges, legend and banned operators');
-    assert.deepEqual(dlg.rows, ['核心盟约', '附加盟约']);
+    assert.deepEqual(dlg.rows, ['Core Alliances', 'Add-on Alliances']);
     assert.ok(dlg.bonds.filter((b) => b.off).every((b) => b.x), 'every greyed disc carries the ✕');
     const arcane = await centre(page, '.minfo-dlg .brief-bond[data-bond="arcaneShip"] .bond__disc');
     await page.mouse.move(arcane.x, arcane.y);
     await page.waitForSelector('.tooltip.is-shown', { visible: true, timeout: 3000 });
-    assert.equal(await page.$eval('.tooltip.is-shown', (el) => el.textContent), '奥术：本局禁用（该盟约不会激活）');
+    assert.equal(await page.$eval('.tooltip.is-shown', (el) => el.textContent), '奥术: disabled this match (this alliance will not activate)');
     const status = await page.$eval('[data-testid="match-info-status"]', (el) => el.textContent.trim());
-    assert.equal(status, '轮到你决策', 'solo: untimed — no seconds');
+    assert.equal(status, 'Your turn to decide', 'solo: untimed — no seconds');
     const box = await page.$eval('.minfo-dlg', (el) => { const r = el.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, left: r.left, right: r.right }; });
     assert.ok(box.top >= 0 && box.bottom <= 1080 && box.left >= 0 && box.right <= 1920, `inside the screen ${JSON.stringify(box)}`);
     const fits = await page.$eval('.minfo-dlg .modal__body', (el) => el.scrollHeight <= el.clientHeight + 1);
@@ -217,14 +217,14 @@ describe('GitHub issue #8 item 1: 本局信息 in the strategy draft (real serve
     await openDialog(p);
     const confirmPt = await centre(page, '.draft-detail__btns .btn--primary');
     const inBox = await page.$eval('.minfo-dlg', (el, pt) => { const r = el.getBoundingClientRect(); return pt.x >= r.left && pt.x <= r.right && pt.y >= r.top && pt.y <= r.bottom; }, confirmPt);
-    assert.equal(inBox, false, '确认选择 lies outside the dialog box (on its backdrop)');
+    assert.equal(inBox, false, 'Confirm Selection lies outside the dialog box (on its backdrop)');
     await page.mouse.click(confirmPt.x, confirmPt.y);
     await page.waitForFunction(() => !document.querySelector('.minfo-dlg'), { timeout: 3000 });
     await sleep(400);
     assert.equal((await st(page)).phase, 'BAND_DRAFT', 'the press on the backdrop confirmed nothing');
     // 关闭
     await openDialog(p);
-    await press(p, '[data-testid="match-info-close"]', '关闭');
+    await press(p, '[data-testid="match-info-close"]', 'Close');
     await page.waitForFunction(() => !document.querySelector('.minfo-dlg'), { timeout: 3000 });
     assert.equal(await selBand(page), sel0, 'the highlighted band is untouched');
     assert.deepEqual((await intents(page)).slice(req0), [], 'no intent while looking');
@@ -232,7 +232,7 @@ describe('GitHub issue #8 item 1: 本局信息 in the strategy draft (real serve
     // the draft still works: highlight another strategy, confirm
     await press(p, '.dband', '阿米娅');
     assert.equal(await selBand(page), '阿米娅');
-    await press(p, '.draft-detail__btns .btn--primary', '确认选择');
+    await press(p, '.draft-detail__btns .btn--primary', 'Confirm Selection');
     const s1 = await waitSt(page, (s) => s.phase !== 'BAND_DRAFT', 'the draft to end');
     assert.equal(s1.bandId, 'band_amiya');
 
@@ -279,11 +279,11 @@ describe('GitHub issue #8 item 1: 本局信息 in the strategy draft (real serve
     for (const [p, info] of briefs) {
       assert.deepEqual(greyedOf(info), want.greyed, `${p.name}: briefing greyed`);
       assert.deepEqual(info.banned, want.names, `${p.name}: briefing banned`);
-      assert.doesNotMatch(info.legend, /本模式禁用/);
+      assert.doesNotMatch(info.legend, /disabled in this mode/);
     }
     assert.deepEqual(briefs.get(b), briefs.get(a), 'both players see the same briefing');
     await shot(b.page, 'coop-phone-briefing-844');
-    for (const p of [a, b]) await press(p, '.brief__foot .btn--primary', '准备就绪');
+    for (const p of [a, b]) await press(p, '.brief__foot .btn--primary', 'Ready');
     for (const p of [a, b]) await waitSt(p.page, (s) => s.phase === 'BAND_DRAFT' && !!s.turn, `${p.name}: band draft`);
 
     const turn = (await st(a.page)).turn;
@@ -298,7 +298,7 @@ describe('GitHub issue #8 item 1: 本局信息 in the strategy draft (real serve
     await openDialog(waiter);
     assert.deepEqual(await readInfo(waiter.page, '.minfo-dlg'), briefs.get(waiter), `${waiter.name}: the dialog = the briefing`);
     const wStatus = await waiter.page.$eval('[data-testid="match-info-status"]', (el) => el.textContent.trim());
-    assert.match(wStatus, new RegExp(`^${picker.name} 决策中\\s*\\d+s$`), `whose turn and its seconds: ${wStatus}`);
+    assert.match(wStatus, new RegExp(`^${picker.name} is deciding\\s*\\d+s$`), `whose turn and its seconds: ${wStatus}`);
     await shot(waiter.page, waiter.phone ? 'coop-phone-dialog-waiting-844' : 'coop-dialog-waiting');
 
     // the picker: its own dialog says 轮到你决策 with the running clock; Esc; then it confirms with the dialog closed
@@ -308,13 +308,13 @@ describe('GitHub issue #8 item 1: 本局信息 in the strategy draft (real serve
     assert.deepEqual(await readInfo(picker.page, '.minfo-dlg'), briefs.get(picker), `${picker.name}: the dialog = the briefing`);
     const secsOf = async (p) => Number((await p.page.$eval('[data-testid="match-info-status"]', (el) => el.textContent)).match(/(\d+)s/)?.[1]);
     const s1 = await secsOf(picker);
-    assert.match(await picker.page.$eval('[data-testid="match-info-status"]', (el) => el.textContent.trim()), /^轮到你决策\s*\d+s$/);
+    assert.match(await picker.page.$eval('[data-testid="match-info-status"]', (el) => el.textContent.trim()), /^Your turn to decide\s*\d+s$/);
     await sleep(2200);
     const s2 = await secsOf(picker);
     assert.ok(s1 > 0 && s2 < s1, `the countdown keeps running in the dialog (${s1} → ${s2})`);
     await shot(picker.page, picker.phone ? 'coop-phone-dialog-picker-844' : 'coop-dialog-picker');
     if (picker.phone) {
-      await press(picker, '[data-testid="match-info-close"]', '关闭');
+      await press(picker, '[data-testid="match-info-close"]', 'Close');
     } else {
       await picker.page.keyboard.press('Escape');
     }
@@ -323,7 +323,7 @@ describe('GitHub issue #8 item 1: 本局信息 in the strategy draft (real serve
     assert.deepEqual((await intents(picker.page)).slice(reqP).filter((t) => t !== 'g.bandFocus'), [], 'nothing but the draft\'s own focus report');
     assert.equal(await dialogOpen(waiter.page), true, 'the waiting player is still looking');
     await press(picker, '.dband', '阿米娅');
-    await press(picker, '.draft-detail__btns .btn--primary', '确认选择');
+    await press(picker, '.draft-detail__btns .btn--primary', 'Confirm Selection');
     await waitSt(picker.page, (s) => !!s.bandId, `${picker.name}: picked`);
 
     // the turn moves on: the waiting player's dialog closes by itself, its draft is in front of it
@@ -356,8 +356,8 @@ describe('GitHub issue #8 item 1: 本局信息 in the strategy draft (real serve
       assert.ok(lay.scrolls && lay.overflow === 'auto', `${w}×${h}: the body scrolls`);
       assert.deepEqual(await readInfo(ph.page, '.minfo-dlg'), briefs.get(ph), `${w}×${h}: the dialog = the briefing`);
       const phStatus = await ph.page.$eval('[data-testid="match-info-status"]', (el) => el.textContent.trim());
-      if (ph === last) assert.match(phStatus, /^轮到你决策\s*\d+s$/);
-      else assert.equal(phStatus, '已选择「阿米娅」，等待其他博士');
+      if (ph === last) assert.match(phStatus, /^Your turn to decide\s*\d+s$/);
+      else assert.equal(phStatus, 'Selected “阿米娅”, waiting for other Doctors');
       await shot(ph.page, `coop-phone-dialog-${w}`);
       // a finger swipe up the body brings the banned operators into view
       const bodyPt = await centre(ph.page, '.minfo-dlg .modal__body');
@@ -392,7 +392,7 @@ describe('GitHub issue #8 item 1: 本局信息 in the strategy draft (real serve
     // the end of the draft takes the open dialog away with the screen
     await openDialog(done);
     await press(last, '.dband', '华法琳');
-    await press(last, '.draft-detail__btns .btn--primary', '确认选择');
+    await press(last, '.draft-detail__btns .btn--primary', 'Confirm Selection');
     for (const p of [a, b]) {
       const s = await waitSt(p.page, (x) => x.phase !== 'BAND_DRAFT', `${p.name}: the draft to end`);
       assert.ok(s.bandId, `${p.name} has a strategy`);

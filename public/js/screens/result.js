@@ -24,9 +24,9 @@ const cx = (...p) => p.flat().filter(Boolean).join(' ');
 // The first seven present are shown (+ remaining LP = a 4×2 grid); the title (评语) stats come first.
 // `gold` is the funds a player SPENT (server/match/PlayerState.js spend(); the 挥金如土 title stat).
 const STAT_ROWS = [
-  ['dmgDealt', '造成伤害'], ['kills', '击倒敌人'], ['bossDamage', '领袖伤害'], ['activatedLayers', '盟约层数'],
-  ['merges', '晋升次数'], ['itemsEquipped', '配发装备'], ['gold', '消耗资金'], ['perfectRounds', '完美作战'],
-  ['refreshes', '刷新次数'], ['leaks', '未击倒'], ['lpLost', '损失生命'],
+  ['dmgDealt', 'Damage Dealt'], ['kills', 'Enemies Defeated'], ['bossDamage', 'Leader Damage'], ['activatedLayers', 'Alliance Layers'],
+  ['merges', 'Promotions'], ['itemsEquipped', 'Gear Issued'], ['gold', 'Funds Spent'], ['perfectRounds', 'Perfect Combat'],
+  ['refreshes', 'Refreshes'], ['leaks', 'Enemies Leaked'], ['lpLost', 'LP Lost'],
 ];
 
 function PlayerCard({ p, myId, titles, best, solo = false }) {
@@ -41,28 +41,28 @@ function PlayerCard({ p, myId, titles, best, solo = false }) {
     <header class="rcard__head">
       <${PlayerAvatar} player=${p} self=${p.playerId === myId} />
       <div class="rcard__who">
-        <b class="rcard__name">${p.name}${p.isBot ? html`<span class="rcard__ai">AI</span>` : null}${p.playerId === myId ? html`<span class="rcard__you">你</span>` : null}</b>
+        <b class="rcard__name">${p.name}${p.isBot ? html`<span class="rcard__ai">AI</span>` : null}${p.playerId === myId ? html`<span class="rcard__you">You</span>` : null}</b>
         <span class="rcard__band">${band ? html`<${BandIcon} bandId=${band.bandId} size="xs" />${band.name}` : '—'}</span>
       </div>
       <div class="rcard__mid">
         <div class="rcard__lineup">
           ${lineup.length ? lineup.map((u, i) => html`<${UnitThumb} key=${i} kind=${u.kind === 'token' ? 'token' : 'chess'} id=${u.id} golden=${!!u.golden} tier=${u.tier} size="sm" />`)
-            : html`<span class="rcard__noinfo">${p.alive === false ? '阵容已撤离' : 'NO INFO'}</span>`}
+            : html`<span class="rcard__noinfo">${p.alive === false ? 'Lineup withdrawn' : 'NO INFO'}</span>`}
         </div>
         ${bonds.length ? html`<div class="rcard__bonds">${bonds.map((b) => html`<span key=${b.bondId} class=${cx('rbond', b.active && 'is-on')} title=${gd.bond(b.bondId)?.name || b.bondId}>
           <${BondGlyph} bondId=${b.bondId} /><b class="num">${b.layers ?? 0}</b></span>`)}</div>` : null}
       </div>
       <div class="rcard__round"><${MicroLabel}>ROUNDS</${MicroLabel}><b class="num">${p.roundsPassed}</b>
-        ${p.trophies > 0 || p.reward > 0 ? html`<span class="rcard__gain">${p.trophies > 0 ? html`<span title="获得奖杯"><${Icon} name="crown" /><b class="num">+${p.trophies}</b></span>` : null}${p.reward > 0 ? html`<span title="卫戍认证"><${Icon} name="shield" /><b class="num">+${p.reward}</b></span>` : null}</span>` : null}
+        ${p.trophies > 0 || p.reward > 0 ? html`<span class="rcard__gain">${p.trophies > 0 ? html`<span title="Trophies earned"><${Icon} name="crown" /><b class="num">+${p.trophies}</b></span>` : null}${p.reward > 0 ? html`<span title="Stronghold Credits earned"><${Icon} name="shield" /><b class="num">+${p.reward}</b></span>` : null}</span>` : null}
       </div>
       ${titleName ? html`<div class="rcard__title" title=${titleRec?.text || p.title?.text || ''}>
         <${Img} src=${titleIconUrl(gd.m, titleRec?.picId || p.title?.picId || String(p.title.id || '').replace('comment_', 'comment_icon_'))} class="rcard__ticon" fallback=${html`<${Icon} name="crown" />`} />
-        <span><${MicroLabel} tone="gold">评语</${MicroLabel}><b>${titleName}</b></span>
+        <span><${MicroLabel} tone="gold">Title</${MicroLabel}><b>${titleName}</b></span>
       </div>` : html`<span class="rcard__title rcard__title--none" aria-hidden="true"></span>`}
     </header>
     <div class="rcard__stats">
       ${stats.map(([k, label]) => html`<div key=${k} class=${cx('rstat', best[k] === p.playerId && 'is-best')}><span>${label}</span><b class="num">${fmtNum(p.stats[k])}</b></div>`)}
-      ${Number.isFinite(p.lp) ? html`<div class="rstat" title=${p.lpShared && !solo ? '最终攻势起全队共享目标生命值' : ''}><span>${p.lpShared && !solo ? '同盟剩余生命' : '剩余生命'}</span><${LpTower} value=${p.lp} size="sm" /></div>` : null}
+      ${Number.isFinite(p.lp) ? html`<div class="rstat" title=${p.lpShared && !solo ? 'From the Final Assault on, the whole team shares one Target LP pool' : ''}><span>${p.lpShared && !solo ? 'Alliance LP Remaining' : 'LP Remaining'}</span><${LpTower} value=${p.lp} size="sm" /></div>` : null}
     </div>
   </article>`;
 }
@@ -97,30 +97,30 @@ export function ResultScreen() {
       <section class="result__hero">
         <div class="result__logo"><${Sprite} k="entry/season_logo_settle" class="result__logoimg" fallback=${html`<${MicroLabel} tone="mint">STRONGHOLD PROTOCOL</${MicroLabel}>`} /></div>
         ${r.difficulty ? html`<${DifficultyTag} difficulty=${r.difficulty} size="lg" />` : null}
-        <h1 class="result__headline">${r.victory ? '模拟完成' : '模拟失败'}</h1>
-        <p class="result__sub">${r.victory ? '成功卫戍 · 敌方领袖已被击败' : '防线已被突破'}</p>
+        <h1 class="result__headline">${r.victory ? 'Simulation Complete' : 'Simulation Failed'}</h1>
+        <p class="result__sub">${r.victory ? 'Garrison Held · Enemy Leader defeated' : 'The defense line has been breached'}</p>
         <div class="result__rounds">
-          <span class="result__rlabel">通过回合</span>
+          <span class="result__rlabel">Rounds Cleared</span>
           <b class="result__rnum num">${r.roundsPassed}</b>
           ${r.roundsPassed <= r.lastRound ? html`<span class="result__rof num">/${r.lastRound}</span>` : null}
         </div>
         <div class="result__medals">
           ${boss ? html`<div class=${cx('medal', r.victory && 'is-done')} title=${boss.name}>
             <${Img} src=${enemyIconUrl(gd.m, boss.enemyKey)} /><span class="medal__check">${r.victory ? html`<${Icon} name="check" />` : html`<${Icon} name="close" />`}</span>
-            <span class="medal__label">敌方领袖</span></div>` : null}
+            <span class="medal__label">Enemy Leader</span></div>` : null}
           ${hidden ? html`<div class=${cx('medal', 'medal--hidden', r.hiddenCleared && 'is-done')} title=${hidden.name}>
             <${Img} src=${enemyIconUrl(gd.m, hidden.enemyKey)} /><span class="medal__check">${r.hiddenCleared ? html`<${Icon} name="check" />` : html`<${Icon} name="close" />`}</span>
-            <span class="medal__label">隐秘核心</span></div>` : null}
+            <span class="medal__label">Hidden Core</span></div>` : null}
         </div>
-        ${mins ? html`<p class="result__time t-lo">本局耗时 <b class="num">${mins}</b> 分钟</p>` : null}
+        ${mins ? html`<p class="result__time t-lo">Match duration <b class="num">${mins}</b> min</p>` : null}
         <footer class="result__foot">
-          <${Button} variant="primary" size="xl" icon="chevronLeft" onClick=${back}>${hasRoom ? '返回同盟' : '返回大厅'}<//>
+          <${Button} variant="primary" size="xl" icon="chevronLeft" onClick=${back}>${hasRoom ? 'Back to Alliance' : 'Back to Lobby'}<//>
         </footer>
       </section>
       <section class="result__players">
-        <h2 class="brief-h"><span>同盟成员</span><${MicroLabel}>ALLIANCE REPORT</${MicroLabel}></h2>
+        <h2 class="brief-h"><span>Alliance Members</span><${MicroLabel}>ALLIANCE REPORT</${MicroLabel}></h2>
         ${r.players.length ? r.players.map((p) => html`<${PlayerCard} key=${p.playerId} p=${p} myId=${myId} titles=${titles} best=${best} solo=${r.players.length < 2} />`)
-          : html`<p class="t-dim">暂无结算数据</p>`}
+          : html`<p class="t-dim">No settlement data yet</p>`}
       </section>
     </main>
   </div>`;

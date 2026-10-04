@@ -7,17 +7,17 @@ import { Img, RichText, GIcon } from './gameComponents.js';
 import { effectIconUrl } from './assetUrls.js';
 import { data } from '../data.js';
 
-const KIND = { band: '策略', choice: '机变', team: '团队增益', item: '道具', garrison: '特质' };
+const KIND = { band: 'Strategy', choice: 'Draft', team: 'Team Buff', item: 'Item', garrison: 'Garrison Trait' };
 
 /** @param {{ effects: any[] }} props */
 export function EffectsList({ effects }) {
   const list = (Array.isArray(effects) ? effects : []).filter((e) => e && (e.name || e.desc));
   if (!list.length) return null;
   const m = data.get('assets');
-  return html`<div class="effects" aria-label="生效中的效果">
+  return html`<div class="effects" aria-label="Active effects">
     <${MicroLabel}>EFFECTS</${MicroLabel}>
     ${list.slice(0, 10).map((e, i) => html`<${Tooltip} key=${e.id ?? i} placement="bottom" text=${html`<div class="efftip">
-        <b>${e.name || '效果'}</b><span class="efftip__kind">${KIND[e.iconKind] || ''}${e.counterText ? ` · ${e.counterText}` : e.counter != null ? ` · ${e.counter}` : ''}</span>
+        <b>${e.name || 'Effect'}</b><span class="efftip__kind">${KIND[e.iconKind] || ''}${e.counterText ? ` · ${e.counterText}` : e.counter != null ? ` · ${e.counter}` : ''}</span>
         <${RichText} as="p" text=${e.desc || ''} />
       </div>`}>
       <span class=${`effect effect--${e.iconKind || 'x'}`}>
