@@ -8,9 +8,8 @@ Written 2026-10-04 at the end of a long autonomous session. Read this first; eve
   `master`; do not open a pull request unless the user asks.** (The session harness also named a branch
   `claude/keen-mayer-0vo386`; the user's standing instruction was to develop and push *only* to `claude/sweet-archimedes-aqioeq`,
   and that is what was done.)
-- **Tests:** `node --test` with the CI environment (`SP_E2E=0 SP_REAL_E2E=0 RENDER_E2E=0 NO_COLOR=1`) was green at `8b2d3c7`:
-  **3,373 tests, 3,354 pass, 0 fail, 19 skipped** (the opt-in browser suites), 344 s. `da6725e` only adds one test
-  (`test/display.test.js`, the wire check) and doc edits. The opt-in browser suites: see §4 item 6.
+- **Tests:** `node --test` with the CI environment (`SP_E2E=0 SP_REAL_E2E=0 RENDER_E2E=0 NO_COLOR=1`) was green at `4dadea5`, the last code
+  commit: **3,374 tests, 3,355 pass, 0 fail, 19 skipped** (the opt-in browser suites), 341 s. The opt-in browser suites: see §4 item 6.
 - **Translation coverage is 100 %:** `node tools/locale.mjs coverage` → `TOTAL missing 0`. 4,458 distinct texts in 14 overlay tables
   (chess 1791, enemies 787, effects 612, choices 312, garrisons 234, items 226, bands 134, tokens 81, bonds 69, config 72,
   bosses 47, emotes 40, stages 39, factions 14). `test/locale.test.js` ratchets it: a data rebuild that adds or rewords Chinese
