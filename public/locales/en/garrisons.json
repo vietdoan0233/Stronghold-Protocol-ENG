@@ -1,0 +1,10 @@
+{
+  "locale": "en",
+  "strings": {
+    "作战能力": "Combat Ability",
+    "整备能力": "Prep Ability",
+    "持续叠加": "Continuous Stacking",
+    "单次叠加": "One-Time Stacking",
+    "特异化": "Special"
+  }
+}

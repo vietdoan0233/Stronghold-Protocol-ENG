@@ -1,0 +1,20 @@
+{
+  "locale": "en",
+  "strings": {
+    "卫戍协议：盟约": "Stronghold Protocol: Alliance",
+    "入门协议": "Entry Protocol",
+    "标准模拟": "Standard Simulation",
+    "险境模拟": "Hazard Simulation",
+    "绝境模拟": "Peril Simulation",
+    "终极模拟": "Ultimate Simulation",
+    "确认本局信息": "Confirm Match Info",
+    "选择策略": "Choose Strategy",
+    "协议启动": "Protocol Start",
+    "卫戍之星": "Star of the Garrison",
+    "不朽盟约": "Immortal Alliance",
+    "坚若磐石": "Rock Solid",
+    "精英云集": "Elite Gathering",
+    "万事俱备": "Fully Equipped",
+    "挥金如土": "Spendthrift"
+  }
+}

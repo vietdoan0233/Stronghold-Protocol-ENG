@@ -1,0 +1,12 @@
+{
+  "locale": "en",
+  "strings": {
+    "特训敌人·特异": "Special Training · Exceptional",
+    "特训敌人·飞行": "Special Training · Flying",
+    "特训敌人·频次": "Special Training · Hit Count",
+    "特训敌人·元素": "Special Training · Elemental",
+    "特训敌人·持续": "Special Training · Damage over Time",
+    "特训敌人·隐匿": "Special Training · Invisible",
+    "特训敌人·折射": "Special Training · Refraction"
+  }
+}

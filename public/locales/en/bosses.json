@@ -1,6 +1,9 @@
 {
   "locale": "en",
   "strings": {
+    "假想敌：胄": "OpFor: Armor",
+    "假想敌：铳": "OpFor: Gun",
+    "假想敌：管": "OpFor: Pipe",
     "盐风主教昆图斯": "Sal Viento Bishop Quintus",
     "同时攻击防御最高的两个单位": "Attacks two units with the highest DEF simultaneously",
     "【大潮】对所有我方单位造成法术和神经损伤": "[Great Tide] Deals Arts damage and Nervous Impairment to all allied units",
@@ -9,6 +12,8 @@
     "【物种爆发】战斗经过较长时间后扣除所有目标生命": "[Species Outbreak] Drains all Life Points after a long time has passed in the battle",
     "卢西恩，“猩红血钻”": "Lucian, 'Blood Diamond'",
     "未被阻挡时有几率闪避物理与法术攻击，被阻挡时可以快速移动至其身后并在原地留下一个<不祥幻影>": "Has a chance to dodge Physical and Arts attacks when not blocked. When blocked, swiftly moves behind the target and leaves an <Ominous Apparition> at the original location",
-    "会使用技能对周围造成物理伤害，攻击和技能无视目标一定防御力且额外造成神经损伤": "Can use skills to deal Physical damage to the surrounding area; attacks and skills ignore a certain amount of DEF and inflict Nervous Impairment"
+    "会使用技能对周围造成物理伤害，攻击和技能无视目标一定防御力且额外造成神经损伤": "Can use skills to deal Physical damage to the surrounding area; attacks and skills ignore a certain amount of DEF and inflict Nervous Impairment",
+    "阿利斯泰尔，帝国余晖": "Alistair, Final Flame of the Empire",
+    "“萨米的意志”": "'Samivilinn,' the Resolution of the Very North"
   }
 }
