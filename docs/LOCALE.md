@@ -7,7 +7,8 @@ translation is built so that it can never change how the game plays.
 |---|---|
 | UI chrome — buttons, labels, toasts, tickers, dialogs (`public/js/**`, `public/css/**`) | in place: the string literals are English |
 | Game data — operator / enemy / item / alliance / strategy names and descriptions (`data/*.json`) | a **read-time overlay**: one table per data file in `public/locales/en/`, applied by the browser when the file is loaded; `data/*.json` itself is never edited |
-| Server messages — errors, toasts, tickers (`server/**`, `shared/constants.js`) | in place: the strings are English |
+| Server messages — errors, toasts, tickers (`server/**`, `shared/constants.js`) | in place: fixed messages are English; text the server composes from the data goes through `L()` (see *Server texts*) |
+| Terminal output of the launcher and setup tools (`scripts/`, `tools/setup.mjs`, `tools/doctor.mjs`) | in place: English |
 
 Terms are fixed in [GLOSSARY.md](GLOSSARY.md); what was changed and why is in [../CHANGES.md](../CHANGES.md).
 
@@ -57,6 +58,26 @@ highlight tag) is listed under `reviewed` with the reason. A number of the sourc
 never accepted automatically — the official English snapshot can be older than the Chinese data ("-25%" vs the current
 "-15%").
 
+## Server texts
+
+The server (and the browser's own combat simulation) keeps reading the pristine Chinese `data/*.json`, so a text the
+server *composes* from that data would reach the English client in Chinese. Two rules:
+
+- **Fixed messages** — error texts (`shared/constants.js` `ERR_TEXT`), toasts, ticker lines, the HTTP error pages, the AI
+  teammates' names (`AI·Warfarin` …), audit diagnostics — are written in English in place.
+- **Text taken from the data** — a draft card's name and rule text, the effects list, a reward offer's label, a result
+  title, the ticker templates (`config.broadcasts`), an operator's name inside a ticker or toast — goes through `L()` from
+  `server/display.js`. It looks the exact Chinese text up in the same tables the browser applies and falls back to the
+  Chinese. It is applied only at the wire boundary (`cardView`, `publicView().sp`, `effectsView()`, `buildResult`,
+  `tickerFor`, the toasts); a player's callsign never goes through it. `SP_LOCALE=zh` turns it off.
+- A few texts exist only on the wire: a multi-round bounty card is rewritten by the server to the battles it lasts
+  (`bountyText`: "接下来两场作战"). These **derived texts** are table keys like any other
+  (`derivedSources()` in `tools/locale.mjs`, listed by `coverage`, accepted by `check`); `test/display.test.js` pins that
+  every one has its English.
+
+`test/display.test.js` also runs bot matches and asserts that no message the server sends to a client carries Chinese
+display text.
+
 ## Maintenance
 
 ```sh
@@ -73,4 +94,5 @@ It only adds missing keys. The mode-specific text (alliances, strategies, gear, 
 translated by hand and reviewed against the glossary and the official terms.
 
 After a data rebuild: `node tools/locale.mjs coverage --list`, `harvest --write` for whatever the official English now covers,
-translate the rest, `check`.
+translate the rest, `check`. `test/locale.test.js` keeps a list of the files that are translated in full (`COMPLETE`): a
+rebuild that adds or rewords Chinese display text in one of them fails until the table has it.

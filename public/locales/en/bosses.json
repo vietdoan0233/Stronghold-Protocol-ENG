@@ -3,6 +3,7 @@
   "strings": {
     "假想敌：胄": "OpFor: Armor",
     "假想敌：铳": "OpFor: Gun",
+    "无法被阻挡": "Cannot be blocked.",
     "假想敌：管": "OpFor: Pipe",
     "盐风主教昆图斯": "Sal Viento Bishop Quintus",
     "同时攻击防御最高的两个单位": "Attacks two units with the highest DEF simultaneously",

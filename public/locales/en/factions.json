@@ -2,17 +2,17 @@
   "locale": "en",
   "strings": {
     "特训敌人·特异": "Special Training · Exceptional",
-    "此类敌人拥有优秀的造成伤害和承受伤害能力": "These enemies excel at both dealing and taking damage",
+    "此类敌人拥有优秀的造成伤害和承受伤害能力": "These enemies excel at both dealing and withstanding damage",
     "特训敌人·飞行": "Special Training · Flying",
-    "此类敌人包含大量空中单位": "These enemies include many airborne units",
+    "此类敌人包含大量空中单位": "These enemies include a large number of aerial units",
     "特训敌人·频次": "Special Training · Hit Count",
-    "此类敌人需要一定攻击次数击破": "These enemies take a number of hits to break",
+    "此类敌人需要一定攻击次数击破": "These enemies require a certain number of hits to defeat",
     "特训敌人·元素": "Special Training · Elemental",
     "此类敌人拥有造成元素损伤的能力": "These enemies can inflict Elemental Injury",
     "特训敌人·持续": "Special Training · Damage over Time",
-    "此类敌人擅长造成持续性伤害": "These enemies specialize in damage over time",
+    "此类敌人擅长造成持续性伤害": "These enemies specialize in dealing damage over time",
     "特训敌人·隐匿": "Special Training · Invisible",
-    "此类敌人拥有隐匿": "These enemies have Invisible",
+    "此类敌人拥有隐匿": "These enemies are Invisible",
     "特训敌人·折射": "Special Training · Refraction",
     "此类敌人拥有折射": "These enemies have Refraction"
   }

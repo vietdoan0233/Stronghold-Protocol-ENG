@@ -464,7 +464,7 @@ describe('coverage and sync (tools/locale.mjs)', () => {
   });
   // The ratchet: a file listed here is translated in full. A data rebuild that adds or rewords Chinese display text fails
   // here until the table has it (node tools/locale.mjs coverage --list).
-  const COMPLETE = ['choices', 'config', 'emotes', 'factions'];
+  const COMPLETE = ['bonds', 'choices', 'config', 'emotes', 'factions', 'garrisons'];
   test('the files that are translated in full stay translated in full', () => {
     for (const r of coverage(COMPLETE)) assert.deepEqual(r.missing.map((m) => m.zh), [], `${r.file}: display text without English`);
   });

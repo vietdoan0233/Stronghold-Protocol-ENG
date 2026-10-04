@@ -116,6 +116,7 @@ Listens on **TCP 3000** by default. To change the port: pass `--port 3001` to th
 | `SP_COMBAT` | `client` | `client`: each player's browser simulates its own combat (very low server load); `server`: the server simulates and streams it |
 | `SP_VERIFY` | `off` | Server re-checks client-reported combat results: `off` / `sample` (about 1/8 spot-checked) / `all` (re-check everything, more CPU) |
 | `TRUST_PROXY` | `auto` | Whether to trust forwarding headers such as `X-Forwarded-For`: `auto` trusts only proxies from the local machine / private network; `1` always; `0` never |
+| `SP_LOCALE` | `en` | Language of the texts the server composes from the game data (draft cards, effects list, tickers…): `en`, or `zh` for the original Chinese. In the browser, `?lang=zh` in the URL shows the original Chinese game data (see [docs/LOCALE.md](docs/LOCALE.md)) |
 | `DEBUG` | empty | Set to any value to output verbose logs |
 | `SP_NO_BROWSER` | empty | Set to `1` to stop the launch script from opening the browser automatically |
 

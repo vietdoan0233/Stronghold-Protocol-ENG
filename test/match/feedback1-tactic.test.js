@@ -15,6 +15,7 @@ import { GameData } from '../../server/match/gamedata.js';
 import { generateDraft, cardView, tacticDraftCards } from '../../server/match/choices.js';
 import { botPickCard } from '../../server/match/bot.js';
 import { createRng } from '../../server/sim/rng.js';
+import { L } from '../../server/display.js';
 
 const OFFICIAL = JSON.parse(readFileSync(new URL('../fixtures/official-bounty-drafts.json', import.meta.url), 'utf8'));
 const SPEC = DATA.choices.tacticDraft;
@@ -110,7 +111,7 @@ test('战术决策 seeded (co-op 绝境 R11, seed 30): 补给 twice — two card
   const { idx: ib, ...vb } = cardView(b);
   assert.deepEqual([ia, ib], at);
   assert.deepEqual(va, vb, 'the same card face');
-  assert.deepEqual(va, { kind: 'tactic', id: 'allybuff_select_4', name: 'Supply', desc: byName('补给')[0].desc, tier: null, team: true, tacticKind: 'ally' });
+  assert.deepEqual(va, { kind: 'tactic', id: 'allybuff_select_4', name: 'Supply', desc: L(byName('补给')[0].desc), tier: null, team: true, tacticKind: 'ally' });
 });
 
 test('战术决策 solo 绝境 R11: three ally cards, a repeat sometimes [ASSUMED: solo extrapolated from co-op]', () => {

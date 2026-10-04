@@ -2785,7 +2785,7 @@ export class Match {
     }
     for (const u of best.values()) {
       const hit = steps.find((s) => (u.dmg || 0) >= s);
-      if (hit) this.tickerFor('CHAR_DAMAGE', [ps.name, L(u.name) || u.defId, String(hit)], { playerId: ps.playerId, param: String(hit) });
+      if (hit) this.tickerFor('CHAR_DAMAGE', [ps.name, L(u.name) || u.defId, Number(hit).toLocaleString('en-US')], { playerId: ps.playerId, param: String(hit) });
     }
   }
 
