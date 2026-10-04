@@ -1,0 +1,14 @@
+{
+  "locale": "en",
+  "strings": {
+    "盐风主教昆图斯": "Sal Viento Bishop Quintus",
+    "同时攻击防御最高的两个单位": "Attacks two units with the highest DEF simultaneously",
+    "【大潮】对所有我方单位造成法术和神经损伤": "[Great Tide] Deals Arts damage and Nervous Impairment to all allied units",
+    "【崩坍】对若干我方单位造成物理伤害": "[Collapse] Deals Physical damage to multiple allied units",
+    "【断裂生殖】召唤子代缠绕我方单位使其晕眩": "[Fragmentation] Summons its offspring to entwine themselves around allied units and Stun them",
+    "【物种爆发】战斗经过较长时间后扣除所有目标生命": "[Species Outbreak] Drains all Life Points after a long time has passed in the battle",
+    "卢西恩，“猩红血钻”": "Lucian, 'Blood Diamond'",
+    "未被阻挡时有几率闪避物理与法术攻击，被阻挡时可以快速移动至其身后并在原地留下一个<不祥幻影>": "Has a chance to dodge Physical and Arts attacks when not blocked. When blocked, swiftly moves behind the target and leaves an <Ominous Apparition> at the original location",
+    "会使用技能对周围造成物理伤害，攻击和技能无视目标一定防御力且额外造成神经损伤": "Can use skills to deal Physical damage to the surrounding area; attacks and skills ignore a certain amount of DEF and inflict Nervous Impairment"
+  }
+}

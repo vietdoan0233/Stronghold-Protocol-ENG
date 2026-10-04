@@ -1,0 +1,23 @@
+{
+  "locale": "en",
+  "strings": {
+    "涨潮控制": "Tide Controller",
+    "深水": "Deep Water",
+    "特制水上平台": "Custom Floating Platform",
+    "在水上建立可以部署<@ba.vup>任意</>单位的平台": "Constructs a platform on the water upon which <@ba.vup>any</> unit can be deployed",
+    "放置平台": "Deployment Platform",
+    "沙尘暴": "Sandstorm",
+    "土石结构": "Dirt Mound",
+    "加固状态：阻挡<@ba.vup>沙尘暴</>，不再受到<@ba.vup>沙尘暴</>的伤害但可以被<高能源石炸弹>直接摧毁。": "Fortified state: Blocks the <@ba.vup>Sandstorm</>, no longer receives damage from the <@ba.vup>Sandstorm</>, but can still be instantly destroyed by <High-Energy Originium Bomb>.",
+    "风沙掩体": "Sandstorm Protection",
+    "可以阻挡沙尘暴": "Can block Sandstorm",
+    "树丛": "Thicket",
+    "生长": "Growth",
+    "不会受到攻击，遮挡我方单位的视野": "Cannot be attacked, and blocks the vision of your units",
+    "源石流发生装置": "Originium Flow Generator",
+    "向前方3格吹出气流；与气流<@ba.vup>同向</>/<@ba.vdown>逆向</>部署的干员攻击<@ba.vup>提升</>/<@ba.vdown>降低</>；<@ba.vdown>同向</>/<@ba.vup>逆向</>移动的敌人移速<@ba.vdown>提升</>/<@ba.vup>降低</>": "Blows out an airflow towards the 3 frontal tiles; Operators deployed <@ba.vup>downstream</>/<@ba.vdown>upstream</> from the airflow have <@ba.vup>increased</>/<@ba.vdown>decreased</> ATK; Enemies moving <@ba.vdown>downstream</>/<@ba.vup>upstream</> from the airflow have <@ba.vdown>increased</>/<@ba.vup>decreased</> Movement Speed",
+    "气流": "Airflow",
+    "向前方3格吹出气流；与气流同向/逆向部署的干员攻击提升/降低；同向/逆向移动的敌人移速提升/降低": "Blows out an airflow towards the 3 frontal tiles; Operators deployed downstream/upstream from the airflow have increased/decreased ATK; Enemies moving downstream/upstream from the airflow have increased/decreased Movement Speed",
+    "沼泽控制": "Mire Control"
+  }
+}
