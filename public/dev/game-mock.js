@@ -33,7 +33,7 @@ const shuffle = (arr) => { const a = [...arr]; for (let i = a.length - 1; i > 0;
 const ME = 'p1';
 const PLAYERS = [
   { playerId: 'p1', seat: 0, name: '凯尔希', isBot: false, bandId: 'band_bldsk' },
-  { playerId: 'ai_2', seat: 1, name: 'AI·华法琳', isBot: true, bandId: 'band_sarkazb' },
+  { playerId: 'ai_2', seat: 1, name: 'AI·Warfarin', isBot: true, bandId: 'band_sarkazb' },
   { playerId: 'p3', seat: 2, name: 'Doctor·B', isBot: false, bandId: 'band_amiya' },
   { playerId: 'p4', seat: 3, name: '灰烬', isBot: false, bandId: 'band_amedic' },
 ];
@@ -182,9 +182,9 @@ function buildState() {
     shop: { level, maxLevel: 6, upgradePrice: 9, refreshPrice: 1, freeRefreshes: 0, frozen: VARIANTS.has('frozen'), slots, rewardOffer: null },
     hand, temp, board, deployCap: 8, deployCount: 0, bonds: [],
     effects: [
-      { id: 'aceffect_band_21', name: '重点监护', desc: data.lookup('bands', 'band_bldsk')?.descRaw || '', iconKind: 'band', iconId: 'band_bldsk' },
-      { id: 'allybuff_select_5', name: '补给', desc: '获得<@ba.vup>2</>次免费刷新机会，若存在其他队友则他们也获得', iconKind: 'team', iconId: 'icon_team_buff', counter: 2 },
-      { id: 'enemyeffect_3', name: '悬赏·飞行I', desc: '为自身<@ba.vup>下场作战</>添加1只悬赏敌人，将其击倒者获得<@ba.vup>1</>资金', iconKind: 'choice', iconId: 'icon_player_buff', counter: 1 },
+      { id: 'aceffect_band_21', name: data.lookup('bands', 'band_bldsk')?.effectName || 'Intensive Care', desc: data.lookup('bands', 'band_bldsk')?.descRaw || '', iconKind: 'band', iconId: 'band_bldsk' },
+      { id: 'allybuff_select_5', name: 'Supply', desc: 'Gain <@ba.vup>2</> free refreshes; <@ba.vup>your teammates</>, if any, gain the same', iconKind: 'team', iconId: 'icon_team_buff', counter: 2 },
+      { id: 'enemyeffect_3', name: 'Bounty · Flying I', desc: 'Adds 1 bounty enemy to your <@ba.vup>next battle</>; whoever defeats it gains <@ba.vup>1</> Fund', iconKind: 'choice', iconId: 'icon_player_buff', counter: 1 },
     ],
     nextEnemies,
     stats: { dmgDealt: 184230, kills: 96, leaks: 3, gold: 58, refreshes: 11, merges: 3 },
@@ -251,8 +251,8 @@ function mockLoadout(board, slots) {
     for (const r of recs) {
       if (Array.isArray(r.skills) && r.skills.length > 1) continue;
       const d = r.skill || {};
-      const alt = { ...d, index: (d.index ?? 0) + 1, skillId: `${d.skillId || 'sk'}_mockalt`, iconId: d.iconId || r.assets?.skillIcon || d.skillId, name: `${d.name || '技能'}·改`, isDefault: false,
-        desc: '（模拟）调配的第二技能：攻击力+60%，持续 20 秒', descRaw: '（模拟）调配的第二技能：攻击力<@ba.vup>+60%</>，持续 20 秒', spCost: 30, initSp: 10, duration: 20 };
+      const alt = { ...d, index: (d.index ?? 0) + 1, skillId: `${d.skillId || 'sk'}_mockalt`, iconId: d.iconId || r.assets?.skillIcon || d.skillId, name: `${d.name || 'Skill'} · Alt`, isDefault: false,
+        desc: '(Mock) Second loadout skill: ATK +60% for 20 seconds', descRaw: '(Mock) Second loadout skill: ATK <@ba.vup>+60%</> for 20 seconds', spCost: 30, initSp: 10, duration: 20 };
       r.skills = [{ ...d, isDefault: true }, alt];
     }
     const base = c.isGolden ? data.lookup('chess', c.baseId) || c : c;
@@ -320,9 +320,9 @@ function setPhase(phase, variant) {
       let cards;
       if (fam === 'supply') cards = shuffle(shopItems().filter((i) => i.tier >= 3)).slice(0, 6).map((i) => ({ itemId: i.id }));
       // the official 机密商店 of match 8 R11 (test/fixtures/official-bounty-drafts.json): the same item twice
-      else if (fam === 'shop') cards = ['变形同构体', '盟约之币', '商业包装方案', '变形同构体', '天马之盔', '双模机械臂'].map((n) => ({ itemId: shopItems().find((i) => i.name === n).id }));
+      else if (fam === 'shop') cards = [['变形同构体', 'Polymorphic Isomorph'], ['盟约之币', 'Alliance Coin'], ['商业包装方案', 'Commercial Packaging Plan'], ['变形同构体', 'Polymorphic Isomorph'], ['天马之盔', 'Pegasus Helm'], ['双模机械臂', 'Dual-Mode Robotic Arm']].map((n) => ({ itemId: shopItems().find((i) => n.includes(i.name)).id }));
       // the official 战术决策 of match 7 R11 (test/fixtures/official-bounty-drafts.json): the same card twice
-      else if (fam === 'tactic') cards = ['补给', '补给', '谢拉格驰援', '列装', '莫斯提马的盟誓', '升华'].map((n) => ({ effectId: ch.cards.tactic.find((t) => t.name === n).effectId }));
+      else if (fam === 'tactic') cards = [['补给', 'Supply'], ['补给', 'Supply'], ['谢拉格驰援', 'Kjerag Reinforcement'], ['列装', 'Outfitting'], ['莫斯提马的盟誓', "Mostima's Oath"], ['升华', 'Sublimation']].map((n) => ({ effectId: ch.cards.tactic.find((t) => n.includes(t.name)).effectId }));
       else cards = shuffle(ch.cards.bounty.filter((b) => b.draft !== false)).slice(0, 6).map((b) => ({ effectId: b.effectId }));
       if (solo) { cards = cards.slice(0, 3); pub.deadline = 0; }
       pub.sp = { family: fam, cards, order: solo ? ['p1'] : ['p4', 'p1', 'ai_2', 'p3'], turn: solo ? 'p1' : 'p1', picks: solo ? {} : { p4: 2 }, untimed: solo };
@@ -570,7 +570,7 @@ async function mockRequest(t, f = {}) {
       p.funds -= p.shop.upgradePrice; p.shop.level++; p.shop.upgradePrice = [5, 8, 11, 12, 13][p.shop.level - 1] ?? 0;
       const n = p.shop.level >= 4 ? 5 : 4;
       while (p.shop.slots.filter((s) => s.kind !== 'item').length < n) p.shop.slots.splice(p.shop.slots.length - 1, 0, makeSlot(p.shop.level));
-      toast(`调度中心等级提升至 ${p.shop.level}`, 'success');
+      toast(`Dispatch Center upgraded to Lv. ${p.shop.level}`, 'success');
       refreshPrivate(); return {};
     }
     case 'g.sell': {
@@ -644,7 +644,7 @@ async function mockRequest(t, f = {}) {
       }
       pushPublic(); return {};
     }
-    case 'g.art': { prepOnly(); const it = findPiece(f.itemUid); if (!it) fail('BAD_TARGET'); removeAt(it); toast('奇术已生效', 'success'); refreshPrivate(); return {}; }
+    case 'g.art': { prepOnly(); const it = findPiece(f.itemUid); if (!it) fail('BAD_TARGET'); removeAt(it); toast('Art activated', 'success'); refreshPrivate(); return {}; }
     case 'g.reward': {
       if (!p.shop.rewardOffer) fail('WRONG_PHASE');
       const s = p.shop.rewardOffer.slots[f.idx]; if (!s) fail('BAD_TARGET');
@@ -724,8 +724,8 @@ function applyUiVariants() {
     const el = document.querySelector('.ff-piece.is-golden') || document.querySelector('.ff-piece');
     el?.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: 10, clientY: 10 }));
   }, 600);
-  if (VARIANTS.has('ticker')) setTimeout(() => store.set((s) => ({ ticker: [...s.ticker, { id: Date.now(), text: '<@ba.vup>Doctor·B博士</>对敌方领袖造成的伤害超过20%!', at: Date.now() }] })), 900);
-  if (VARIANTS.has('toast')) setTimeout(() => toast('资金不足', 'error'), 500);
+  if (VARIANTS.has('ticker')) setTimeout(() => store.set((s) => ({ ticker: [...s.ticker, { id: Date.now(), text: '<@ba.vup>Doctor Doctor·B</> has dealt over 20% damage to the Enemy Leader!', at: Date.now() }] })), 900);
+  if (VARIANTS.has('toast')) setTimeout(() => toast('Not enough Funds', 'error'), 500);
 }
 
 // ---- switcher --------------------------------------------------------------------------------------------------------------
@@ -733,7 +733,7 @@ const SWITCH = [
   ['INFO_CHECK', PHASE.INFO_CHECK, ''], ['BAND_DRAFT', PHASE.BAND_DRAFT, ''], ['BAND_DRAFT solo', PHASE.BAND_DRAFT, 'solo'],
   ['BATTLE_CHECK', PHASE.BATTLE_CHECK, ''], ['PREP', PHASE.PREP, ''], ['PREP + reward', PHASE.PREP, 'reward'],
   ['PREP + temp', PHASE.PREP, 'temp'], ['PREP frozen', PHASE.PREP, 'frozen'], ['PREP dead', PHASE.PREP, 'dead'],
-  ['PREP boss (L)', PHASE.PREP, 'boss'], ['PREP boss (R)', PHASE.PREP, 'bossR'], ['PREP 标准 同构体 + 调和', PHASE.PREP, 'funny,morph,harmony'],
+  ['PREP boss (L)', PHASE.PREP, 'boss'], ['PREP boss (R)', PHASE.PREP, 'bossR'], ['PREP Standard · Isomorph + Harmony', PHASE.PREP, 'funny,morph,harmony'],
   ['SP bounty', PHASE.SP_DRAFT, 'bounty'], ['SP supply', PHASE.SP_DRAFT, 'supply'], ['SP shop', PHASE.SP_DRAFT, 'shop'], ['SP tactic', PHASE.SP_DRAFT, 'tactic'], ['SP solo', PHASE.SP_DRAFT, 'solo'],
   ['COMBAT', PHASE.COMBAT, ''], ['COMBAT done', PHASE.COMBAT, 'done'], ['UNITE', PHASE.UNITE, ''], ['UNITE leaker', PHASE.UNITE, 'leaker'], ['SETTLE', PHASE.SETTLE, ''],
   ['FINAL_ASSAULT', PHASE.FINAL_ASSAULT, ''], ['FA overtime soon', PHASE.FINAL_ASSAULT, 'overtime'], ['FA draining', PHASE.FINAL_ASSAULT, 'drain'],
@@ -745,8 +745,8 @@ function Switcher() {
   return html`<h4>PHASE</h4>${SWITCH.map(([label, ph, v]) => html`<button class=${cur === ph ? 'on' : ''} onClick=${() => { VARIANTS.clear(); setPhase(ph, v); renderBar(); }}>${label}</button>`)}
     <h4>EVENTS</h4>
     <button onClick=${() => { const now = Date.now(); store.set((s) => ({ emotes: [...s.emotes, { seq: now, playerId: pick(['p3', 'ai_2', 'p4']), id: pick(['autochess_battle_happy', 'slug_autochess_battle_thanks', 'autochess_battle_call', 'autochess_battle_fooldoctor_05', 'autochess_battle_foolamiya_03', 'autochess_battle_foolwisdel_01']), at: now }] })); }}>teammate emote</button>
-    <button onClick=${() => store.set((s) => ({ ticker: [...s.ticker, { id: Date.now(), text: `<@ba.vup>${pick(['Doctor·B', '灰烬'])}博士</>将调度中心等级提升为5级`, at: Date.now() }] }))}>ticker</button>
-    <button onClick=${() => toast('资金不足', 'error')}>error toast</button>
+    <button onClick=${() => store.set((s) => ({ ticker: [...s.ticker, { id: Date.now(), text: `<@ba.vup>Doctor ${pick(['Doctor·B', '灰烬'])}</> upgraded the Dispatch Center to Lv. 5`, at: Date.now() }] }))}>ticker</button>
+    <button onClick=${() => toast('Not enough Funds', 'error')}>error toast</button>
     <button onClick=${() => { if (S.priv) { S.priv.shop.rewardOffer = { tier: 5, slots: shuffle(visibleChess(5)).slice(0, 3).map((c) => ({ kind: 'chess', id: c.chessId, price: 0, sold: false })) }; refreshPrivate(); } }}>merge reward</button>
     <button onClick=${() => { S.priv.funds += 10; refreshPrivate(); }}>+10 funds</button>`;
 }

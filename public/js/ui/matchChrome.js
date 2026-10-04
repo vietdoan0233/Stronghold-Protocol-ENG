@@ -18,8 +18,8 @@ import { GuideButton } from './guide.js';
  * lobby straight away — no settlement screen follows, so the solo text must not promise one.
  */
 export const EXIT_TEXT = Object.freeze({
-  soloRest: '独立模拟的休整期没有时间限制，你可以随时继续。',
-  soloQuit: '放弃模拟将立即结束本局并返回大厅，本局进度不会保留，也不会进行结算。',
+  soloRest: 'The Rest Phase of a Solo Simulation has no time limit. You can continue at any time.',
+  soloQuit: 'Abandoning the simulation ends this match immediately and returns you to the lobby. Your progress will not be kept and no settlement will take place.',
 });
 
 /** Local "暂离 / AI 托管" flag (the server keeps no per-client autoplay view). */
@@ -71,16 +71,16 @@ export function ExitModal({ open, onClose, solo, onAway }) {
     onClose();
     if (ok) { awayStore.set({ away: true }); onAway?.(); }
   };
-  return html`<${Modal} open=${open} onClose=${onClose} tone="red" title="离开模拟" micro="LEAVE SIMULATION" width="6.8rem"
+  return html`<${Modal} open=${open} onClose=${onClose} tone="red" title="Leave Simulation" micro="LEAVE SIMULATION" width="min(9rem, 94vw)"
     actions=${html`
-      <${Button} variant="secondary" onClick=${onClose}>取消<//>
-      ${!solo ? html`<${Button} variant="ice" icon="robot" loading=${busy === 'away'} onClick=${away}>暂离（AI 托管）<//>` : null}
-      <${Button} variant="danger" icon="exit" loading=${busy === 'quit'} onClick=${quit}>放弃模拟<//>`}>
+      <${Button} variant="secondary" onClick=${onClose}>Cancel<//>
+      ${!solo ? html`<${Button} variant="ice" icon="robot" loading=${busy === 'away'} onClick=${away}>Step Out (AI Takeover)<//>` : null}
+      <${Button} variant="danger" icon="exit" loading=${busy === 'quit'} onClick=${quit}>Abandon Simulation<//>`}>
     <div class="exitm">
       ${solo
         ? html`<p>${EXIT_TEXT.soloRest}</p><p class="t-lo">${EXIT_TEXT.soloQuit}</p>`
-        : html`<p><b class="t-ice">暂离</b>：由 AI 托管你的席位（自动部署、准备与选择），随时可以返回。</p>
-               <p><b class="t-red">放弃模拟</b>：离开后无法返回本局，你的干员将回到共享卡池。</p>`}
+        : html`<p><b class="t-ice">Step Out</b>: an AI takes over your seat (it deploys, readies up and makes selections for you), and you can return at any time.</p>
+               <p><b class="t-red">Abandon Simulation</b>: you can't return to this match, and your operators go back to the shared pool.</p>`}
     </div>
   <//>`;
 }
@@ -88,13 +88,13 @@ export function ExitModal({ open, onClose, solo, onAway }) {
 /** Full-screen "AI 托管中" overlay with 返回模拟. */
 export function AwayOverlay({ onBack = () => {} }) {
   const [busy, setBusy] = useState(false);
-  return html`<div class="awayov" role="dialog" aria-label="AI 托管中">
+  return html`<div class="awayov" role="dialog" aria-label="AI Takeover Active">
     <div class="awayov__box brackets">
       <${GIcon} name="robot" class="awayov__icon" />
-      <${MicroLabel} tone="mint">AUTOPILOT // AI 托管</${MicroLabel}>
-      <h2>AI 托管中</h2>
-      <p class="t-lo">AI 正在代为操作你的席位</p>
-      <${Button} variant="primary" size="lg" icon="play" loading=${busy} onClick=${async () => { setBusy(true); const ok = await actions.autoplay(false); setBusy(false); if (ok) { awayStore.set({ away: false }); onBack(); } }}>返回模拟<//>
+      <${MicroLabel} tone="mint">AUTOPILOT</${MicroLabel}>
+      <h2>AI Takeover Active</h2>
+      <p class="t-lo">The AI is playing for you</p>
+      <${Button} variant="primary" size="lg" icon="play" loading=${busy} onClick=${async () => { setBusy(true); const ok = await actions.autoplay(false); setBusy(false); if (ok) { awayStore.set({ away: false }); onBack(); } }}>Return to Simulation<//>
     </div>
   </div>`;
 }
@@ -107,7 +107,7 @@ export function StepHeader({ step, of, title, micro, pub, total, onExit }) {
   const conn = useStore((s) => s.connection, shallowEqual);
   return html`<header class="stephead">
     <div class="stephead__left">
-      <${Button} variant="danger" size="lg" square=${true} icon="exit" onClick=${onExit} aria-label="离开" title="离开" />
+      <${Button} variant="danger" size="lg" square=${true} icon="exit" onClick=${onExit} aria-label="Leave" title="Leave" />
       <div class="stephead__meta">
         <${PingPill} ms=${conn.ping} online=${conn.status === 'online'} />
         ${pub?.difficulty ? html`<${DifficultyTag} difficulty=${pub.difficulty} />` : null}

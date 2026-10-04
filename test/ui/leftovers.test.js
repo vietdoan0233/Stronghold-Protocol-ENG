@@ -171,9 +171,9 @@ describe('2. boss-round countdown and the overtime (DOT) warning', () => {
 describe('3. server session reset', () => {
   const base = { me: { playerId: 'p_old' }, room: null, match: emptyMatch() };
   test('a new playerId while a match / room was on screen says why the screen went back to the lobby', () => {
-    assert.equal(sessionResetNotice({ ...base, match: { ...emptyMatch(), public: { phase: 'PREP' } } }, 'p_new'), '服务器会话已重置，上一局模拟已结束');
-    assert.equal(sessionResetNotice({ ...base, room: { code: 'ABCD', inMatch: true } }, 'p_new'), '服务器会话已重置，上一局模拟已结束');
-    assert.equal(sessionResetNotice({ ...base, room: { code: 'ABCD', inMatch: false } }, 'p_new'), '服务器会话已重置，已返回大厅');
+    assert.equal(sessionResetNotice({ ...base, match: { ...emptyMatch(), public: { phase: 'PREP' } } }, 'p_new'), 'The server session was reset; the previous simulation has ended');
+    assert.equal(sessionResetNotice({ ...base, room: { code: 'ABCD', inMatch: true } }, 'p_new'), 'The server session was reset; the previous simulation has ended');
+    assert.equal(sessionResetNotice({ ...base, room: { code: 'ABCD', inMatch: false } }, 'p_new'), 'The server session was reset; you are back in the lobby');
   });
   test('nothing to say: first welcome, resumed session, lobby / title only', () => {
     assert.equal(sessionResetNotice({ ...base, me: { playerId: null }, room: { code: 'X' } }, 'p_new'), null);

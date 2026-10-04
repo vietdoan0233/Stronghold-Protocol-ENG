@@ -15,7 +15,7 @@ import { factionIconUrl } from './assetUrls.js';
 import { data } from '../data.js';
 
 const cx = (...p) => p.flat().filter(Boolean).join(' ');
-const TAG = { boss: '领袖', bounty: '悬赏', escort: '护卫' };
+const TAG = { boss: 'Leader', bounty: 'Bounty', escort: 'Escort' };
 
 function FactionChips({ types }) {
   const f = data.get('factions')?.types || {};
@@ -32,7 +32,7 @@ function EnemiesTab({ pub, priv, onEnemy }) {
   const boss = pub?.bossId ? data.lookup('bosses', pub.bossId) : null;
   return html`<div class="edrawer__body">
     <div class="edrawer__sum">
-      <span>第 <b class="num">${pub?.round ?? '-'}</b> 回合 · 即将迎击 <b class="num t-orange">${total}</b> 名敌人</span>
+      <span>Round <b class="num">${pub?.round ?? '-'}</b> · <b class="num t-orange">${total}</b> ${total === 1 ? 'enemy' : 'enemies'} incoming</span>
       ${types.length ? html`<${FactionChips} types=${types} />` : null}
     </div>
     ${rows.length ? html`<div class="elist">
@@ -43,18 +43,18 @@ function EnemiesTab({ pub, priv, onEnemy }) {
           <b class="erow__name">${r.name}</b>
           <span class="erow__tags">
             ${r.tag ? html`<span class=${`etag etag--${r.tag}`}>${TAG[r.tag] || r.tag}</span>` : null}
-            ${r.rank === 'ELITE' ? html`<span class="etag etag--elite">精英</span>` : null}
-            ${r.fly ? html`<span class="etag etag--fly">空中</span>` : null}
-            ${r.acTypes.map((t) => html`<span key=${t} class="etag etag--faction">${(f[t]?.name || t).replace('特训敌人·', '')}</span>`)}
+            ${r.rank === 'ELITE' ? html`<span class="etag etag--elite">Elite</span>` : null}
+            ${r.fly ? html`<span class="etag etag--fly">Flying</span>` : null}
+            ${r.acTypes.map((t) => html`<span key=${t} class="etag etag--faction">${String(f[t]?.name || t).split('·').pop().trim()}</span>`)}
           </span>
         </span>
         <b class="erow__count num">×${r.count}</b>
       </button>`)}
-    </div>` : html`<p class="edrawer__empty"><${GIcon} name="target" />暂无敌方情报</p>`}
+    </div>` : html`<p class="edrawer__empty"><${GIcon} name="target" />No enemy intel yet</p>`}
     ${boss ? html`<div class="eboss">
       <${UnitThumb} kind="enemy" id=${boss.enemyKey} size="md" />
-      <div><${MicroLabel} tone="gold">ENEMY LEADER // 敌方领袖</${MicroLabel}><b>${boss.name}</b>
-        <span class="t-lo">第 ${data.get('config')?.modes?.[pub.modeId]?.bossRound ?? pub.lastRound ?? 14} 回合 · 最终攻势</span></div>
+      <div><${MicroLabel} tone="gold">ENEMY LEADER</${MicroLabel}><b>${boss.name}</b>
+        <span class="t-lo">Round ${data.get('config')?.modes?.[pub.modeId]?.bossRound ?? pub.lastRound ?? 14} · Final Assault</span></div>
     </div>` : null}
   </div>`;
 }
@@ -71,16 +71,16 @@ function InfoTab({ pub, priv, onChess }) {
   return html`<div class="edrawer__body">
     ${band ? html`<div class="iband">
       <${BandIcon} bandId=${band.bandId} size="md" />
-      <div><${MicroLabel} tone="mint">STRATEGY // 我的策略</${MicroLabel}><b>${band.name} <small class="t-lo">${band.effectName}</small></b>
+      <div><${MicroLabel} tone="mint">MY STRATEGY</${MicroLabel}><b>${band.name} <small class="t-lo">${band.effectName}</small></b>
         <${RichText} text=${band.descRaw || band.desc} class="iband__desc" /></div>
     </div>` : null}
-    ${stage ? html`<p class="istage"><${Icon} name="rook" />战场：<b>${stage.name || stage.id}</b></p>` : null}
-    <h4 class="ihead">本局禁用干员情况 <small class="num">${banned.length}</small></h4>
+    ${stage ? html`<p class="istage"><${Icon} name="rook" />Battlefield: <b>${stage.name || stage.id}</b></p>` : null}
+    <h4 class="ihead">Disabled Operators <small class="num">${banned.length}</small></h4>
     <div class="ibonds">
       ${withBans.length ? withBans.map((b) => html`<span key=${b.bondId} class=${cx('ibond', disabled.has(b.bondId) && 'is-off')} title=${briefingBondTip(b.name, stateOf(b.bondId), perBond.get(b.bondId) || 0)}>
         <${BondGlyph} bondId=${b.bondId} /><span>${b.name}</span>
-        ${perBond.get(b.bondId) ? html`<span class="ibond__ban num" title="该盟约中被禁用的干员数"><${Icon} name="user" />${perBond.get(b.bondId)}</span>` : null}
-      </span>`) : html`<span class="t-dim">本局没有禁用盟约</span>`}
+        ${perBond.get(b.bondId) ? html`<span class="ibond__ban num" title="Disabled operators in this alliance"><${Icon} name="user" />${perBond.get(b.bondId)}</span>` : null}
+      </span>`) : html`<span class="t-dim">No alliances disabled this match</span>`}
     </div>
     ${banned.length ? html`<div class="ibanned">${banned.map((id) => html`<button key=${id} type="button" class="ibanned__one" onClick=${() => onChess(id)}>
       <${UnitThumb} kind="chess" id=${id} size="sm" dim=${true} /></button>`)}</div>` : null}
@@ -91,10 +91,10 @@ function InfoTab({ pub, priv, onChess }) {
  * @param {{ tab:'enemies'|'info', onTab:(t:string)=>void, pub:any, priv:any, onClose:Function, onEnemy:(key:string, count:number)=>void, onChess:(id:string)=>void }} props
  */
 export function EnemyDrawer({ tab, onTab, pub, priv, onClose, onEnemy, onChess }) {
-  return html`<div class="edrawer brackets" role="dialog" aria-label=${tab === 'info' ? '本局信息' : '敌方情报'}>
+  return html`<div class="edrawer brackets" role="dialog" aria-label=${tab === 'info' ? 'Match Info' : 'Enemy Intel'}>
     <div class="edrawer__top">
-      <${Tabs} size="sm" value=${tab} onChange=${onTab} items=${[{ id: 'info', label: '本局信息' }, { id: 'enemies', label: '敌方情报' }]} />
-      <button type="button" class="edrawer__close tapx" aria-label="关闭" onClick=${onClose}><${Icon} name="close" /></button>
+      <${Tabs} size="sm" value=${tab} onChange=${onTab} items=${[{ id: 'info', label: 'Match Info' }, { id: 'enemies', label: 'Enemy Intel' }]} />
+      <button type="button" class="edrawer__close tapx" aria-label="Close" onClick=${onClose}><${Icon} name="close" /></button>
     </div>
     ${tab === 'info' ? html`<${InfoTab} pub=${pub} priv=${priv} onChess=${onChess} />` : html`<${EnemiesTab} pub=${pub} priv=${priv} onEnemy=${onEnemy} />`}
   </div>`;

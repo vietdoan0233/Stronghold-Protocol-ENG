@@ -115,7 +115,7 @@ export function installLoadoutSync({ net, getChessReady, lookupChess, timers, ta
           // the server stored it for the next match; the running one keeps the loadout it locked
           lastSent = json;
           setState('locked');
-          if (wasEdit) tell('本局的干员调配已锁定，修改将在下一局生效');
+          if (wasEdit) tell('The Operator Loadout is locked for this match. Changes will take effect in the next match.');
         } else if (code === 'RATE' || code === 'TIMEOUT' || code === 'OFFLINE') { edited = edited || wasEdit; schedule(RETRY_MS); }
         else { console.warn('[loadout] room.loadout refused', code, err && err.detail); setState('error'); }
       }

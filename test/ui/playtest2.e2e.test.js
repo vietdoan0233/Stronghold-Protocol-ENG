@@ -328,8 +328,8 @@ describe('user playtest #2 — UI fixes (mock harness, headless Chrome)', { skip
       // the playtest's case (a unit left of the board, card docked right) — the popup keeps clear of the underframe
       assert.equal(pop.coversButtons, false, `the bond popup (${pop.place}) keeps clear of the underframe buttons`);
       assert.ok(!pop.coversCard || pop.over, `the popup covers the card only when placed over it (${pop.place})`);
-      const iNow = pop.secs.findIndex((t) => t.includes('当前效果'));
-      const iDesc = pop.secs.findIndex((t) => t.includes('盟约效果'));
+      const iNow = pop.secs.findIndex((t) => t.includes('Current Effect'));
+      const iDesc = pop.secs.findIndex((t) => t.includes('Alliance Effect'));
       if (iNow >= 0) assert.ok(iNow < iDesc, `current effect before the description (${pop.secs})`);
       assert.ok(pop.factsIn);
       assert.ok(pop.btnTop.every(Boolean), 'the underframe stays above the bond popup');
@@ -348,7 +348,7 @@ describe('user playtest #2 — UI fixes (mock harness, headless Chrome)', { skip
     assert.ok(lo && Object.keys(lo).length >= 1, 'the mock sends m.private.loadout');
     const badges = await page.$$eval('.scard__skill', (els) => els.map((el) => ({ custom: el.classList.contains('is-custom'), title: el.getAttribute('title') || '' })));
     assert.ok(badges.length >= 3, 'every operator card shows its skill');
-    assert.ok(badges.some((b) => b.custom && b.title.includes('已调配')), `a card with a non-default skill (${JSON.stringify(badges)})`);
+    assert.ok(badges.some((b) => b.custom && b.title.includes('from Loadout')), `a card with a non-default skill (${JSON.stringify(badges)})`);
     assert.ok(badges.some((b) => !b.custom), 'default skills stay plain');
     // a chosen skill is never a blank square: its icon, or its slot letter when the manifest has no icon for it
     const marks = await page.$$eval('.scard__skill.is-custom', (els) => els.map((el) => ({ img: el.querySelector('img')?.getAttribute('src') || null, glyph: el.querySelector('.scard__sglyph')?.textContent || null })));

@@ -14,8 +14,15 @@
 //   - or either of those wrapped as { <name>: … } / { list: … } / { data: … }.
 // Synchronous getters (getChess, getBond, …) return null until the file has loaded; use
 // `loadData(...)` to await, or the `useData(...)` hook to re-render when files arrive.
+//
+// Language: the files are the official Chinese data. When the store has a `locale` (the browser's singleton shows English
+// unless `?lang=zh` is given), the matching table from /locales/<lang>/<name>.json is fetched together with each file and
+// applied before the file counts as loaded (locale.js): display text is replaced in place, everything the table lacks —
+// or the whole table, when it cannot be loaded — stays the original Chinese. A file is 'ready' only once its table is
+// applied, so no screen ever renders a half-translated record.
 
 import { useEffect, useReducer } from '../vendor/hooks.module.js';
+import { applyLocale, hasLocaleTable, localeUrl, parseLocaleTable, pickLocale } from './locale.js';
 
 /** Known data files (name → URL basename). Unknown names are allowed too (`/data/<name>.json`). */
 export const DATA_FILES = Object.freeze({
@@ -92,10 +99,14 @@ const transientFailure = (err) => {
  * A file is downloaded once per page (the texts of the game are static data, never fetched again during a match —
  * user playtest #3 item 9); a transient failure is retried (RETRY_DELAYS_MS) while the file stays 'loading', so a
  * network hiccup does not leave the texts of a whole session missing.
- * @param {{ fetch?: typeof fetch, base?: string, retryDelays?: number[], wait?: (ms: number) => Promise<void> }} [opts]
+ * `locale` ('en' …) switches the English overlay on (default: off — the original Chinese data); `localeBase` is where the
+ * tables are served.
+ * @param {{ fetch?: typeof fetch, base?: string, locale?: string|null, localeBase?: string, retryDelays?: number[], wait?: (ms: number) => Promise<void> }} [opts]
  */
 export function createDataStore(opts = {}) {
   const base = opts.base ?? '/data/';
+  const lang = typeof opts.locale === 'string' && opts.locale ? opts.locale : null;
+  const localeBase = opts.localeBase ?? '/locales/';
   const doFetch = opts.fetch || ((...a) => globalThis.fetch(...a));
   const retryDelays = Array.isArray(opts.retryDelays) ? opts.retryDelays : RETRY_DELAYS_MS;
   const wait = opts.wait || ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
@@ -112,12 +123,46 @@ export function createDataStore(opts = {}) {
 
   const urlFor = (name) => base + (DATA_FILES[name] || `${name}.json`);
 
+  /**
+   * The English table of a data file: null when there is none (language off, a file without display text, a 404, a table
+   * that is not one) — the original text then stays. A transient failure is retried like the data file itself; the
+   * promise never rejects (a missing table must not take the data down with it).
+   * @param {string} name @param {() => boolean} current false once this load was superseded by invalidate()
+   * @returns {Promise<Map<string, string>|null>}
+   */
+  async function fetchTable(name, current) {
+    if (!lang || !hasLocaleTable(name)) return null;
+    const url = localeUrl(lang, name, localeBase);
+    for (let attempt = 0; ; attempt++) {
+      try {
+        const res = await doFetch(url, { cache: 'no-cache' });
+        if (!res || !res.ok) throw Object.assign(new Error(`HTTP ${res ? res.status : '???'}`), { status: res ? res.status : null });
+        let json;
+        try { json = await res.json(); } catch (err) { throw Object.assign(err instanceof Error ? err : new Error(String(err)), { badJson: true }); }
+        return parseLocaleTable(json, lang);
+      } catch (err) {
+        if (transientFailure(err) && attempt < retryDelays.length && current()) {
+          await wait(retryDelays[attempt]);
+          if (current()) continue;
+          return null;
+        }
+        if (err?.status !== 404 && !warned.has(url)) {
+          warned.add(url);
+          console.warn(`[data] ${url} unavailable (${err?.message || err}); showing the original text`);
+        }
+        return null;
+      }
+    }
+  }
+
   function load(name) {
     if (typeof name !== 'string' || !/^[A-Za-z0-9_-]+$/.test(name)) return Promise.resolve(null);
     const cur = entries.get(name);
     if (cur) return cur.promise;
     const entry = { status: 'loading', promise: null, value: null, index: null };
     entry.promise = (async () => {
+      const table = fetchTable(name, () => entries.get(name) === entry); // in parallel with the file itself
+      let loaded = false;
       for (let attempt = 0; ; attempt++) {
         try {
           const res = await doFetch(urlFor(name), { cache: 'no-cache' });
@@ -125,7 +170,7 @@ export function createDataStore(opts = {}) {
           let json;
           try { json = await res.json(); } catch (err) { throw Object.assign(err instanceof Error ? err : new Error(String(err)), { badJson: true }); }
           entry.value = json;
-          entry.status = 'ready';
+          loaded = true;
           break;
         } catch (err) {
           // a transient failure is tried again (still 'loading'), unless the load was superseded meanwhile
@@ -143,6 +188,11 @@ export function createDataStore(opts = {}) {
           entry.status = 'missing';
           break;
         }
+      }
+      if (loaded) {
+        const t = await table;
+        if (t && entries.get(name) === entry) applyLocale(entry.value, t);
+        entry.status = 'ready';
       }
       // A load superseded by invalidate() must not announce itself (its entry is no longer cached).
       if (entries.get(name) === entry) notify(name);
@@ -192,8 +242,8 @@ export function createDataStore(opts = {}) {
   };
 }
 
-/** Browser data store singleton. */
-export const data = createDataStore();
+/** Browser data store singleton (English text unless `?lang=zh`, locale.js pickLocale). */
+export const data = createDataStore({ locale: pickLocale() });
 
 /** @param {...string} names @returns {Promise<any[]>} */
 export const loadData = (...names) => data.loadAll(...names);

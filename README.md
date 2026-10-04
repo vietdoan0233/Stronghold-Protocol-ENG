@@ -2,6 +2,8 @@
 
 An **unofficial fan remake** of *Arknights'* seasonal auto-chess tower-defense mode "Stronghold Protocol: Alliance": play instantly in the browser, solo or 1–4 player online co-op.
 
+> **English edition.** Everything a player reads — the interface, the game data (names and descriptions) and the server's messages — is in English. The game data itself (`data/*.json`) is the original Chinese, untouched; its English is a read-time overlay (see [CHANGES.md](CHANGES.md) and [docs/LOCALE.md](docs/LOCALE.md)). The launcher / setup / doctor terminal output is still Chinese.
+
 ![version](https://img.shields.io/badge/version-0.1.1-2ea44f)
 ![license](https://img.shields.io/badge/code%20license-GPL--3.0--or--later-blue)
 ![node](https://img.shields.io/badge/node-22%20%7C%2024-339933)
@@ -47,7 +49,7 @@ An **unofficial fan remake** of *Arknights'* seasonal auto-chess tower-defense m
 - **Alliances and layers**: 23 alliances (8 faction core alliances + add-on alliances), with layers kept for the whole match, up to 999 layers per alliance.
 - **Gear and the draft**: equipment and arts, same-name gear merging, and specific combinations that grant alliance effects; equipped gear is locked to the operator. Some rounds begin with a draft pick (gear, funds, operators, layers, bounties, and so on).
 - **Automatic combat**: skills fire automatically following the official "skill strategy"; blocking is by contact radius, and when a blocker falls an operator in contact takes over; elemental damage and elemental bursts; summons are placed by hand; knockback / pull are computed from force and weight; a knocked-down operator stays in place showing its redeploy countdown.
-- **Terrain and enemies**: barricades, firing platforms, Originium-current blowers, swamps, exhaust grilles, rising tides and other terrain devices; airborne and low-hovering enemies, and bounty enemies.
+- **Terrain and enemies**: roadblocks, firing platforms, Originium-current blowers, swamps, exhaust grilles, rising tides and other terrain devices; airborne and low-hovering enemies, and bounty enemies.
 - **Unite Phase**: when someone leaks enemies while someone else had a perfect combat, the teammate with the perfect combat brings their formation in to help intercept the leaked enemies.
 - **Final Assault and Hidden Core**: two players share one battlefield and the whole team chips away at the same leader's health bar; 10 enemy leaders, a giant leader with a roughly 5×3-tile hit area, and the official damage-cap rule.
 - **Settlement titles**: 6 titles such as Star of the Garrison, Immortal Alliance and Rock Solid.
@@ -116,6 +118,7 @@ Listens on **TCP 3000** by default. To change the port: pass `--port 3001` to th
 | `SP_COMBAT` | `client` | `client`: each player's browser simulates its own combat (very low server load); `server`: the server simulates and streams it |
 | `SP_VERIFY` | `off` | Server re-checks client-reported combat results: `off` / `sample` (about 1/8 spot-checked) / `all` (re-check everything, more CPU) |
 | `TRUST_PROXY` | `auto` | Whether to trust forwarding headers such as `X-Forwarded-For`: `auto` trusts only proxies from the local machine / private network; `1` always; `0` never |
+| `SP_LOCALE` | `en` | Language of the texts the server composes from the game data (draft cards, effects list, tickers…): `en`, or `zh` for the original Chinese. In the browser, `?lang=zh` in the URL shows the original Chinese game data (see [docs/LOCALE.md](docs/LOCALE.md)) |
 | `DEBUG` | empty | Set to any value to output verbose logs |
 | `SP_NO_BROWSER` | empty | Set to `1` to stop the launch script from opening the browser automatically |
 
@@ -163,13 +166,15 @@ General notes:
 | Emotes | "Chat" at the bottom left; swipe left / right (or arrow keys) to change the set, 1-second cooldown |
 | Spectate | After your own combat ends (or during the rest phase), click a teammate's portrait on the left → "Go watch" |
 
-The full rules, numbers and tips are in **[docs/PLAYING.md](docs/PLAYING.md)** (also available in-game via "How to play" at the bottom left).
+The full rules, numbers and tips are in **[docs/PLAYING.md](docs/PLAYING.md)**. The "How to play" button in the game shows the official tutorial pages instead — pictures with Chinese text, or the English loading-screen tips when the locally extracted client art is absent.
 
 ## Documentation
 
 | Document | Contents |
 |---|---|
-| [CHANGES.md](CHANGES.md) | English-localization notes: terminology, the code-vs-display name split, and what is / isn't translated yet (this is an English fork of a Chinese project) |
+| [CHANGES.md](CHANGES.md) | English-localization notes: terminology, the code-vs-display name split, what is localized and what is intentionally (or not yet) still Chinese (this is an English fork of a Chinese project) |
+| [docs/LOCALE.md](docs/LOCALE.md) | How the English gets on screen: the read-time overlay tables, the server's display layer, the markup rules and the maintenance commands |
+| [docs/GLOSSARY.md](docs/GLOSSARY.md) | The Chinese → English glossary: modes, phases, economy, alliances, status terms, the names settled in review and the open questions |
 | [CHANGELOG.md](CHANGELOG.md) | Change log: what each version fixed, and which pieces of feedback turned out not to be bugs |
 | [docs/PLAYING.md](docs/PLAYING.md) | Gameplay guide: flow, economy, recruiting and promotion, formation, the Unite Phase, alliances, the Final Assault, settlement titles |
 | [docs/DEPLOY.md](docs/DEPLOY.md) | Deployment guide: hosting and start-on-boot on Windows, firewall, mesh networking / tunneling, reverse proxy and HTTPS, Docker, systemd, troubleshooting |
@@ -185,24 +190,24 @@ The full rules, numbers and tips are in **[docs/PLAYING.md](docs/PLAYING.md)** (
 
 ```bash
 npm run dev                 # node --watch: auto-restart the server after code changes
-node --test                 # unit + integration tests (~3,170; cases needing assets / a browser skip automatically)
+node --test                 # unit + integration tests (~3,370; cases needing assets / a browser skip automatically)
 SP_E2E=1 node --test test/ui/mock.e2e.test.js        # browser end-to-end tests, needs a local Chrome (CHROME_PATH can point at it)
 SP_REAL_E2E=1 node --test test/ui/real.e2e.test.js   # needs Chrome + downloaded assets
 RENDER_E2E=1 node --test 'test/render/*.browser.test.js'   # render tests, some need locally extracted board textures
 ```
 
-- The game data is generated by `npm run build-data` (`tools/build-data.mjs`) from the official data tables — do not edit `data/*.json` by hand.
+- The game data is generated by `npm run build-data` (`tools/build-data.mjs`) from the official data tables — do not edit `data/*.json` by hand. Its English is in the overlay tables `public/locales/en/*.json`: after a data rebuild, `node tools/locale.mjs coverage --list` shows what has no English yet and `node tools/locale.mjs check` validates the tables (`test/locale.test.js` runs both). Batch translation / review tooling: [tools/locale-work/README.md](tools/locale-work/README.md).
 - GitHub Actions ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs `npm ci`, `node --test` and a server smoke test on Ubuntu and Windows, Node 22 / 24.
 
 ## Project structure
 
 | Path | Contents |
 |---|---|
-| `server/` | Node HTTP static serving + WebSocket (`/ws`), lobby, match engine (`match/`), combat simulation (`sim/`, shared by browser and server) |
+| `server/` | Node HTTP static serving + WebSocket (`/ws`), lobby, match engine (`match/`), combat simulation (`sim/`, shared by browser and server), `display.js` (the English of the texts the server composes from the data) |
 | `shared/` | Constants and the network protocol shared by client and server |
-| `public/` | The browser client (native ES modules, PixiJS + pixi-spine, three.js 3D board, Preact + htm UI) |
+| `public/` | The browser client (native ES modules, PixiJS + pixi-spine, three.js 3D board, Preact + htm UI); `public/locales/en/` holds the English overlay tables, one per data file |
 | `data/` | The game data generated from the official data tables, and the asset manifest `assets.json` |
-| `tools/` | `setup.mjs` / `doctor.mjs`, asset download `fetch-assets.mjs`, data build, local extraction `local-extract/` |
+| `tools/` | `setup.mjs` / `doctor.mjs`, asset download `fetch-assets.mjs`, data build, local extraction `local-extract/`, `locale.mjs` (overlay coverage / checks / official-English harvest) and `locale-work/` (translation and review tooling) |
 | `scripts/` | Launch scripts (Windows / macOS / Linux), Windows start-on-boot |
 | `docs/` | Documentation and research |
 | `test/` | `node:test` tests |
@@ -215,7 +220,7 @@ RENDER_E2E=1 node --test 'test/render/*.browser.test.js'   # render tests, some 
 
 ## Credits and data sources
 
-- Game data: [Kengxxiao/ArknightsGameData](https://github.com/Kengxxiao/ArknightsGameData).
+- Game data: [Kengxxiao/ArknightsGameData](https://github.com/Kengxxiao/ArknightsGameData). Official English (Arknights Global) operator, enemy, skill, module and status texts: [Kengxxiao/ArknightsGameData_YoStar](https://github.com/Kengxxiao/ArknightsGameData_YoStar) (`en_US`), harvested by `tools/locale.mjs harvest` into `public/locales/en/`; the rest of the English was written for this project.
 - Asset sources: [yuanyan3060/ArknightsGameResource](https://github.com/yuanyan3060/ArknightsGameResource), [fexli/ArknightsResource](https://github.com/fexli/ArknightsResource), [isHarryh/Ark-Models](https://github.com/isHarryh/Ark-Models), [ArknightsAssets/ArknightsAssets2](https://github.com/ArknightsAssets/ArknightsAssets2); fonts from [TimWangZi/The-font-of-Arknights](https://github.com/TimWangZi/The-font-of-Arknights) and Google Fonts (Noto Sans SC). See [docs/ASSETS.md](docs/ASSETS.md) for details.
 - Rule-checking reference: [PRTS Arknights Chinese Wiki](https://prts.wiki/).
 - LZ4AK unpacking: the algorithm in `tools/local-extract/aklz4.py` comes from [isHarryh/Ark-Unpacker](https://github.com/isHarryh/Ark-Unpacker) (BSD-3-Clause, via MooncellWiki/UnityPy); parsing Unity assets uses [UnityPy](https://github.com/K0lb3/UnityPy) (MIT).
@@ -227,7 +232,7 @@ Thanks to the authors and maintainers of the projects above, and to Hypergryph f
 
 Issues reporting bugs, discrepancies with the official rules or suggestions for improvement are welcome, as are Pull Requests:
 
-- Before submitting, please run `node --test` and update the relevant docs; documentation and code and comments are all in English.
+- Before submitting, please run `node --test` and update the relevant docs. Write new documentation, comments and player-facing text in English (the internal engine docs and many older code comments are still Chinese, see [CHANGES.md](CHANGES.md) section 5); texts that come from the game data are translated in the overlay tables, see [docs/LOCALE.md](docs/LOCALE.md).
 - Submitted code will be released under GPL-3.0-or-later.
 - Please do not commit any game asset files (directories such as `public/assets/` are already excluded by `.gitignore`).
 - This project stays non-commercial: please do not submit any form of monetization feature such as ads, paywalls or donations.

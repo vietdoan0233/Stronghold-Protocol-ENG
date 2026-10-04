@@ -21,6 +21,15 @@ import { assets } from '../js/assets.js';
 import { GEO } from '../../shared/constants.js';
 import { FX_KINDS } from '../js/render/fx.js';
 
+// The demo names operators by their original (Chinese) name; the display data is English, so they resolve through their ids.
+const OPERATOR_ID = {
+  塞雷娅: 'chess_char_5_11_a', 银灰: 'chess_char_4_22_a', 德克萨斯: 'chess_char_1_08_a', 能天使: 'chess_char_3_01_a',
+  莫斯提马: 'chess_char_4_02_a', 白面鸮: 'chess_char_4_21_a', 伊内丝: 'chess_char_4_04_a', 斯卡蒂: 'chess_char_3_05_a',
+  夕: 'chess_char_5_12_a', 史尔特尔: 'chess_char_5_07_a', 缇缇: 'chess_char_5_02_a', 蕾缪安: 'chess_char_6_01_a',
+  异客: 'chess_char_6_05_a', 角峰: 'chess_char_1_02_a', 格雷伊: 'chess_char_1_14_a',
+};
+const operatorNamed = (list, name) => list.find((c) => c.chessId === OPERATOR_ID[name]) || list.find((c) => c.name === name);
+
 const $ = (id) => document.getElementById(id);
 const q = new URLSearchParams(location.search);
 const logLines = [];
@@ -53,7 +62,7 @@ async function main() {
 
   // ---- UI --------------------------------------------------------------------------------------------------
   const sceneSel = $('scene');
-  const scenes = [{ name: 'prep', title: '休整期 · 拖拽演示' }, ...index.map((r) => ({ name: r.name, title: r.title, rec: r })), { name: 'stress', title: '压力测试 · 120 单位' }, { name: 'fx', title: '特效图鉴 · 全部 fx' }, { name: 'numbers', title: '伤害数字 · 重叠测试' }];
+  const scenes = [{ name: 'prep', title: 'Rest Phase · drag demo' }, ...index.map((r) => ({ name: r.name, title: r.title, rec: r })), { name: 'stress', title: 'Stress test · 120 units' }, { name: 'fx', title: 'FX gallery · all fx' }, { name: 'numbers', title: 'Damage numbers · overlap test' }];
   for (const s of scenes) sceneSel.append(new Option(s.title, s.name));
   const stageSel = $('stage');
   for (const id of STAGE_IDS) { const st = data.lookup('stages', id); if (st) stageSel.append(new Option(st.name || id, id)); }
@@ -154,7 +163,7 @@ async function prepScene(view, stageId, index = []) {
     if (Array.isArray(rec?.preview)) nextEnemies = rec.preview;
   } else if (q.get('pen') === '0') nextEnemies = [];
   const chess = data.list('chess').filter((c) => c.visible && !c.isGolden);
-  const pick = (name) => chess.find((c) => c.name === name);
+  const pick = (name) => operatorNamed(chess, name);
   const golden = (c) => data.lookup('chess', c.goldenId) || c;
   const items = data.list('items').filter((i) => i.itemType === 'EQUIP' && !i.isGolden);
   let uid = 1;
@@ -428,8 +437,8 @@ function fxScene(view, stageId) {
   const stage = data.lookup('stages', stageId);
   view.setStage(stage);
   const rect = { ...GEO.NORMAL_RECT };
-  const pick = (name) => data.list('chess').find((c) => c.name === name && !c.isGolden);
-  const op = (id, name, x, y) => { const c = pick(name); return c ? { id, kind: 'op', side: 'ally', defId: c.chessId, name, tier: c.tier, golden: false, spine: c.assets?.spine, avatar: c.assets?.avatar, x, y, facing: 1, maxHp: 3000 } : null; };
+  const pick = (name) => operatorNamed(data.list('chess').filter((c) => !c.isGolden), name);
+  const op = (id, name, x, y) => { const c = pick(name); return c ? { id, kind: 'op', side: 'ally', defId: c.chessId, name: c.name, tier: c.tier, golden: false, spine: c.assets?.spine, avatar: c.assets?.avatar, x, y, facing: 1, maxHp: 3000 } : null; };
   const en = (id, key, x, y, extra = {}) => { const e = data.lookup('enemies', key); return { id, kind: 'enemy', side: 'enemy', defId: key, name: e?.name || key, tier: 1, golden: false, spine: e?.spine || key, avatar: e?.iconId || key, x, y, facing: -1, maxHp: 4000, ...extra }; };
   const units = [
     op(1, '银灰', 4, 9), op(2, '能天使', 3, 11), op(3, '塞雷娅', 5, 10), op(4, '莫斯提马', 6, 12),
@@ -494,7 +503,7 @@ function fxScene(view, stageId) {
           const at = posFor(k, ex);
           if (k === 'lock' && !queue.length) { ev.push(['skill', 2, 1]); lemuenS3(); }
           ev.push(['fx', k, at.x, at.y, ex]);
-          $('title').textContent = `特效图鉴 · ${k} (${FX_KINDS[k].a})`;
+          $('title').textContent = `FX gallery · ${k} (${FX_KINDS[k].a})`;
           const a = units[i % 4], b = units[4 + (i % 5)];
           const pk = projs[i % projs.length];
           ev.push(['atk', pk === 'chain' ? 20 : a.id, b.id, pk]);
@@ -528,8 +537,8 @@ function numbersScene(view, stageId) {
   const stage = data.lookup('stages', stageId);
   view.setStage(stage);
   const rect = { ...GEO.BOSS_RECT };
-  const pick = (name) => data.list('chess').find((c) => c.name === name && !c.isGolden);
-  const op = (id, name, x, y) => { const c = pick(name); return c ? { id, kind: 'op', side: 'ally', defId: c.chessId, name, tier: c.tier, golden: false, spine: c.assets?.spine, avatar: c.assets?.avatar, x, y, facing: 1, dir: 'RIGHT', maxHp: 4000 } : null; };
+  const pick = (name) => operatorNamed(data.list('chess').filter((c) => !c.isGolden), name);
+  const op = (id, name, x, y) => { const c = pick(name); return c ? { id, kind: 'op', side: 'ally', defId: c.chessId, name: c.name, tier: c.tier, golden: false, spine: c.assets?.spine, avatar: c.assets?.avatar, x, y, facing: 1, dir: 'RIGHT', maxHp: 4000 } : null; };
   const en = (id, key, x, y, extra = {}) => { const e = data.lookup('enemies', key); return { id, kind: 'enemy', side: 'enemy', defId: key, name: e?.name || key, tier: 1, golden: false, spine: e?.spine || key, avatar: e?.iconId || key, x, y, facing: -1, maxHp: 6000, ...extra }; };
   const units = [
     op(1, '史尔特尔', 6, 3), op(2, '能天使', 5, 4), op(3, '莫斯提马', 5, 2), op(4, '白面鸮', 4, 3),

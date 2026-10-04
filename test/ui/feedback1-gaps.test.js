@@ -158,17 +158,17 @@ describe('§21.26 1 — 变形同构体 on the cards', () => {
 
   test('the item card (shop / reward / hand): a 天赋 section with the 14 lines, 本局禁用 struck through, no highlight', () => {
     const v = ItemDetail({ item: items[ISO], piece: null, editable: false, onDestroy() {}, offBonds: funny });
-    const sec = [...walk(v)].find((x) => x.type?.name === 'Section' && x.props.title === '天赋');
+    const sec = [...walk(v)].find((x) => x.type?.name === 'Section' && x.props.title === 'Talent');
     assert.ok(sec, 'a 天赋 section (the item text points at its 天赋栏)');
-    assert.match(textOf(v), /搭配以下装备时，携带者视为对应盟约的成员：/);
+    assert.match(textOf(v), /When paired with the gear below, the carrier counts as a member of the matching alliance:/);
     const rows = byClass(v, 'dmorph__row');
     assert.equal(rows.length, 14);
     const off = rows.filter((r) => hasClass(r, 'is-off'));
     assert.deepEqual(off.map((r) => r.props['data-bond']), ['lateranoShip', 'egirShip', 'kazimierzShip', 'arcaneShip', 'raidShip']);
-    for (const r of off) assert.match(textOf(r), /本局禁用/);
-    assert.equal(rows.filter((r) => !hasClass(r, 'is-off') && /本局禁用/.test(textOf(r))).length, 0);
+    for (const r of off) assert.match(textOf(r), /Disabled/);
+    assert.equal(rows.filter((r) => !hasClass(r, 'is-off') && /Disabled/.test(textOf(r))).length, 0);
     assert.equal(byClass(v, 'is-worn').length, 0, 'no wearer: nothing highlighted');
-    assert.match(textOf(rows.find((r) => r.props['data-bond'] === 'victoriaShip')), /【维多利亚】维式重锤、战栗维式重锤、坚固维式重锤、加速维式重锤、灼燃维式重锤/);
+    assert.match(textOf(rows.find((r) => r.props['data-bond'] === 'victoriaShip')), /\[维多利亚\]维式重锤, 战栗维式重锤, 坚固维式重锤, 加速维式重锤, 灼燃维式重锤/);
     assert.equal(byClass(v, 'dmorph__none').length, 0);
     // other modes: no mark
     assert.equal(byClass(ItemDetail({ item: items[ISO_B], piece: null, editable: false, onDestroy() {}, offBonds: new Set() }), 'is-off').length, 0, '进阶 copy, 绝境');
@@ -182,19 +182,19 @@ describe('§21.26 1 — 变形同构体 on the cards', () => {
     assert.equal(rows.length, 14);
     const worn = rows.filter((r) => hasClass(r, 'is-worn'));
     assert.deepEqual(worn.map((r) => r.props['data-bond']), ['victoriaShip']);
-    assert.match(textOf(worn[0]), /生效中/);
+    assert.match(textOf(worn[0]), /Active/);
     assert.deepEqual(byClass(worn[0], 'dmorph__item').filter((x) => hasClass(x, 'is-worn')).map(textOf), ['维式重锤']);
     const grant = byClass(equip, 'dhint--morph');
     assert.equal(grant.length, 1, 'the 维式重锤 row');
     assert.ok(hasClass(grant[0], 'is-worn'));
-    assert.match(textOf(grant[0]), /与变形同构体一同装备时，携带者视为【维多利亚】成员.*生效中/);
-    // worn with a bond the mode switches off: 已搭配 + 本局禁用, never 生效中
+    assert.match(textOf(grant[0]), /When equipped with 变形同构体, the carrier counts as a member of \[维多利亚\]\..*Active/);
+    // worn with a bond the mode switches off: 已搭配 (Paired) + 本局禁用 (Disabled), never 生效中 (Active)
     const lat = ChessDetail({ chess: chess[WEARER], piece: { ...piece, items: [{ uid: 2, id: ISO }, { uid: 4, id: LATERANO_CLIP }] }, editable: false, bonds: [], offBonds: funny, loadout: null });
     const latRow = byClass(lat.find((b) => b?.key === 'equip'), 'dmorph__row').find((r) => hasClass(r, 'is-worn'));
     assert.equal(latRow.props['data-bond'], 'lateranoShip');
-    assert.match(textOf(latRow), /已搭配/);
-    assert.match(textOf(latRow), /本局禁用/);
-    assert.doesNotMatch(textOf(latRow), /生效中/);
+    assert.match(textOf(latRow), /Paired/);
+    assert.match(textOf(latRow), /Disabled/);
+    assert.doesNotMatch(textOf(latRow), /Active/);
     // a teammate's unit / a popup's 同构 row (no own piece): the same, from the item ids it carries
     const ro = ChessDetail({ chess: chess[WEARER], piece: null, editable: false, bonds: [], offBonds: null, loadout: null, unitItems: [HAMMER_SHUDDER, ISO_B] });
     assert.deepEqual(byClass(ro.find((b) => b?.key === 'equip'), 'dmorph__row').filter((r) => hasClass(r, 'is-worn')).map((r) => r.props['data-bond']), ['victoriaShip']);
@@ -203,15 +203,15 @@ describe('§21.26 1 — 变形同构体 on the cards', () => {
   test('a wearer without a pair reads 暂未生效; a bond item alone says what it would give', () => {
     const lone = MorphPairings({ off: null, carried: [ISO] });
     assert.equal(byClass(lone, 'is-worn').length, 0);
-    assert.match(textOf(byClass(lone, 'dmorph__none')[0]), /暂未生效/);
+    assert.match(textOf(byClass(lone, 'dmorph__none')[0]), /Not active yet/);
     const card = ItemDetail({ item: items[HAMMER], piece: null, editable: false, onDestroy() {}, offBonds: funny });
     const line = byClass(card, 'dhint--morph');
     assert.equal(line.length, 1);
-    assert.match(textOf(line[0]), /^与变形同构体一同装备时，携带者视为【维多利亚】成员$/);
+    assert.match(textOf(line[0]), /^When equipped with 变形同构体, the carrier counts as a member of \[维多利亚\]\.$/);
     assert.ok(!hasClass(line[0], 'is-worn'));
     const clip = byClass(ItemDetail({ item: items[LATERANO_CLIP], piece: null, editable: false, onDestroy() {}, offBonds: funny }), 'dhint--morph');
     assert.ok(hasClass(clip[0], 'is-off'));
-    assert.match(textOf(clip[0]), /【拉特兰】成员本局禁用/);
+    assert.match(textOf(clip[0]), /member of \[拉特兰\]\.Disabled/);
     assert.equal(MorphGrantLine({ item: items[ISO], off: null }), null, 'not on the 变形同构体 itself');
     assert.equal(MorphGrantLine({ item: items['chess_item_1_03_e_a'], off: null }), null, 'not on an item without a bond');
   });
@@ -253,16 +253,16 @@ describe('§21.26 2 — 调和\'s +1 in the bond popup', () => {
     assert.equal(view.entry.count, 3);
     const calls = [];
     const v = BondPopup({ bondId: 'yanShip', entry: view.entry, priv: view.priv, onClose() {}, onMember: (...a) => calls.push(a) });
-    assert.match(textOf(byClass(v, 'bpop__facts')[0]).replace(/\s+/g, ''), /在场3\/6（含调和\+1）/);
+    assert.match(textOf(byClass(v, 'bpop__facts')[0]).replace(/\s+/g, ''), /OnField3\/6\(incl\.调和\+1\)/);
     const row = byClass(v, 'bpop__harmony');
     assert.equal(row.length, 1);
     assert.equal(row[0].type, 'button');
     assert.match(textOf(row[0]), /调和 \+1/);
-    assert.match(textOf(row[0]), /缪尔赛思 在场：核心盟约激活人数 \+1/);
+    assert.match(textOf(row[0]), /缪尔赛思 on the field: Core Alliance member count \+1/);
     row[0].props.onClick();
     assert.deepEqual(calls, [[MLYSS, null]], 'opens 缪尔赛思\'s card');
-    const head = [...walk(v)].filter((x) => x.type === 'h4').map(textOf).find((t) => t.startsWith('成员'));
-    assert.match(head.replace(/\s+/g, ''), /^成员2\//, 'the real members: 2 in play + the 调和 row = 在场 3');
+    const head = [...walk(v)].filter((x) => x.type === 'h4').map(textOf).find((t) => t.startsWith('Members'));
+    assert.match(head.replace(/\s+/g, ''), /^Members2\//, 'the real members: 2 in play + the 调和 row = 在场 3');
     // the popup of 调和 itself (an add-on bond) and of a bond without the +1: no row
     const mani = popupView({ open: { id: HARMONY_BOND, ownerId: 'p_1' }, pub: m.publicView(), priv, myId: 'p_1' });
     assert.equal(byClass(BondPopup({ bondId: HARMONY_BOND, entry: mani.entry, priv, onClose() {} }), 'bpop__harmony').length, 0);
@@ -278,13 +278,13 @@ describe('§21.26 2 — 调和\'s +1 in the bond popup', () => {
     assert.equal(view.name, ps.name);
     assert.equal(view.entry.harmony, 1);
     const v = BondPopup({ bondId: 'yanShip', entry: view.entry, priv: view.priv, owner: view.name, onClose() {} });
-    assert.match(textOf(byClass(v, 'bpop__facts')[0]), /含调和 \+1/);
-    assert.match(textOf(byClass(v, 'bpop__harmony')[0]), /缪尔赛思 在场/);
+    assert.match(textOf(byClass(v, 'bpop__facts')[0]), /incl\. 调和 \+1/);
+    assert.match(textOf(byClass(v, 'bpop__harmony')[0]), /缪尔赛思 on the field/);
     // their board not on screen (no field): the row still explains the +1, without names
     const blind = popupView({ open: { id: 'yanShip', ownerId: 'p_1' }, pub, priv: null, myId: 'p_0', field: null });
     const row = byClass(BondPopup({ bondId: 'yanShip', entry: blind.entry, priv: blind.priv, owner: view.name, onClose() {} }), 'bpop__harmony');
     assert.equal(row[0].type, 'div');
-    assert.match(textOf(row[0]), /调和已激活：核心盟约激活人数 \+1/);
+    assert.match(textOf(row[0]), /调和 active: Core Alliance member count \+1/);
     m.dispose();
   });
 
@@ -293,7 +293,7 @@ describe('§21.26 2 — 调和\'s +1 in the bond popup', () => {
     const priv = { board: [{ kind: 'chess', id: MLYSS }, { kind: 'chess', id: YAN[0] }], hand: [], temp: [] };
     const v = BondPopup({ bondId: 'yanShip', entry: plain, priv, onClose() {} });
     assert.equal(byClass(v, 'bpop__harmony').length, 0, 'the client does not re-derive the rule');
-    assert.doesNotMatch(textOf(byClass(v, 'bpop__facts')[0]), /调和/);
+    assert.doesNotMatch(textOf(byClass(v, 'bpop__facts')[0]), /调和|Harmony/);
     const off = BondPopup({ bondId: 'lateranoShip', entry: { bondId: 'lateranoShip', count: 2, harmony: 1 }, priv, onClose() {}, off: true });
     assert.equal(byClass(off, 'bpop__harmony').length, 0);
   });
@@ -304,12 +304,12 @@ describe('§21.26 2 — 调和\'s +1 in the bond popup', () => {
     const slot = [...walk(strip)].find((x) => x.props?.['data-bond'] === 'yanShip');
     assert.equal(slot.props['data-harmony'], 1);
     const disc = [...walk(slot)].find((x) => typeof x.props?.title === 'string' && x.props.title.startsWith('炎'));
-    assert.equal(disc.props.title, '炎 3/6（含调和 +1）');
+    assert.equal(disc.props.title, '炎 3/6 (incl. Harmony +1)');
     const chips = BondChips({ bondIds: ['yanShip'], bonds: [entry], onBond() {} });
     const chip = [...walk(chips)].find((x) => x.props?.['data-bond'] === 'yanShip');
-    assert.equal(chip.props.title, '炎：在场 3/6（含调和 +1），已激活 1 阶');
+    assert.equal(chip.props.title, '炎: 3/6 on the field (incl. Harmony +1), Tier I active');
     const noPlus = [...walk(BondChips({ bondIds: ['yanShip'], bonds: [{ ...entry, harmony: undefined }] }))].find((x) => x.props?.['data-bond'] === 'yanShip');
-    assert.equal(noPlus.props.title, '炎：在场 3/6，已激活 1 阶');
+    assert.equal(noPlus.props.title, '炎: 3/6 on the field, Tier I active');
   });
 });
 
@@ -348,17 +348,17 @@ describe('§21.26 4 — the strategy draft marks a strategy built around a bond 
 
   test('the card\'s tag and the detail pane\'s note: "本局禁用【拉特兰】盟约，此策略效果可能无法发挥", the bond struck through; nothing without one', async () => {
     const { BandOffTag, BandOffNote } = await import('../../public/js/screens/bandDraft.js');
-    assert.equal(bandOffLine(['拉特兰']), '本局禁用【拉特兰】盟约，此策略效果可能无法发挥');
-    assert.equal(bandOffLine(['拉特兰', '阿戈尔']), '本局禁用【拉特兰】【阿戈尔】盟约，此策略效果可能无法发挥');
+    assert.equal(bandOffLine(['拉特兰']), 'Alliance disabled this match: [拉特兰]. This strategy\'s effect may not apply.');
+    assert.equal(bandOffLine(['拉特兰', '阿戈尔']), 'Alliance disabled this match: [拉特兰][阿戈尔]. This strategy\'s effect may not apply.');
     assert.equal(bandOffLine([]), '');
     const tag = BandOffTag({ names: ['拉特兰'] });
     assert.ok(hasClass(tag, 'dband__off'));
-    assert.equal(textOf(tag), '本局禁用');
-    assert.equal(tag.props.title, '本局禁用【拉特兰】盟约，此策略效果可能无法发挥');
+    assert.equal(textOf(tag), 'Disabled');
+    assert.equal(tag.props.title, 'Alliance disabled this match: [拉特兰]. This strategy\'s effect may not apply.');
     const note = BandOffNote({ names: ['拉特兰'] });
     assert.ok(hasClass(note, 'draft-detail__off'));
     assert.equal(note.props.role, 'note');
-    assert.equal(textOf(note), '本局禁用【拉特兰】盟约，此策略效果可能无法发挥');
+    assert.equal(textOf(note), 'Alliance disabled this match: [拉特兰]. This strategy\'s effect may not apply.');
     assert.deepEqual(byClass(note, 'draft-detail__offname').map(textOf), ['拉特兰'], 'the bond name struck through (§21.7)');
     assert.equal(BandOffTag({ names: [] }), null);
     assert.equal(BandOffNote({ names: [] }), null);

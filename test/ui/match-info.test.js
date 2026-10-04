@@ -81,8 +81,8 @@ test('matchInfoModel: the two greyed kinds, the briefing order, banned operators
 
 test('MatchBondRow: greyed by state (✕ disc), the banned-member badge, the red ring on an enabled bond that lost members, the tip', () => {
   const m = model();
-  const row = MatchBondRow({ title: '附加盟约', micro: 'ADD-ON BONDS', bonds: m.addon, model: m });
-  assert.match(textOf(row), /附加盟约ADD-ON BONDS/);
+  const row = MatchBondRow({ title: 'Add-on Alliances', micro: 'ADD-ON ALLIANCES', bonds: m.addon, model: m });
+  assert.match(textOf(row), /Add-on AlliancesADD-ON ALLIANCES/);
   const cell = (id) => [...walk(row)].find((v) => v.props?.['data-bond'] === id);
   const disc = (id) => [...walk(cell(id))].find((v) => v.type === BondDisc);
   const badge = (id) => [...walk(cell(id))].find((v) => hasClass(v, 'brief-bond__ban'));
@@ -91,16 +91,16 @@ test('MatchBondRow: greyed by state (✕ disc), the banned-member badge, the red
   assert.ok(hasClass(cell('arcaneShip'), 'is-off') && !hasClass(cell('arcaneShip'), 'is-incomplete'));
   assert.deepEqual([disc('arcaneShip').props.disabled, disc('arcaneShip').props.active, disc('arcaneShip').props.tier], [true, false, 0]);
   assert.match(textOf(badge('arcaneShip')), /^2$/);
-  assert.equal(tipOf('arcaneShip').props.text, '奥术：本局禁用（该盟约不会激活）');
+  assert.equal(tipOf('arcaneShip').props.text, '奥术: disabled this match (this alliance will not activate)');
   // 坚守: drawn (D) — greyed as well, marked incomplete, the 阵容不完整 tip
   assert.ok(hasClass(cell('steadShip'), 'is-off') && hasClass(cell('steadShip'), 'is-incomplete'));
   assert.equal(tipOf('steadShip').props.text, briefingBondTip('坚守', 'drawn', m.perBond.get('steadShip')));
-  assert.match(tipOf('steadShip').props.text, /部分盟约所含干员阵容不完整/);
+  assert.match(tipOf('steadShip').props.text, /incomplete operator roster/);
   // 精准: enabled, but 2 of its members are banned — lit disc, red ring (is-partial), badge 2
   assert.ok(!hasClass(cell('preciShip'), 'is-off') && hasClass(cell('preciShip'), 'is-partial'));
   assert.deepEqual([disc('preciShip').props.disabled, disc('preciShip').props.active], [false, true]);
   assert.match(textOf(badge('preciShip')), /^2$/);
-  assert.equal(tipOf('preciShip').props.text, '精准：部分盟约所含干员阵容不完整（2 名干员无法出现）');
+  assert.equal(tipOf('preciShip').props.text, "精准: incomplete operator roster (2 operators can't appear)");
   // 助力: untouched — lit, no badge, the plain name
   assert.ok(!hasClass(cell('deputShip'), 'is-off') && !hasClass(cell('deputShip'), 'is-partial'));
   assert.equal(badge('deputShip'), undefined);
@@ -110,21 +110,21 @@ test('MatchBondRow: greyed by state (✕ disc), the banned-member badge, the red
 
 test('MatchLegend: the grey and the badge; "或本模式禁用" only when the mode switches bonds off', () => {
   const t = textOf(MatchLegend({ model: model() }));
-  assert.match(t, /灰色：部分盟约所含干员阵容不完整（仍可通过其他盟约的干员或装备激活），或本模式禁用 · /);
-  assert.match(t, /该盟约中无法出现的干员数$/);
+  assert.match(t, /Grayed out: incomplete operator roster \(can still be activated through other alliances' operators or gear\), or disabled in this mode · /);
+  assert.match(t, /Number of this alliance's operators that can't appear$/);
   const hard = matchInfoModel({ drawnDisabledBonds: ['sargonShip'] }, SRC('mode_multi_hard'));
-  assert.doesNotMatch(textOf(MatchLegend({ model: hard })), /本模式禁用/);
+  assert.doesNotMatch(textOf(MatchLegend({ model: hard })), /disabled in this mode/);
 });
 
 test('BannedOperators: the count and dimmed avatars in tier order; none ⇒ 本局没有禁用干员', () => {
   const m = model();
   const block = BannedOperators({ model: m });
-  assert.match(textOf(block), /本局禁用干员BANNED OPERATORS4/);
+  assert.match(textOf(block), /Disabled OperatorsDISABLED OPERATORS4/);
   const thumbs = [...walk(block)].filter((v) => v.type === UnitThumb);
   assert.deepEqual(thumbs.map((v) => v.props.id), m.banned);
   assert.ok(thumbs.every((v) => v.props.kind === 'chess' && v.props.dim === true && v.props.size === 'sm'));
   const none = BannedOperators({ model: matchInfoModel({}, SRC('mode_single_normal')) });
-  assert.match(textOf(none), /本局没有禁用干员/);
+  assert.match(textOf(none), /No operators disabled this match/);
   assert.equal([...walk(none)].filter((v) => v.type === UnitThumb).length, 0);
 });
 
@@ -132,21 +132,21 @@ test('MatchInfo = 核心盟约, 附加盟约, the legend, 本局禁用干员 (on
   const m = model();
   const parts = MatchInfo({ model: m }).filter((v) => v && typeof v === 'object');
   assert.deepEqual(parts.map((v) => v.type), [MatchBondRow, MatchBondRow, MatchLegend, BannedOperators]);
-  assert.deepEqual(parts.slice(0, 2).map((v) => [v.props.title, v.props.bonds]), [['核心盟约', m.core], ['附加盟约', m.addon]]);
+  assert.deepEqual(parts.slice(0, 2).map((v) => [v.props.title, v.props.bonds]), [['Core Alliances', m.core], ['Add-on Alliances', m.addon]]);
   assert.ok(parts.every((v) => v.props.model === m));
   const onClose = () => {};
-  const dlg = MatchInfoDialog({ open: true, onClose, model: m, status: '轮到你决策' });
+  const dlg = MatchInfoDialog({ open: true, onClose, model: m, status: 'Your turn to decide' });
   assert.equal(dlg.type, Modal);
   assert.equal(dlg.props.open, true);
   assert.equal(dlg.props.onClose, onClose, 'Esc and a tap outside close it (components.js Modal)');
-  assert.equal(dlg.props.title, '本局信息');
+  assert.equal(dlg.props.title, 'Match Info');
   assert.equal(dlg.props.class, 'minfo-dlg');
   const inner = [...walk(dlg.props.children)].find((v) => v.type === MatchInfo);
   assert.equal(inner?.props.model, m, 'the very blocks of the briefing');
   const close = [...walk(dlg.props.actions)].find((v) => v.type === Button);
   assert.equal(close.props.onClick, onClose);
-  assert.match(textOf(close), /关闭/);
-  assert.match(textOf(dlg.props.actions), /轮到你决策/);
+  assert.match(textOf(close), /Close/);
+  assert.match(textOf(dlg.props.actions), /Your turn to decide/);
   const shut = MatchInfoDialog({ open: false, onClose, model: m });
   assert.equal(shut.props.open, false);
   assert.equal([...walk(shut.props.children)].find((v) => v.type === MatchInfo), undefined, 'nothing built while closed');
@@ -166,7 +166,7 @@ test('a real 标准 match (solo and co-op): the mode\'s 10 inactive bonds are "o
     assert.deepEqual(m.banned.map((id) => DATA.chess[id].tier), [...m.banned.map((id) => DATA.chess[id].tier)].sort((a, b) => a - b));
     for (const id of m.banned) assert.ok(DATA.chess[id].bonds.every((b) => m.stateOf(b)), `${id}: every bond greyed`);
     assert.equal(m.addon.filter((b) => m.stateOf(b.bondId)).length + m.core.filter((b) => m.stateOf(b.bondId)).length, 11);
-    assert.match(textOf(MatchLegend({ model: m })), /或本模式禁用/);
+    assert.match(textOf(MatchLegend({ model: m })), /or disabled in this mode/);
     h.m.dispose();
   }
   // 绝境: 3 core + 4 add-on drawn, nothing switched off by the mode
@@ -179,14 +179,14 @@ test('a real 标准 match (solo and co-op): the mode\'s 10 inactive bonds are "o
 });
 
 test('draftInfoStatus: the dialog repeats the turn and its seconds (warning at ≤ 10 s), or my pick', () => {
-  assert.deepEqual(draftInfoStatus({ myTurn: true, secs: 24 }), { text: '轮到你决策', secs: 24, tone: 'gold' });
-  assert.deepEqual(draftInfoStatus({ myTurn: true, secs: 7 }), { text: '轮到你决策', secs: 7, tone: 'warn' });
-  assert.deepEqual(draftInfoStatus({ myTurn: false, turnName: '凯尔希', secs: 30 }), { text: '凯尔希 决策中', secs: 30, tone: 'gold' });
-  assert.deepEqual(draftInfoStatus({ myTurn: true, secs: null }), { text: '轮到你决策', secs: null, tone: 'gold' }, 'untimed: no seconds');
-  assert.deepEqual(draftInfoStatus({ myTurn: false, turnName: null }), { text: '等待轮到你', secs: null, tone: 'dim' });
+  assert.deepEqual(draftInfoStatus({ myTurn: true, secs: 24 }), { text: 'Your turn to decide', secs: 24, tone: 'gold' });
+  assert.deepEqual(draftInfoStatus({ myTurn: true, secs: 7 }), { text: 'Your turn to decide', secs: 7, tone: 'warn' });
+  assert.deepEqual(draftInfoStatus({ myTurn: false, turnName: '凯尔希', secs: 30 }), { text: '凯尔希 is deciding', secs: 30, tone: 'gold' });
+  assert.deepEqual(draftInfoStatus({ myTurn: true, secs: null }), { text: 'Your turn to decide', secs: null, tone: 'gold' }, 'untimed: no seconds');
+  assert.deepEqual(draftInfoStatus({ myTurn: false, turnName: null }), { text: 'Waiting for your turn', secs: null, tone: 'dim' });
   assert.deepEqual(draftInfoStatus({ myPick: 'band_bldsk', pickName: '华法琳', myTurn: false, waiting: true }),
-    { text: '已选择「华法琳」，等待其他博士', secs: null, tone: 'mint' });
-  assert.equal(draftInfoStatus({ myPick: 'band_bldsk', pickName: '华法琳', myTurn: false }).text, '已选择「华法琳」');
+    { text: 'Selected “华法琳”, waiting for other Doctors', secs: null, tone: 'mint' });
+  assert.equal(draftInfoStatus({ myPick: 'band_bldsk', pickName: '华法琳', myTurn: false }).text, 'Selected “华法琳”');
 });
 
 test('the briefing, the strategy draft and the in-game 本局信息 tab all read ui/matchInfo.js (no second copy to drift)', () => {
@@ -198,7 +198,7 @@ test('the briefing, the strategy draft and the in-game 本局信息 tab all read
   const draft = read('public/js/screens/bandDraft.js');
   assert.match(draft, /import \{ MatchInfoDialog, matchInfoModel \} from '\.\.\/ui\/matchInfo\.js';/);
   assert.match(draft, /const info = infoOpen \? matchInfoModel\(pub, \{ bonds: gd\.list\('bonds'\), chess: gd\.chess, mode \}\) : null;/);
-  assert.match(draft, /data-testid="match-info-open"[\s\S]*?onClick=\$\{\(\) => setInfoOpen\(true\)\}>查看禁用盟约与干员</);
+  assert.match(draft, /data-testid="match-info-open"[\s\S]*?onClick=\$\{\(\) => setInfoOpen\(true\)\}>Disabled Alliances & Operators</);
   assert.match(draft, /<\$\{MatchInfoDialog\} open=\$\{infoOpen\} onClose=\$\{\(\) => setInfoOpen\(false\)\} model=\$\{info\}/);
   // a turn change or my pick closes it; the draft's end unmounts the screen
   assert.match(draft, /const turnKey = `\$\{draft\.turnPid \|\| ''\}\|\$\{myPick \|\| ''\}`;\n\s*useEffect\(\(\) => \{ setInfoOpen\(false\); \}, \[turnKey\]\);/);

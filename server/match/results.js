@@ -14,6 +14,7 @@
 
 import { bondList } from './bondsMeta.js';
 import { boardOrder } from './board.js';
+import { L } from '../display.js';
 
 const STAT_OF = {
   bossDamage: (ps) => ps.stats.bossDamage,
@@ -59,6 +60,9 @@ export function assignTitles(gd, players, victory) {
   }
   return out;
 }
+
+/** A title (评语) as the result screen shows it: its name and its criterion in the server's language. */
+const titleView = (t) => (t ? { ...t, name: L(t.name), text: L(t.text) } : null);
 
 function trophiesFor(gd, roundsPassed, hiddenCleared) {
   const tr = gd.config.trophies;
@@ -120,7 +124,7 @@ export function buildResult(m, outcome) {
         bossDamage: Math.round(ps.stats.bossDamage), activatedLayers: ps.activatedLayers(), lpLost: ps.stats.lpLost,
         perfectRounds: ps.stats.perfectRounds,
       },
-      title: titles.get(ps.playerId) ?? null,
+      title: titleView(titles.get(ps.playerId)),
       trophies: trophiesFor(gd, roundsPassed, cleared && hiddenCleared),
       reward: rewardFor(gd, roundsPassed),
     };

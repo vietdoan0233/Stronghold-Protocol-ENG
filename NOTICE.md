@@ -30,6 +30,7 @@ All **names, characters, art, Spine models, UI images, music and sound effects, 
 - `public/assets/**` in the release bundle (including the 3D board models and textures extracted locally from the official client, `public/assets/local/**`) and `public/fonts/**` (fonts belong to their respective authors);
 - `data/*.json` generated from the official data tables, and the `docs/research/*.json`, `test/fixtures/official-waves.json` and `public/dev/recordings/*.json` that contain or are derived from game data;
 - the game screenshots in `docs/img/`;
+- the official parts of `public/locales/en/*.json` (the English overlay tables): their keys, which are the official Chinese text, and the values that are official Arknights Global (Yostar) English — operator, enemy, skill, module and status texts harvested from the `en_US` client data by `tools/locale.mjs harvest`; the English written for this project in the same files is covered by the GPL;
 - the text quoted in `docs/` from community pages such as PRTS, BWIKI, NGA and Bahamut (still under their source's license; wiki text is CC BY-NC-SA).
 
 This content is **not within the scope of the GPL-3.0 license**, and this project has no right to grant anyone any rights to it.

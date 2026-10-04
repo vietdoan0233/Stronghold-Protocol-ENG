@@ -232,22 +232,22 @@ describe('§20.15 screenStrip: the game screen\'s state → whose bonds (every w
 });
 
 describe('§20.15 the ‹ › pill of a shared field watched with 前往查看 (ui/combatHud.js)', () => {
-  const layers = [{ key: 'L', label: '华法琳', self: false, watch: true }, { key: 'ALL', label: '全景', self: false, watch: false }, { key: 'R', label: '阿米娅', self: false, watch: true }];
+  const layers = [{ key: 'L', label: '华法琳', self: false, watch: true }, { key: 'ALL', label: 'Panorama', self: false, watch: false }, { key: 'R', label: '阿米娅', self: false, watch: true }];
   test('observing + halves: the ‹ › pill (the picked player\'s half) with 返回战场 — no separate observing pill', () => {
     const v = CombatHud({ pub: {}, myId: ME, watching: 'u', hud: null, myDone: false, client: { observing: { name: '阿米娅' }, onBack() {}, layers, layer: 'R', onLayer() {} } });
     const pill = [...walk(v)].find((x) => hasClass(x, 'chud__layers'));
     assert.ok(pill && hasClass(pill, 'is-observing'));
     assert.match(textOf(pill), /阿米娅/);
-    assert.match(textOf(pill), /返回战场/);
+    assert.match(textOf(pill), /Back to Battlefield/);
     assert.ok(![...walk(v)].some((x) => hasClass(x, 'chud__observe')));
   });
   test('observing a normal field: the "👁 name" pill + 返回战场; a helper\'s own pill has no 返回战场', () => {
     const v = CombatHud({ pub: {}, myId: ME, watching: 'n:p2', hud: null, myDone: true, client: { observing: { name: '阿米娅' }, onBack() {}, layers: [], layer: 'ALL' } });
     const pill = [...walk(v)].find((x) => hasClass(x, 'chud__observe'));
-    assert.ok(pill && /阿米娅/.test(textOf(pill)) && /返回战场/.test(textOf(pill)));
+    assert.ok(pill && /阿米娅/.test(textOf(pill)) && /Back to Battlefield/.test(textOf(pill)));
     const own = CombatHud({ pub: {}, myId: ME, watching: null, hud: null, myDone: false, client: { observing: null, onBack() {}, layers, layer: 'ALL', onLayer() {} } });
     const p2 = [...walk(own)].find((x) => hasClass(x, 'chud__layers'));
-    assert.ok(p2 && !hasClass(p2, 'is-observing') && !/返回战场/.test(textOf(p2)));
+    assert.ok(p2 && !hasClass(p2, 'is-observing') && !/Back to Battlefield/.test(textOf(p2)));
   });
 });
 
@@ -313,7 +313,7 @@ describe('§20.15 the strip and the popup say whose bonds they show', () => {
     const root = [...walk(other)].find((v) => hasClass(v, 'bstrip'));
     assert.ok(root && hasClass(root, 'is-other'));
     assert.equal(root.props['data-owner'], '阿米娅');
-    assert.equal(root.props['aria-label'], '阿米娅 的盟约');
+    assert.equal(root.props['aria-label'], '阿米娅\'s Alliances');
     const tag = [...walk(other)].find((v) => hasClass(v, 'bstrip__owner'));
     assert.ok(tag, 'the owner tag');
     assert.match(textOf(tag), /阿米娅/);
@@ -325,9 +325,9 @@ describe('§20.15 the strip and the popup say whose bonds they show', () => {
   });
   test('a teammate without bonds: "name 尚未激活盟约" with the tag', () => {
     const v = BondStrip({ bonds: [], owner: 'AI·煌', onOpen() {} });
-    assert.match(textOf(v), /AI·煌 尚未激活盟约/);
+    assert.match(textOf(v), /AI·煌 has no active alliances yet/);
     assert.ok([...walk(v)].some((x) => hasClass(x, 'bstrip__owner')));
-    assert.match(textOf(BondStrip({ bonds: [], onOpen() {} })), /部署干员以激活盟约/);
+    assert.match(textOf(BondStrip({ bonds: [], onOpen() {} })), /Deploy operators to activate alliances/);
   });
   test('the popup of a teammate\'s bond: "👁 name 的盟约", their count / layers, members from their board', () => {
     const id = ids[0];
@@ -336,8 +336,8 @@ describe('§20.15 the strip and the popup say whose bonds they show', () => {
     const v = BondPopup({ bondId: id, entry: bond(id, 2, 333, 1), priv: { board: [{ kind: 'chess', id: member }], hand: [], temp: [] }, owner: '阿米娅', onClose() {} });
     const root = [...walk(v)].find((x) => hasClass(x, 'bpop'));
     assert.ok(hasClass(root, 'is-other') && root.props['data-owner'] === '阿米娅');
-    assert.match(root.props['aria-label'], /^阿米娅 的盟约：/);
-    assert.match(textOf([...walk(v)].find((x) => hasClass(x, 'bpop__owner'))), /阿米娅.*的盟约/);
+    assert.match(root.props['aria-label'], /^阿米娅's Alliances: /);
+    assert.match(textOf([...walk(v)].find((x) => hasClass(x, 'bpop__owner'))), /阿米娅.*'s alliances/);
     assert.match(textOf([...walk(v)].find((x) => hasClass(x, 'bpop__facts'))), /333/);
     const on = [...walk(v)].filter((x) => hasClass(x, 'bpop__member') && hasClass(x, 'is-on'));
     assert.equal(on.length, 1, 'the teammate\'s operator on the field is the one member in play');

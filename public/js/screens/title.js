@@ -174,8 +174,8 @@ function Ridges() {
 }
 
 const STATUS_TEXT = {
-  idle: '准备连接', connecting: '正在连接服务器', connected: '已连接服务器', handshaking: '正在验证身份',
-  online: '已连接服务器', reconnecting: '连接中断，正在重连', closed: '连接已关闭',
+  idle: 'Preparing to connect', connecting: 'Connecting to the server', connected: 'Connected to the server', handshaking: 'Verifying identity',
+  online: 'Connected to the server', reconnecting: 'Connection lost, reconnecting', closed: 'Connection closed',
 };
 
 /** Title screen component. */
@@ -199,7 +199,7 @@ export function TitleScreen() {
 
   const valid = isValidName(name);
   const start = () => {
-    if (!valid) { toast('请输入博士代号', 'warn'); return; }
+    if (!valid) { toast('Please enter a callsign.', 'warn'); return; }
     enterSession(name);
   };
 
@@ -241,18 +241,18 @@ export function TitleScreen() {
         <span class="title-en__a">STRONGHOLD PROTOCOL</span>
         <span class="title-en__b">ALLIANCE</span>
       </div>
-      <h1 class="title-cn">卫戍协议<span class="title-cn__colon">：</span><em>盟约</em></h1>
-      <p class="title-tag">调配资金与干员，与同伴协同布防，抵御多波次进攻，直至击败敌方领袖。</p>
+      <h1 class="title-cn">Stronghold Protocol<span class="title-cn__colon">:</span> <em>Alliance</em></h1>
+      <p class="title-tag">Allocate Funds and Operators, set up your defenses together with your teammates and withstand wave after wave of attacks until the Enemy Leader is defeated.</p>
 
       <div class="title-login">
         ${pendingJoin ? html`<div class="title-invite">
           <${Icon} name="key" />
-          <span>收到同盟邀请</span><b class="num">${pendingJoin}</b><span class="t-lo">· 输入代号后将自动加入</span>
+          <span>Invited to alliance</span><b class="num">${pendingJoin}</b><span class="t-lo">· You will join automatically once you enter a callsign</span>
         </div>` : null}
-        <${TextField} label="博士代号" micro="CALLSIGN" size="lg" icon="user" value=${name} maxLength=${NAME_MAX_LEN}
-          placeholder="输入你的代号（最多 ${NAME_MAX_LEN} 字）" autoFocus=${!touchUi}
+        <${TextField} label="Callsign" micro="CALLSIGN" size="lg" icon="user" value=${name} maxLength=${NAME_MAX_LEN}
+          placeholder="Enter your callsign (max ${NAME_MAX_LEN} characters)" autoFocus=${!touchUi}
           onInput=${setName} onEnter=${start} />
-        <${Button} variant="primary" size="xl" block=${true} iconRight="chevrons" disabled=${!valid} onClick=${start}>开始<//>
+        <${Button} variant="primary" size="xl" block=${true} iconRight="chevrons" disabled=${!valid} onClick=${start}>Start<//>
         <div class="title-conn">
           <span class=${`status-dot ${dotClass}`}></span>
           <span>${STATUS_TEXT[conn.status] || conn.status}</span>
@@ -264,7 +264,7 @@ export function TitleScreen() {
     </main>
 
     <footer class="title-foot">
-      <span>非官方同人复刻 · 游戏素材版权归 上海鹰角网络 / Yostar 所有</span>
+      <span>Unofficial fan remake · Game assets © Shanghai Hypergryph Network / Yostar</span>
       <${MicroLabel}>v${APP_VERSION} · WEB SIMULATION<//>
     </footer>
   </div>`;

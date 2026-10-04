@@ -47,32 +47,32 @@ describe('user playtest #2 item 1 — loadout chosen in the UI fights in the loc
       await c.click('.lobby-screen [data-testid="loadout-open"]');
       await c.page.waitForSelector('.lo .lo-card', { visible: true, timeout: 15000 });
       await c.click('.lo-search input');
-      await c.page.keyboard.type('野鬃');
+      await c.page.keyboard.type('Wild Mane'); // 野鬃 (the page shows the English overlay names)
       await c.page.waitForFunction(() => document.querySelectorAll('.lo-card').length === 1, { timeout: 5000 });
       await c.click('.lo-card');
       await c.click('.lo-detail .lo-skill[data-skill="0"]');
       await c.click('.lo-detail .lo-mod[data-module="none"]');
       await c.page.waitForFunction(() => document.querySelector('.lo-skill.is-on[data-skill="0"]') && document.querySelector('.lo-mod.is-on[data-module="none"]'), { timeout: 3000 });
-      await c.page.waitForFunction(() => /已同步/.test(document.querySelector('.lo-sync')?.textContent || ''), { timeout: 8000 });
+      await c.page.waitForFunction(() => /Synced/.test(document.querySelector('.lo-sync')?.textContent || ''), { timeout: 8000 });
       await c.shot('overlay');
       await c.page.keyboard.press('Escape');
       await c.page.waitForFunction(() => !document.querySelector('.lo'), { timeout: 3000 });
 
       // 2) a solo 标准 match: the briefing's m.private carries the loadout
-      await c.click('.mode-card', '独立模拟');
-      await c.click('.diff-card', '标准模拟');
-      await c.click('.create-box button', '开始独立模拟');
+      await c.click('.mode-card', 'Solo Simulation');
+      await c.click('.diff-card', 'Standard Simulation');
+      await c.click('.create-box button', 'Start Solo Simulation');
       await c.waitFor((s) => !!s.room, 'solo room');
-      if (!(await c.st()).phase) await c.click('.room-bar__right button', '开始模拟', { timeout: 20000 });
+      if (!(await c.st()).phase) await c.click('.room-bar__right button', 'Start Simulation', { timeout: 20000 });
       await c.waitFor((s) => s.phase === 'INFO_CHECK', 'briefing', 30000);
       const lo = await c.page.evaluate(() => globalThis.__SP__.store.get().match.private?.loadout ?? null);
       assert.deepEqual(lo, { [BASE]: { skill: 0, module: 'none' } }, 'the match received the loadout');
-      await c.click('.brief__foot .btn--primary', '准备就绪');
+      await c.click('.brief__foot .btn--primary', 'Ready');
       await c.waitFor((s) => s.phase === 'BAND_DRAFT', 'band draft', 30000);
       await sleep(500);
       assert.deepEqual(await untimed(c), { deadline: false, shown: 0 }, 'item 11: the solo strategy draft is untimed');
       await c.click('.dband', null, { nth: 1 });
-      await c.click('.draft-detail__btns .btn--primary', '确认选择');
+      await c.click('.draft-detail__btns .btn--primary', 'Confirm Selection');
       await c.waitFor((s) => s.phase === 'PREP' && !s.ready && s.hand > 0, 'prep with the starter kit', 60000);
       await sleep(1800); // camera flight + pieces
       assert.deepEqual(await untimed(c), { deadline: false, shown: 0 }, 'item 11: solo prep is untimed');
@@ -103,20 +103,20 @@ describe('user playtest #2 item 1 — loadout chosen in the UI fights in the loc
           module: document.querySelector('.dpanel .dmodule')?.textContent || '',
           none: !!document.querySelector('.dpanel .dmodule.is-none'),
           // the record (base) value: with live stats (user playtest #4 item 7: the start-of-battle preview) it is the
-          // cell's title "基础 N", else the value itself
+          // cell's title "Base N", else the value itself
           stats: Object.fromEntries([...document.querySelectorAll('.dpanel .dstat')].map((el) => [el.querySelector('.dstat__k')?.textContent,
-            (el.getAttribute('title') || '').replace(/^基础 /, '') || el.querySelector('.dstat__v')?.textContent])),
+            (el.getAttribute('title') || '').replace(/^Base /, '') || el.querySelector('.dstat__v')?.textContent])),
           trait: document.querySelector('.dpanel .dtrait')?.textContent || '',
         })), () => null);
         if (detail) break;
       }
       assert.ok(detail, 'the detail card opens for the placed elite');
-      assert.ok(detail.skill.includes(s1.name) && detail.tag, `detail card: ${s1.name} 已调配 (${JSON.stringify(detail)})`);
-      assert.ok(detail.none && detail.module.includes('未装备模组'), `detail card: 未装备模组 (${JSON.stringify(detail)})`);
-      // …and the stats / 特性 the unit fights with: no module (ATK 524, interval 1.00 s, "获得1点") — not the default module's
-      assert.equal(detail.stats['攻击'], String(rec.statsBase.atk), `detail card ATK without the module (${JSON.stringify(detail.stats)})`);
-      assert.equal(detail.stats['攻击间隔'], '1.00s', 'detail card interval: ASPD 100');
-      assert.match(detail.trait, /获得1点部署费用/, `detail card 特性 without the module (${detail.trait})`);
+      assert.ok(detail.skill.includes(s1.name) && detail.tag, `detail card: ${s1.name} Loadout tag (${JSON.stringify(detail)})`);
+      assert.ok(detail.none && detail.module.includes('No module equipped'), `detail card: No module equipped (${JSON.stringify(detail)})`);
+      // …and the stats / trait the unit fights with: no module (ATK 524, interval 1.00 s, "Obtain 1 DP") — not the default module's
+      assert.equal(detail.stats.ATK, String(rec.statsBase.atk), `detail card ATK without the module (${JSON.stringify(detail.stats)})`);
+      assert.equal(detail.stats['Atk Interval'], '1.00s', 'detail card interval: ASPD 100');
+      assert.match(detail.trait, /Obtain 1 DP/, `detail card trait without the module (${detail.trait})`);
       await c.shot('detail');
       await c.page.keyboard.press('Escape');
       await c.page.waitForFunction(() => !document.querySelector('.dpanel'), { timeout: 4000 });

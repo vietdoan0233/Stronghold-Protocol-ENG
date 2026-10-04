@@ -106,7 +106,7 @@
 .lo-chip:hover .lo-profglyph { opacity: 1; }
 .lo-chip.is-on .lo-profglyph { filter: none; mix-blend-mode: multiply; opacity: 1; }
 .lo-chip__lbl { font-size: max(.14rem, 10px); }
-.lo-search { flex: 1 1 2.6rem; min-width: 2rem; max-width: 4.2rem; margin-left: auto; }
+.lo-search { flex: 1 1 2.6rem; min-width: 2rem; max-width: 5.2rem; margin-left: auto; } /* wide enough for the English placeholder */
 
 .lo-select { display: inline-flex; align-items: center; gap: .06rem; height: max(.4rem, 24px); padding-left: .1rem; border: 1px solid var(--line); background: rgba(0, 0, 0, .35); }
 .lo-select__k { font-size: max(.13rem, 10px); color: var(--text-dim); letter-spacing: .06em; }
@@ -299,7 +299,7 @@
 .lo-minfo__title { display: flex; align-items: center; gap: .08rem; font-size: max(.17rem, 11px); }
 .lo-minfo__type { font-family: var(--font-num); font-size: max(.13rem, 9px); color: var(--gold-2); letter-spacing: .1em; }
 .lo-minfo__icon { flex: none; width: max(.26rem, 16px); height: max(.26rem, 16px); object-fit: contain; }
-.lo-minfo__row { display: grid; grid-template-columns: max(.5rem, 28px) minmax(0, 1fr); gap: .08rem; align-items: baseline; }
+.lo-minfo__row { display: grid; grid-template-columns: max(.66rem, 38px) minmax(0, 1fr); gap: .08rem; align-items: baseline; } /* key column: Stats / Trait / Talent */
 .lo-minfo__k { font-size: max(.13rem, 9px); color: var(--text-dim); letter-spacing: .08em; }
 .lo-minfo__v { font-size: max(.15rem, 10px); line-height: 1.55; color: var(--text-md); }
 .lo-minfo__tname { color: var(--text-hi); margin-right: .06rem; }
@@ -321,8 +321,8 @@
 
 /* Untimed phases (user playtest #11 / #4 item 3: the official 独立模拟 shows no countdown outside combat — the server
    sends deadline 0 for them, Match.soloUntimed): ui/components.js Countdown now renders nothing without a deadline;
-   this rule stays as a safety net for the old "无倒计时" placeholder ("--" digits + COUNTDOWN label). */
-.countdown[aria-label="无倒计时"] { display: none; }
+   this rule stays as a safety net for the old "No countdown" placeholder ("--" digits + COUNTDOWN label). */
+.countdown[aria-label="No countdown"] { display: none; }
 
 /* the app screens behind the overlay do not need to animate */
 .sp-loadout-open .app-root > .screen { visibility: hidden; }

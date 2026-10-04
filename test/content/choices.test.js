@@ -183,7 +183,7 @@ test('悬赏决策 E2E (co-op, real battles): the picker\'s own battle gets the 
   h.start();
   const sp = toDraft(h, 3);
   assert.equal(sp.family, 'bounty');
-  assert.equal(m.publicView().sp.name, '悬赏决策');
+  assert.equal(m.publicView().sp.name, 'Bounty Draft');
   assert.deepEqual(sp.cards.map((c) => c.id).sort(), [KILL, PERF].sort());
   for (const c of m.publicView().sp.cards) {
     const card = DATA.choices.cards.bounty.find((x) => x.effectId === c.id);
@@ -330,7 +330,7 @@ test('道具补给 E2E (co-op): 6 free normal items within the round window; the
   h.start();
   const sp = toDraft(h, 3);
   assert.equal(sp.family, 'supply');
-  assert.equal(m.publicView().sp.name, '道具补给');
+  assert.equal(m.publicView().sp.name, 'Item Supply');
   const [lo, hi] = data.choices.schedule.mode_multi_normal.rounds['3'].supplyTiers;
   assert.equal(sp.cards.length, 6);
   for (const c of m.publicView().sp.cards) {
@@ -368,7 +368,7 @@ test('机密商店 E2E (solo HARD R11): 3 free normal items of the official comp
   h.start();
   const sp = toDraft(h, 11);
   assert.equal(sp.family, 'shop');
-  assert.equal(m.publicView().sp.name, '机密商店');
+  assert.equal(m.publicView().sp.name, 'Secret Shop');
   assert.equal(sp.cards.length, 3);
   for (const c of sp.cards) assert.ok(DATA.items[c.id] && !DATA.items[c.id].isGolden && DATA.items[c.id].itemType === 'EQUIP');
   const ps = h.ps('p_0');
@@ -511,8 +511,8 @@ test('战术决策 E2E (co-op 3): team cards reach every teammate (AI included),
   h.start();
   const sp = toDraft(h, 3);
   assert.equal(sp.family, 'tactic');
-  assert.equal(m.publicView().sp.name, '战术决策');
-  assert.equal(m.publicView().sp.desc, '进行协同调整，做好迎战准备。', 'the official header');
+  assert.equal(m.publicView().sp.name, 'Tactical Decision');
+  assert.equal(m.publicView().sp.desc, 'Make coordinated adjustments and prepare for battle.', 'the official header');
   assert.equal(sp.cards.length, 6);
   assert.ok(sp.cards.every((c) => TEAM_PREP.includes(c.id)), 'drawn from the pool (with replacement)');
   offerTactic(m, TEAM_PREP);
@@ -611,7 +611,7 @@ test('战术决策 升华 / 整备: the next purchased operator becomes elite, t
   const ps = h.ps('p_0');
   const ref = ps.effects.find((e) => e.key === BUILTIN_REFS.eliteChess);
   assert.ok(ref && ref.counter === 1 && ref.iconId === EFF('allybuff_select_6').decoIconId);
-  assert.ok(ps.effectsView().some((e) => e.id === ref.id && e.name === '升华'));
+  assert.ok(ps.effectsView().some((e) => e.id === ref.id && e.name === 'Sublimation'));
   ps.funds = 50;
   ps.hand.fill(null);
   ps.recompute();

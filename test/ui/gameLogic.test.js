@@ -12,7 +12,7 @@ import {
   bondMembers, bannedPerBond, priceTone, mergeProgress, shopBlockReason, deploySets, indexPieces, placementContext, canPlace,
   boardTargets, dropIntent, normalizeDraft, normalizeSp, groupEnemies, factionTypes, snapHud, bossFrac, attackInterval, fmtNum,
   rangeGridBox, shortcutFor, sanitizeSettings, DEFAULT_SETTINGS, normalizeResult, cycleField, fieldLabel, homeFieldId,
-  activeBubbles, sortedPlayers, tileKey, prepCapsuleLabel, prepCamera, dropFailureReason,
+  activeBubbles, sortedPlayers, tileKey, prepCapsuleLabel, prepCamera, dropFailureReason, STATUS_META,
 } from '../../public/js/ui/gameLogic.js';
 import { pairPlayers } from '../../server/match/finalAssault.js';
 import { PHASE, GEO } from '../../shared/constants.js';
@@ -64,13 +64,22 @@ describe('phases', () => {
   test('combat / boss predicates and banners', () => {
     assert.ok(isCombatPhase(PHASE.UNITE) && !isCombatPhase(PHASE.PREP));
     assert.ok(isBossPhase(PHASE.HIDDEN_CORE) && !isBossPhase(PHASE.COMBAT));
-    assert.equal(phaseBanner(PHASE.UNITE, {}).title, '联防阶段');
-    assert.equal(phaseBanner(PHASE.FINAL_ASSAULT, {}).title, '最终攻势');
-    assert.equal(phaseBanner(PHASE.HIDDEN_CORE, {}).title, '隐秘核心');
-    assert.equal(phaseBanner(PHASE.COMBAT, {}).title, '作战开始');
-    assert.match(phaseBanner(PHASE.ROUND_START, { round: 7 }).title, /7/);
+    assert.equal(phaseBanner(PHASE.UNITE, {}).title, 'Unite Phase');
+    assert.equal(phaseBanner(PHASE.FINAL_ASSAULT, {}).title, 'Final Assault');
+    assert.equal(phaseBanner(PHASE.HIDDEN_CORE, {}).title, 'Hidden Core');
+    assert.equal(phaseBanner(PHASE.COMBAT, {}).title, 'Combat Start');
+    assert.equal(phaseBanner(PHASE.ROUND_START, { round: 7 }).title, 'Round 7');
     assert.equal(phaseBanner(PHASE.SETTLE, {}), null);
-    assert.equal(prepCapsuleLabel(PHASE.PREP), '休息一下');
+    assert.equal(prepCapsuleLabel(PHASE.PREP), 'Rest Phase');
+    // the Unite banner lists the helpers (a nameless one reads "Doctor"); without any it says who defends
+    const uni = { players: [{ playerId: 'a', seat: 0, name: 'Amiya' }, { playerId: 'b', seat: 1 }], unite: { helpers: ['a', 'b'] } };
+    assert.equal(phaseBanner(PHASE.UNITE, uni).sub, 'Uniting: Amiya, Doctor');
+    assert.match(phaseBanner(PHASE.UNITE, {}).sub, /^Doctors with a Perfect Combat/);
+  });
+  test('player statuses use the shared terms (Ready / Deciding / Uniting ...)', () => {
+    assert.deepEqual(Object.fromEntries(Object.entries(STATUS_META).map(([k, v]) => [k, v.text])), {
+      acting: 'Preparing', ready: 'Ready', deciding: 'Deciding', combat: 'In Combat', done: 'Combat Over', helping: 'Uniting', left: 'Left', dead: 'Eliminated',
+    });
   });
 });
 
@@ -166,16 +175,16 @@ describe('shop', () => {
   test('shopBlockReason', () => {
     const priv = privWith();
     assert.equal(shopBlockReason('buy', { priv, editable: true, slot: { price: 3, sold: false } }), null);
-    assert.equal(shopBlockReason('buy', { priv, editable: true, slot: { price: 30 } }), '资金不足');
-    assert.equal(shopBlockReason('buy', { priv, editable: true, slot: { price: 1, sold: true } }), '已售出');
-    assert.equal(shopBlockReason('buy', { priv: { ...priv, ready: true }, editable: false, slot: {} }), '已准备就绪，取消准备后才能操作');
-    assert.equal(shopBlockReason('levelUp', { priv: { ...priv, shop: { ...priv.shop, level: 6 } }, editable: true }), '调度中心已达最高等级');
-    assert.equal(shopBlockReason('refresh', { priv: { ...priv, funds: 0 }, editable: true }), '资金不足');
+    assert.equal(shopBlockReason('buy', { priv, editable: true, slot: { price: 30 } }), 'Not enough Funds');
+    assert.equal(shopBlockReason('buy', { priv, editable: true, slot: { price: 1, sold: true } }), 'Sold');
+    assert.equal(shopBlockReason('buy', { priv: { ...priv, ready: true }, editable: false, slot: {} }), "You're Ready. Cancel Ready to make changes");
+    assert.equal(shopBlockReason('levelUp', { priv: { ...priv, shop: { ...priv.shop, level: 6 } }, editable: true }), 'Dispatch Center is at max level');
+    assert.equal(shopBlockReason('refresh', { priv: { ...priv, funds: 0 }, editable: true }), 'Not enough Funds');
     assert.equal(shopBlockReason('refresh', { priv: { ...priv, funds: 0, shop: { ...priv.shop, refreshPrice: 0 } }, editable: true }), null, 'free refresh');
-    assert.match(shopBlockReason('ready', { priv: { ...priv, canReady: false } }), /临时整备区/);
+    assert.match(shopBlockReason('ready', { priv: { ...priv, canReady: false } }), /Temporary Reserve/);
     assert.equal(shopBlockReason('ready', { priv }), null);
-    assert.equal(shopBlockReason('buy', { priv: { ...priv, alive: false }, editable: true }), '你已被淘汰');
-    assert.equal(shopBlockReason('buy', {}), '尚未就绪');
+    assert.equal(shopBlockReason('buy', { priv: { ...priv, alive: false }, editable: true }), 'You have been eliminated');
+    assert.equal(shopBlockReason('buy', {}), 'Not available yet');
   });
 });
 
@@ -373,11 +382,11 @@ describe('fields, players, emotes', () => {
     assert.equal(cycleField([], 'n:p1', 1), null);
   });
   test('fieldLabel / homeFieldId', () => {
-    assert.equal(fieldLabel(pub.fields[0], pub, 'p1'), '自己');
+    assert.equal(fieldLabel(pub.fields[0], pub, 'p1'), 'You');
     assert.equal(fieldLabel(pub.fields[1], pub, 'p1'), 'B');
-    assert.equal(fieldLabel({ fieldId: 'b1', kind: 'boss', players: ['p1', 'p2'] }, pub, 'p1'), '全景');
+    assert.equal(fieldLabel({ fieldId: 'b1', kind: 'boss', players: ['p1', 'p2'] }, pub, 'p1'), 'Panorama');
     assert.equal(fieldLabel({ fieldId: 'b2', kind: 'boss', players: ['p2'] }, pub, 'p1'), 'B');
-    assert.equal(fieldLabel({ fieldId: 'u', kind: 'unite', players: ['p2'] }, pub, 'p1'), '联防阵地');
+    assert.equal(fieldLabel({ fieldId: 'u', kind: 'unite', players: ['p2'] }, pub, 'p1'), 'Unite Battlefield');
     assert.equal(homeFieldId(pub, 'p1'), 'n:p1');
     assert.equal(homeFieldId({ ...pub, fields: [{ fieldId: 'b1', kind: 'boss', players: ['p1'], live: true }] }, 'p1'), 'b1');
     assert.equal(homeFieldId({}, 'zz'), 'n:zz');
@@ -418,8 +427,12 @@ describe('enemies, HUD, stats', () => {
     assert.equal(attackInterval(0, 100), null);
     assert.equal(attackInterval(1, 0), 1, 'bad aspd falls back to 100');
     assert.equal(fmtNum(12345), '12,345');
-    assert.equal(fmtNum(2_310_000), '231万');
-    assert.equal(fmtNum(150_000), '15.0万');
+    assert.equal(fmtNum(2_310_000), '2.31M');
+    assert.equal(fmtNum(150_000), '150K');
+    assert.equal(fmtNum(99_999), '99,999');
+    assert.equal(fmtNum(999_999), '1M', 'rounds up into the next unit');
+    assert.equal(fmtNum(36_000_000), '36M');
+    assert.equal(fmtNum(1_500_000_000), '1.5B');
     assert.equal(fmtNum('x'), '—');
     const box = rangeGridBox([[1, 0], [0, 1], [-1, 2]]);
     assert.equal(box.rows, 3); assert.equal(box.cols, 3); assert.ok(box.cells.has('0,1'));
@@ -512,7 +525,7 @@ describe('equipment dropped on a tile goes to the unit on it', () => {
     assert.deepEqual(dropIntent(ctx, eq.uid, { area: 'hand', idx: 4 }).fields, { itemUid: eq.uid, targetUid: onBench.uid }, 'a bench operator');
     // the empty tile behind `behind` (where its head is drawn) takes nothing — and the release says why
     assert.equal(dropIntent(ctx, eq.uid, { area: 'board', row: 11, col: 3 }), null);
-    assert.equal(dropFailureReason(ctx, eq.uid, { row: 11, col: 3, area: 'board' }), '请将装备拖拽至干员身上');
+    assert.equal(dropFailureReason(ctx, eq.uid, { row: 11, col: 3, area: 'board' }), 'Drag gear onto an operator');
     // an Art is used on the tile under the pointer itself
     assert.deepEqual(dropIntent(ctx, art.uid, { area: 'board', row: 11, col: 3 }), { t: 'g.art', fields: { itemUid: art.uid, row: 11, col: 3 } });
   });

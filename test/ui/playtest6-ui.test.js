@@ -25,9 +25,12 @@ const read = (p) => readFileSync(path.join(ROOT, p), 'utf8');
 
 // the browser data store reads the real data files from disk
 globalThis.fetch = async (url) => {
-  const name = String(url).split('/').pop();
+  const u = String(url);
+  const name = u.split('/').pop();
   try {
-    const body = readFileSync(path.join(ROOT, 'data', name), 'utf8');
+    // the English overlay tables too (as served at /locales/en/), so the store shows what the player sees
+    const file = u.includes('/locales/') ? path.join(ROOT, 'public', 'locales', 'en', name) : path.join(ROOT, 'data', name);
+    const body = readFileSync(file, 'utf8');
     return { ok: true, status: 200, json: async () => JSON.parse(body) };
   } catch {
     return { ok: false, status: 404, json: async () => ({}) };
@@ -126,8 +129,8 @@ describe('6: 机变 cards (道具补给 / 机密商店 / 悬赏 / 战术) show t
     assert.ok(badge, 'the taker\'s badge');
     assert.equal(children(badge).length, 1, 'avatar only');
     assert.equal(children(badge)[0].type?.name, 'PlayerAvatar');
-    assert.equal(badge.props.title, 'P2 已选择');
-    assert.match(taken[0].props['aria-label'], /，P2已选择$/);
+    assert.equal(badge.props.title, 'Selected by P2');
+    assert.match(taken[0].props['aria-label'], /, selected by P2$/);
     const armed = [...walk(ChoiceView({ pub: { players, deadline: 0 }, sp, myId: 'me', solo: false, armed: 0 }))];
     assert.ok(armed.some((n) => hasClass(n, 'spcard__confirm')));
   });

@@ -561,7 +561,7 @@ export function payHammers(ctx) {
       if (id && ctx.grantItem(id, { source: 'bond:victoriaShip' })) granted++;
     }
   }
-  if (granted && typeof ctx.toast === 'function') ctx.toast(`【维多利亚】获得${granted}件维式重锤`, 'info');
+  if (granted && typeof ctx.toast === 'function') ctx.toast(`[Victoria] Gained ${granted} Vice ${granted === 1 ? 'Hammer' : 'Hammers'}`, 'info');
   return granted;
 }
 

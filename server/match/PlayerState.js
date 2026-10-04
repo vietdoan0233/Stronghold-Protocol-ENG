@@ -78,6 +78,7 @@ import { offsetTile } from '../sim/dir.js';
 import { computeBonds, bondList, bondSnapshot, activatedLayers, bondsWithGains } from './bondsMeta.js';
 import { itemKey } from './gamedata.js';
 import { bountyText } from './choices.js';
+import { L } from '../display.js';
 
 const HAND_SIZE = GEO.HAND_SIZE;
 const TEMP_SIZE = GEO.TEMP_SIZE;
@@ -280,11 +281,11 @@ export class PlayerState {
         if (kind === 'chess') {
           this.removeTokensOf(piece.uid);
           const rec = this.gd.chess(piece.id);
-          names.push(rec && rec.name ? rec.name : piece.id);
+          names.push(rec && rec.name ? L(rec.name) : piece.id);
         }
       }
     }
-    if (names.length) this.m.toast(this, 'warn', `地形变化：${names.join('、')}无法停留在原位置，已撤回整备区`);
+    if (names.length) this.m.toast(this, 'warn', `Terrain change: ${names.join(', ')} can't stay in place and ${names.length === 1 ? 'was' : 'were'} returned to Reserve`);
     return moved;
   }
 
@@ -495,7 +496,7 @@ export class PlayerState {
       const where = this.stow(piece, { allowTemp: true, toTemp });
       if (!where) {
         this.returnCopies(piece);
-        this.m.toast(this, 'warn', '整备区已满，获得的干员已返还');
+        this.m.toast(this, 'warn', 'Reserve is full; the operator you gained was returned to the pool');
         return null;
       }
     }
@@ -566,7 +567,7 @@ export class PlayerState {
     if (where === 'board') this.grantTokensFor(elite);
     if (!where) {
       this.m.pool.give(baseId, copies);
-      this.m.toast(this, 'warn', '整备区已满，晋升的精锐干员无法放入');
+      this.m.toast(this, 'warn', 'Reserve is full; the promoted Elite operator can\'t be placed');
       this.m.log.warn?.(`[match ${this.m.roomCode}] ${this.playerId}: merge result dropped (hand+temp full)`);
       this.recompute();
       return null;
@@ -574,7 +575,7 @@ export class PlayerState {
     this.stats.merges++;
     this.pushRewardOffer('merge');
     const rec = this.gd.chess(goldenId);
-    this.m.tickerFor('GOLDEN_CHAR', [this.name, rec ? rec.name : goldenId], { playerId: this.playerId });
+    this.m.tickerFor('GOLDEN_CHAR', [this.name, rec ? L(rec.name) : goldenId], { playerId: this.playerId });
     this.m.dispatch(this, 'onMerge', { kind: 'chess', piece: elite, baseId, consumed: consumed.map((l) => l.piece.uid), area: where });
     return elite;
   }
@@ -721,7 +722,7 @@ export class PlayerState {
       piece = this._mergeItem(itemId, piece);
       if (!piece) return null;
     } else if (!this.stow(piece, { allowTemp: true, toTemp })) {
-      this.m.toast(this, 'warn', '整备区已满，获得的装备已销毁');
+      this.m.toast(this, 'warn', 'Reserve is full; the gear you gained was destroyed');
       return null;
     }
     this.recompute();
@@ -743,7 +744,7 @@ export class PlayerState {
     if (!this.stow(golden, { allowTemp: true })) {
       const at = slotOf[0];
       if (!at || !this.find(at.holder.uid)) {
-        this.m.toast(this, 'warn', '整备区已满，合成的装备已销毁');
+        this.m.toast(this, 'warn', 'Reserve is full; the merged gear was destroyed');
         return null;
       }
       at.holder.items.splice(Math.max(0, Math.min(at.idx, at.holder.items.length)), 0, golden);
@@ -1057,10 +1058,10 @@ export class PlayerState {
       const range = this.summonRange(p);
       if (!range || range.has(k)) continue;
       this.board.delete(k);
-      (this._returnToken(p, null, { allowTemp: true }) ? back : gone).push(this.gd.token(p.id)?.name || p.id);
+      (this._returnToken(p, null, { allowTemp: true }) ? back : gone).push(L(this.gd.token(p.id)?.name) || p.id);
     }
-    if (back.length) this.m.toast(this, 'warn', `${back.join('、')}只能部署在召唤者攻击范围内，已退回整备区`);
-    if (gone.length) this.m.toast(this, 'warn', `${gone.join('、')}只能部署在召唤者攻击范围内，整备区已满，下回合返还`);
+    if (back.length) this.m.toast(this, 'warn', `${back.join(', ')} can only be deployed within the summoner's attack range; returned to Reserve`);
+    if (gone.length) this.m.toast(this, 'warn', `${gone.join(', ')} can only be deployed within the summoner's attack range; Reserve is full, returning next round`);
     return back.length + gone.length;
   }
 
@@ -1584,10 +1585,10 @@ export class PlayerState {
   effectsView() {
     const out = [];
     const band = this.bandId ? this.gd.band(this.bandId) : null;
-    if (band) out.push({ id: band.effectId || band.bandId, name: band.effectName || band.name, desc: band.desc || '', iconKind: 'band', iconId: band.iconId || band.bandId });
+    if (band) out.push({ id: band.effectId || band.bandId, name: L(band.effectName || band.name), desc: L(band.desc || ''), iconKind: 'band', iconId: band.iconId || band.bandId });
     for (const e of this.effects) {
       if (e.hidden) continue;
-      const v = { id: e.id, name: e.name || e.id, desc: e.desc || '', iconKind: e.iconKind || 'choice', iconId: e.iconId || e.id };
+      const v = { id: e.id, name: L(e.name) || e.id, desc: L(e.desc || ''), iconKind: e.iconKind || 'choice', iconId: e.iconId || e.id };
       if (e.counter != null) v.counter = e.counter;
       out.push(v);
     }
@@ -1598,8 +1599,8 @@ export class PlayerState {
       const left = b.roundsLeft >= 90 ? null : b.roundsLeft;
       const eff = b.card.effectId ? this.gd.effect(b.card.effectId) : null;
       out.push({
-        id: b.id, name: b.card.name || '悬赏', desc: bountyText((eff && eff.descRaw) || b.card.desc || '', b.card), iconKind: 'choice', iconId: b.card.effectId || 'bounty',
-        counter: left, counterText: left == null ? '之后的每场作战' : `还剩 ${left} 场作战`,
+        id: b.id, name: L(b.card.name) || 'Bounty', desc: L(bountyText((eff && eff.descRaw) || b.card.desc || '', b.card)), iconKind: 'choice', iconId: b.card.effectId || 'bounty',
+        counter: left, counterText: left == null ? 'Every battle thereafter' : `${left} ${left === 1 ? 'battle' : 'battles'} left`,
       });
     }
     return out;
@@ -1631,7 +1632,7 @@ export class PlayerState {
         slots,
         // `source` 'merge' = the promotion reward (晋升奖励); any other offer (a strategy, an item, a 特质) carries the
         // `label` the bar shows instead; `queued` = offers waiting behind it (player report #6 after 0.1.0)
-        rewardOffer: offer ? { tier: offer.tier, source: offer.source === 'merge' ? 'merge' : 'special', label: offer.label || null, queued: this.offers.length - 1, slots: offer.slots.map((s) => ({ kind: s.kind === 'item' ? 'item' : 'chess', id: s.id, price: s.price, sold: !!s.sold })) } : null,
+        rewardOffer: offer ? { tier: offer.tier, source: offer.source === 'merge' ? 'merge' : 'special', label: L(offer.label) || null, queued: this.offers.length - 1, slots: offer.slots.map((s) => ({ kind: s.kind === 'item' ? 'item' : 'chess', id: s.id, price: s.price, sold: !!s.sold })) } : null,
       },
       hand: this.hand.map((p) => (p ? this.pieceView(p) : null)),
       temp: this.temp.map((p) => (p ? this.pieceView(p) : null)),

@@ -68,12 +68,14 @@ describe('#7 the 联防 leak counter (HUD)', () => {
 
   test('tooltips name the true count and the capped loss', () => {
     const over = pendingTip(30, 10, { unite: true, left: 15 });
-    assert.match(over, /还剩 15 个.*剩余不足 10 个后，队友每击倒一个少扣 1 点.*扣除 10 点（每回合至多 10 点）/);
-    assert.doesNotMatch(over, /队友每击倒一个就少扣/, 'above the cap a kill does not lower the loss');
-    assert.match(pendingTip(30, 4, { unite: true, left: 4 }), /还剩 4 个，队友每击倒一个就少扣 1 点/);
-    assert.match(pendingTip(30, 8, { unite: true, left: 9, cap: 8 }), /剩余不足 8 个后.*每回合至多 8 点/);
-    assert.equal(rowLpTip({ lp: 30, pending: 10, unite: true, left: 13 }), '目标生命值 30，联防中：漏过的敌人还剩 13 个，按现在结算扣除 10 点（每回合至多 10 点）');
-    assert.match(rowLpTip({ lp: 30, pending: 8, unite: true, left: 13 }, 8), /每回合至多 8 点/, 'the configured cap');
+    assert.match(over, /15 of your leaked enemies remain; once fewer than 10 remain, each enemy downed by your teammates reduces the deduction by 1\. If settled now: −10 \(max 10 per round\)/);
+    assert.doesNotMatch(over, /remain; each enemy downed/, 'above the cap a kill does not lower the loss');
+    assert.match(pendingTip(30, 4, { unite: true, left: 4 }), /4 of your leaked enemies remain; each enemy downed by your teammates reduces the deduction by 1/);
+    assert.match(pendingTip(30, 1, { unite: true, left: 1 }), /1 of your leaked enemies remains; /, 'one enemy left: singular verb');
+    assert.match(pendingTip(30, 8, { unite: true, left: 9, cap: 8 }), /once fewer than 8 remain.*\(max 8 per round\)/);
+    assert.equal(rowLpTip({ lp: 30, pending: 10, unite: true, left: 13 }), 'Target LP 30: Uniting. 13 leaked enemies remain. If settled now: −10 (max 10 per round)');
+    assert.equal(rowLpTip({ lp: 30, pending: 1, unite: true, left: 1 }), 'Target LP 30: Uniting. 1 leaked enemy remains. If settled now: −1 (max 10 per round)');
+    assert.match(rowLpTip({ lp: 30, pending: 8, unite: true, left: 13 }, 8), /\(max 8 per round\)/, 'the configured cap');
     assert.equal(rowLpTip({ lp: 30, pending: 0, unite: true, left: 0 }), null);
   });
 
@@ -108,13 +110,14 @@ describe('#7 the 联防 leak counter (HUD)', () => {
   });
 
   test('the tag\'s tooltip speaks to the leaker on the own tag, names the teammate on a teammate\'s row', () => {
-    assert.equal(missTip(5), '你漏过的敌人还剩 5 个（队友正在迎战）');
-    assert.equal(missTip(0), '你漏过的敌人已全部被击倒');
-    assert.equal(missTip(5, 'Doctor·B'), 'Doctor·B 漏过的敌人还剩 5 个（联防中）');
-    assert.equal(missTip(0, 'Doctor·B'), 'Doctor·B 漏过的敌人已全部被击倒');
-    assert.equal(MissTag({ n: 5, name: 'Doctor·B' }).props.title, 'Doctor·B 漏过的敌人还剩 5 个（联防中）');
-    assert.equal(MissTag({ n: 5 }).props.title, '你漏过的敌人还剩 5 个（队友正在迎战）');
-    assert.match(read('public/js/ui/teamPanel.js'), /<\$\{MissTag\} n=\$\{lp\.left\} name=\$\{self \? null : p\.name \|\| '博士'\} \/>/);
+    assert.equal(missTip(5), '5 of your leaked enemies remain (teammates are intercepting them)');
+    assert.equal(missTip(1), '1 of your leaked enemies remains (teammates are intercepting them)');
+    assert.equal(missTip(0), 'All of your leaked enemies have been downed');
+    assert.equal(missTip(5, 'Doctor·B'), "5 of Doctor·B's leaked enemies remain (Uniting)");
+    assert.equal(missTip(0, 'Doctor·B'), "All of Doctor·B's leaked enemies have been downed");
+    assert.equal(MissTag({ n: 5, name: 'Doctor·B' }).props.title, "5 of Doctor·B's leaked enemies remain (Uniting)");
+    assert.equal(MissTag({ n: 5 }).props.title, '5 of your leaked enemies remain (teammates are intercepting them)');
+    assert.match(read('public/js/ui/teamPanel.js'), /<\$\{MissTag\} n=\$\{lp\.left\} name=\$\{self \? null : p\.name \|\| 'Doctor'\} \/>/);
   });
 
   test('the phase capsule carries the official runner tag ×N in 联防 only; the tag reads the uncapped number', () => {
@@ -126,7 +129,7 @@ describe('#7 the 联防 leak counter (HUD)', () => {
     const tag = MissTag({ n: 14 });
     assert.ok(hasClass(tag, 'misstag'));
     assert.match(textOf(tag), /14$/);
-    assert.match(tag.props.title, /还剩 14 个/);
+    assert.match(tag.props.title, /^14 of your leaked enemies remain/);
     assert.ok(hasClass(MissTag({ n: 0 }), 'is-clear'));
     // wiring: the top bar hands the live value to the capsule; the game screen feeds liveLp with the leaker's count
     assert.match(read('public/js/ui/hud.js'), /PhaseCapsule} pub=\$\{pub\} hud=\$\{hud\} miss=/);

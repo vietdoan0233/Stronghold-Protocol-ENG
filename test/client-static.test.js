@@ -409,14 +409,15 @@ describe('net.js', () => {
 
   test('errorText / NetError', async () => {
     const { errorText, NetError } = await mod('net.js');
-    assert.equal(errorText('ROOM_FULL'), '房间已满');
-    assert.equal(errorText('TIMEOUT'), '请求超时，请重试');
+    assert.equal(errorText('ROOM_FULL'), 'The room is full');
+    assert.equal(errorText('TIMEOUT'), 'Request timed out; please try again');
     assert.equal(errorText('WHATEVER', 'server says'), 'server says');
+    assert.equal(errorText(''), 'Unknown error', 'no code, no server text');
     const e = new NetError('NO_FUNDS');
     assert.ok(e instanceof Error);
     assert.equal(e.code, 'NO_FUNDS');
-    assert.equal(e.message, '资金不足');
-    assert.match(new NetError('BAD_MSG', 'x', 'version mismatch: server 2').message, /版本/);
+    assert.equal(e.message, 'Not enough Funds');
+    assert.match(new NetError('BAD_MSG', 'x', 'version mismatch: server 2').message, /version does not match/);
   });
 
   test('defaultWsUrl', async () => {
@@ -465,7 +466,7 @@ describe('net.js', () => {
     const p2 = net.request('room.join', { code: 'ABCD' });
     const m2 = ws().last('room.join');
     ws().recv({ t: 'error', rid: m2.rid, code: 'ROOM_NOT_FOUND', msg: '…' });
-    await assert.rejects(p2, (e) => e.code === 'ROOM_NOT_FOUND' && e.message === '未找到该同盟密钥对应的房间');
+    await assert.rejects(p2, (e) => e.code === 'ROOM_NOT_FOUND' && e.message === 'No room found for this alliance key');
     assert.equal(net.pendingCount, 0);
   });
 
@@ -618,7 +619,7 @@ describe('net.js', () => {
     ws().recv({ t: 'error', rid: ws().last('hello').rid, code: 'BAD_MSG', msg: 'x', detail: 'version mismatch: server 2' });
     assert.equal(net.status, 'connected');
     assert.equal(errs.length, 1);
-    assert.match(errs[0].message, /版本/);
+    assert.match(errs[0].message, /version does not match/);
     await assert.rejects(p, (e) => e.code === 'OFFLINE');
   });
 
@@ -1003,18 +1004,43 @@ describe('screen helpers', () => {
     }
     // config.json not loaded here: the embedded fallback
     for (const room of ['solo', 'coop']) {
-      assert.equal(difficultyInfo(room, 'FUNNY').stageNote, '战场固定为 战场#01');
-      assert.equal(difficultyInfo(room, 'NORMAL').stageNote, '战场随机（共8张）');
-      assert.equal(difficultyInfo(room, 'HARD').stageNote, '战场随机（共7张）');
-      assert.equal(difficultyInfo(room, 'ABYSS').stageNote, '战场随机（共7张）');
+      assert.equal(difficultyInfo(room, 'FUNNY').stageNote, 'Fixed battlefield: Battlefield #01');
+      assert.equal(difficultyInfo(room, 'NORMAL').stageNote, 'Random battlefield (8 maps)');
+      assert.equal(difficultyInfo(room, 'HARD').stageNote, 'Random battlefield (7 maps)');
+      assert.equal(difficultyInfo(room, 'ABYSS').stageNote, 'Random battlefield (7 maps)');
     }
     assert.equal(difficultyInfo('coop', 'BOGUS').stageNote, '');
-    assert.equal(stageNote(cfg.modes.mode_multi_normal.stages), '战场随机（共8张）');
-    assert.equal(stageNote(['act1autochess_m01']), '战场固定为 战场#01');
+    assert.equal(stageNote(cfg.modes.mode_multi_normal.stages), 'Random battlefield (8 maps)');
+    assert.equal(stageNote(['act1autochess_m01']), 'Fixed battlefield: Battlefield #01');
     assert.equal(stageNote([]), '');
     assert.equal(stageNote(null), '');
-    assert.equal(stageLabel('act2autochess_m02'), '战场#06', 'act2 continues the numbering');
+    assert.equal(stageLabel('act2autochess_m02'), 'Battlefield #06', 'act2 continues the numbering');
     assert.equal(stageLabel('nope'), '');
+  });
+
+  test('lobby: stageLabel keeps the "Battlefield #NN" lead of an English stage name (stages.json overlay), the first word of any other name', async () => {
+    const { stageLabel, stageNote } = await mod('screens/lobby.js');
+    const { data } = await mod('data.js');
+    const STAGES = {
+      act1autochess_m01: { id: 'act1autochess_m01', name: 'Battlefield #01' },
+      act1autochess_m04: { id: 'act1autochess_m04', name: 'Battlefield #04 Active Originium' },
+      act1autochess_m05: { id: 'act1autochess_m05', name: 'Battlefield #05 (First Half) Rising Tide / Custom Water Platform' },
+      act2autochess_m02: { id: 'act2autochess_m02', name: 'Marsh Control' }, // no "Battlefield #NN" lead: the first word
+    };
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = async (url) => (/\/locales\//.test(String(url)) ? { ok: false, status: 404 } : { ok: true, status: 200, json: async () => STAGES });
+    try {
+      await data.invalidate('stages'); // a no-op unless an earlier test loaded it
+      await data.load('stages');
+      assert.equal(stageLabel('act1autochess_m01'), 'Battlefield #01');
+      assert.equal(stageLabel('act1autochess_m04'), 'Battlefield #04');
+      assert.equal(stageLabel('act1autochess_m05'), 'Battlefield #05', 'the half and the title are not part of the label');
+      assert.equal(stageLabel('act2autochess_m02'), 'Marsh');
+      assert.equal(stageLabel('act1autochess_m02'), 'Battlefield #02', 'a stage the table lacks: derived from the id');
+      assert.equal(stageNote(['act1autochess_m04']), 'Fixed battlefield: Battlefield #04');
+    } finally {
+      globalThis.fetch = realFetch;
+    }
   });
 
   test('room: normalizeSeats / roomFacts / inviteLink', async () => {
@@ -1067,20 +1093,20 @@ describe('screen helpers', () => {
 
   test('toasts: merge identical, describeError', async () => {
     const { toast, dismissToast, describeError } = await mod('ui/toasts.js');
-    const a = toast('资金不足', 'error');
-    const b = toast('资金不足', 'error');
+    const a = toast('Not enough Funds', 'error');
+    const b = toast('Not enough Funds', 'error');
     assert.equal(a, b, 'identical toasts merge');
-    const c = toast('资金不足', 'warn');
+    const c = toast('Not enough Funds', 'warn');
     assert.notEqual(a, c);
     assert.equal(toast('   '), -1);
     dismissToast(a);
     dismissToast(c);
     dismissToast(12345); // unknown id: no-op
-    assert.equal(describeError({ code: 'NO_FUNDS' }), '资金不足');
-    assert.equal(describeError('ROOM_FULL'), '房间已满');
+    assert.equal(describeError({ code: 'NO_FUNDS' }), 'Not enough Funds');
+    assert.equal(describeError('ROOM_FULL'), 'The room is full');
     assert.equal(describeError(new Error('boom')), 'boom');
-    assert.equal(describeError(null), '发生未知错误');
-    assert.equal(describeError({}), '发生未知错误');
+    assert.equal(describeError(null), 'An unknown error occurred');
+    assert.equal(describeError({}), 'An unknown error occurred');
   });
 });
 

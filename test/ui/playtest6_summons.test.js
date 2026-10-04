@@ -40,10 +40,10 @@ const textOf = (v) => {
 
 test('summonDeployHint: skill summons at the start and with the skill, talent summons with the board, other tokens say nothing', () => {
   assert.equal(SKILL_SUMMON_START_DEPLOY, true, 'the user\'s answer after playtest #6: the PRTS start deploy');
-  assert.match(summonDeployHint(TOKENS.token_10000_silent_healrb), /^作战开始时在摆放的位置部署一次.*发动技能时/);
-  assert.match(summonDeployHint(TOKENS.token_10006_vodfox_doll), /^作战开始时在摆放的位置部署一次.*发动技能时/);
+  assert.match(summonDeployHint(TOKENS.token_10000_silent_healrb), /^At the start of battle, deploys once.*casts a skill/);
+  assert.match(summonDeployHint(TOKENS.token_10006_vodfox_doll), /^At the start of battle, deploys once.*casts a skill/);
   for (const id of ['token_10041_cathy_catsld', 'token_10028_vigil_wolf', 'token_10017_skadi2_dedant', 'token_10030_mlyss_wtrman']) {
-    assert.match(summonDeployHint(TOKENS[id]), /作战开始时/, id);
+    assert.match(summonDeployHint(TOKENS[id]), /At the start of battle/, id);
   }
   assert.equal(summonDeployHint(TOKENS.token_10056_angel2_target), null, '投递坐标 is no hand piece');
   assert.equal(summonDeployHint(TOKENS.enemy_9012_acloon), null);
@@ -54,9 +54,9 @@ test('one switch for the start-of-battle deploy: the sim and the hint read share
   const drone = TOKENS.token_10000_silent_healrb;
   assert.equal(summonDeployHint(drone), summonDeployHint(drone, SKILL_SUMMON_START_DEPLOY), 'the hint defaults to it');
   // off (the playtest #4 reading): only with the skill; on (PRTS, the default): once at the start, then with each skill
-  assert.match(summonDeployHint(drone, false), /^所属干员发动技能时才在摆放的位置出现/);
-  assert.match(summonDeployHint(drone, true), /^作战开始时在摆放的位置部署一次，之后所属干员每次发动技能时再次出现/);
-  assert.match(summonDeployHint(TOKENS.token_10006_vodfox_doll, true), /作战开始时.*部署一次/);
+  assert.match(summonDeployHint(drone, false), /^Appears at its placed position only when its owning operator casts a skill/);
+  assert.match(summonDeployHint(drone, true), /^At the start of battle, deploys once at its placed position, then appears there again each time its owning operator casts a skill/);
+  assert.match(summonDeployHint(TOKENS.token_10006_vodfox_doll, true), /At the start of battle.*deploys once/);
   // talent summons deploy with the board either way
   assert.equal(summonDeployHint(TOKENS.token_10041_cathy_catsld, true), summonDeployHint(TOKENS.token_10041_cathy_catsld, false));
 });
@@ -79,16 +79,16 @@ test('the guide and SIM.md state the start-of-battle rule the switch selects (fl
 test('the summon card: 凯瑟琳\'s device shows the hint and its shield talent; 巫恋\'s doll its token skill', async () => {
   await data.loadAll('tokens', 'assets');
   const dev = textOf(TokenDetail({ token: TOKENS.token_10041_cathy_catsld, piece: { kind: 'token', id: 'token_10041_cathy_catsld', count: 2 } }));
-  assert.match(dev, /作战开始时在摆放的位置部署/);
+  assert.match(dev, /At the start of battle, deploys at its placed position/);
   assert.match(dev, /定向支援信号/);
   assert.match(dev, /屏障/);
   const drone = textOf(TokenDetail({ token: TOKENS.token_10000_silent_healrb, piece: { kind: 'token', id: 'token_10000_silent_healrb', count: 1 } }));
-  assert.match(drone, /作战开始时在摆放的位置部署一次，之后所属干员每次发动技能时再次出现/);
+  assert.match(drone, /At the start of battle, deploys once at its placed position, then appears there again each time its owning operator casts a skill/);
   assert.ok(!/自我销毁/.test(drone), 'the withdraw skill is not listed');
   const doll = textOf(TokenDetail({ token: TOKENS.token_10006_vodfox_doll, piece: { kind: 'token', id: 'token_10006_vodfox_doll', count: 1 } }));
   assert.match(doll, /攻击力和防御力-25%/);
   // a summon on the battlefield (no prep piece) shows no prep hint
-  assert.ok(!/摆放的位置/.test(textOf(TokenDetail({ token: TOKENS.token_10041_cathy_catsld, piece: null }))));
+  assert.ok(!/placed position/.test(textOf(TokenDetail({ token: TOKENS.token_10041_cathy_catsld, piece: null }))));
 });
 
 test('a golden owner\'s summon card shows the golden variant: 精锐 巫恋\'s doll −30%, 精锐 赫默\'s drone ATK 114', async () => {

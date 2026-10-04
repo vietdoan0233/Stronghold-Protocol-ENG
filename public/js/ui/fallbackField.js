@@ -118,6 +118,13 @@ export function createFallbackView(host, opts = {}) {
   const handPos = (L, idx) => ({ x: idx * L.tile, y: (L.rows + 0.6) * L.tile });
   const tempPos = (L, idx) => ({ x: (GEO.TEMP_C0 + idx) * L.tile, y: (L.rows + 1.72) * L.tile });
 
+  /** A battle unit's name in the shown language (the data store's record of its defId; the sim's own name is the original Chinese). */
+  function unitName(info) {
+    const id = String(info.defId || '');
+    const rec = info.side === 'enemy' ? lookup('enemies', id) : id.startsWith('token_') ? lookup('tokens', id) : lookup('chess', id);
+    return rec?.name || info.name || '?';
+  }
+
   // ---- pieces (prep) ---------------------------------------------------------------------------------------
   function pieceArt(p) {
     const mm = m();
@@ -126,9 +133,9 @@ export function createFallbackView(host, opts = {}) {
     return chessAvatarUrl(mm, lookup('chess', p.id));
   }
   function pieceName(p) {
-    if (p.kind === 'item') return lookup('items', p.id)?.name || '道具';
-    if (p.kind === 'token') return lookup('tokens', p.id)?.name || '召唤物';
-    return lookup('chess', p.id)?.name || '干员';
+    if (p.kind === 'item') return lookup('items', p.id)?.name || 'Item';
+    if (p.kind === 'token') return lookup('tokens', p.id)?.name || 'Summon';
+    return lookup('chess', p.id)?.name || 'Operator';
   }
 
   function Piece({ p, x, y, L, area }) {
@@ -246,7 +253,7 @@ export function createFallbackView(host, opts = {}) {
         style=${`transform:translate(${px - size / 2}px,${py - size / 2}px);width:${size}px;height:${size}px`}
         onPointerDown=${(e) => { if (e.button === 0) emit('pieceClick', { unitId: id, uid: info.uid ?? null, unit: info, button: 0, clientX: e.clientX, clientY: e.clientY }); }}
         onContextMenu=${(e) => { e.preventDefault(); emit('pieceClick', { unitId: id, uid: info.uid ?? null, unit: info, button: 2, clientX: e.clientX, clientY: e.clientY }); }}>
-      <div class="ff-unit__art">${src ? html`<img src=${src} alt="" draggable=${false} />` : html`<span>${[...(info.name || '?')][0]}</span>`}</div>
+      <div class="ff-unit__art">${src ? html`<img src=${src} alt="" draggable=${false} />` : html`<span>${[...unitName(info)][0]}</span>`}</div>
       <div class="ff-unit__bars"><i class="hp" style=${`width:${hpPct}%`}></i>${!enemy && spMax > 0 ? html`<i class="sp" style=${`width:${spPct}%`}></i>` : null}</div>
     </div>`;
   }
@@ -291,7 +298,7 @@ export function createFallbackView(host, opts = {}) {
     });
     return html`<div class="ff-board ff-board--pen" style=${`left:${left}px;top:${top}px;width:${bw}px;height:${tile * rows}px;--tile:${tile}px`}>
       ${cells}${figs}
-      ${models.length ? null : html`<p class="ff-pen__empty">暂无敌方情报</p>`}
+      ${models.length ? null : html`<p class="ff-pen__empty">No enemy intel yet</p>`}
     </div>`;
   }
 
@@ -359,7 +366,7 @@ export function createFallbackView(host, opts = {}) {
     })() : null;
     if (st.camera === 'pen') { render(html`${penView()}<div class="ff-badge">SIMPLIFIED VIEW</div>`, root); return; }
     render(html`<div class=${cx('ff-board', `ff-board--${st.mode}`, `ff-cam--${st.camera}`)} style=${`left:${L.left}px;top:${L.top}px;width:${L.bw}px;height:${L.bh}px;--tile:${L.tile}px`}>
-      ${st.mode === 'prep' ? html`<div class="ff-hand-label" style=${`top:${(L.rows + 0.18) * L.tile}px`}><span>整备区</span><i></i></div>` : null}
+      ${st.mode === 'prep' ? html`<div class="ff-hand-label" style=${`top:${(L.rows + 0.18) * L.tile}px`}><span>Reserve</span><i></i></div>` : null}
       ${tiles}${hand}${units}${pieces}${floats}
     </div>${ghost}
     <div class="ff-badge">SIMPLIFIED VIEW</div>`, root);

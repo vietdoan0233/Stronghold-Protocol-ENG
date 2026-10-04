@@ -48,10 +48,10 @@ function settleCoins(ctx, bondId, counterKey, label) {
   const gain = (due - paid) * count;
   if (prepEnded(ctx)) {
     ctx.addPendingFunds(gain);
-    ctx.toast(`【${label}】层数达成，下回合开始时获得${gain}资金`, 'info');
+    ctx.toast(`[${label}] Layers reached: ${gain} Funds will arrive at the start of next round`, 'info');
   } else {
     ctx.addFunds(gain, `bond:${bondId}`);
-    ctx.toast(`【${label}】层数达成，获得${gain}资金`, 'info');
+    ctx.toast(`[${label}] Layers reached: +${gain} Funds`, 'info');
   }
   return gain;
 }
@@ -67,15 +67,15 @@ function latchVisiDiscount(ctx) {
   const t = L >= n(p.layer2, Infinity) ? 2 : L >= n(p.layer1, Infinity) ? 1 : 0;
   if (t > cur) {
     ctx.setCounter(C_VISI_DISC, t);
-    ctx.toast(t >= 2 ? '【远见】所有干员购买价格永久降低' : '【远见】远见干员购买价格永久降低', 'info');
+    ctx.toast(t >= 2 ? '[Foresight] All operators permanently cost less' : '[Foresight] Foresight operators permanently cost less', 'info');
   }
 }
 
 function visiSettle(ctx) {
-  settleCoins(ctx, 'visiShip', C_VISI_PAID, '远见');
+  settleCoins(ctx, 'visiShip', C_VISI_PAID, 'Foresight');
   latchVisiDiscount(ctx);
 }
-const miraSettle = (ctx) => { settleCoins(ctx, 'miraShip', C_MIRA_PAID, '奇迹'); };
+const miraSettle = (ctx) => { settleCoins(ctx, 'miraShip', C_MIRA_PAID, 'Miracle'); };
 
 /** A handler object running `fn(ctx)` on every catch-up hook and on the bond's own layer gains. */
 function settler(bondId, fn) {
@@ -128,7 +128,7 @@ export function registerMeta(registry) {
       const chance = Math.max(0, Math.min(1, n(p.baseprob) + n(p.prob) * ctx.layers('miraShip')));
       if (ctx.rng() < chance) {
         ctx.grantFreeRefresh(1);
-        ctx.toast('【奇迹】下次刷新不消耗资金', 'info');
+        ctx.toast('[Miracle] Your next refresh costs no Funds', 'info');
       }
     },
   });
