@@ -40,7 +40,8 @@ All names, characters, artwork, Spine models, UI graphics, music, sound effects 
 "Stronghold Protocol: Alliance" are © Shanghai Hypergryph Network Technology Co., Ltd. and its licensors
 (Yostar and others). They are **not** licensed under the GPL and this project grants no rights to them; see
 [NOTICE.md](NOTICE.md) for the non-commercial terms. Community mirrors used by `tools/fetch-assets.mjs` /
-`tools/build-data.mjs`: [Kengxxiao/ArknightsGameData](https://github.com/Kengxxiao/ArknightsGameData),
+`tools/build-data.mjs` / `tools/locale.mjs`: [Kengxxiao/ArknightsGameData](https://github.com/Kengxxiao/ArknightsGameData),
+[Kengxxiao/ArknightsGameData_YoStar](https://github.com/Kengxxiao/ArknightsGameData_YoStar) (the official Global English text),
 [yuanyan3060/ArknightsGameResource](https://github.com/yuanyan3060/ArknightsGameResource),
 [fexli/ArknightsResource](https://github.com/fexli/ArknightsResource),
 [isHarryh/Ark-Models](https://github.com/isHarryh/Ark-Models),

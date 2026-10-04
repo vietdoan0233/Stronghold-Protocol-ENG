@@ -8,7 +8,7 @@ translation is built so that it can never change how the game plays.
 | UI chrome — buttons, labels, toasts, tickers, dialogs (`public/js/**`, `public/css/**`) | in place: the string literals are English |
 | Game data — operator / enemy / item / alliance / strategy names and descriptions (`data/*.json`) | a **read-time overlay**: one table per data file in `public/locales/en/`, applied by the browser when the file is loaded; `data/*.json` itself is never edited |
 | Server messages — errors, toasts, tickers (`server/**`, `shared/constants.js`) | in place: fixed messages are English; text the server composes from the data goes through `L()` (see *Server texts*) |
-| Terminal output of the launcher and setup tools (`scripts/`, `tools/setup.mjs`, `tools/doctor.mjs`) | in place: English — **not translated yet** (see [../HANDOFF.md](../HANDOFF.md)) |
+| Terminal output of the launcher and setup tools (`scripts/`, `tools/setup.mjs`, `tools/doctor.mjs`) | in place — **not translated yet**, still Chinese (see [../CHANGES.md](../CHANGES.md) section 5) |
 
 Terms are fixed in [GLOSSARY.md](GLOSSARY.md); what was changed and why is in [../CHANGES.md](../CHANGES.md).
 
@@ -96,3 +96,7 @@ translated by hand and reviewed against the glossary and the official terms.
 After a data rebuild: `node tools/locale.mjs coverage --list`, `harvest --write` for whatever the official English now covers,
 translate the rest, `check`. Every table is translated in full and `test/locale.test.js` keeps it that way (the coverage ratchet): a
 rebuild that adds or rewords Chinese display text fails until the table has it.
+
+The scripts the translation was built with — batches of missing texts with context and reference names, merging and checking
+translated batches, reviewer input and fixes, the "no Chinese on the wire" audit, the screenshot tours — are in
+[`tools/locale-work/`](../tools/locale-work/README.md); the terms are in [GLOSSARY.md](GLOSSARY.md).

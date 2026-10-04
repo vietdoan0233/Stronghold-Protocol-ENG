@@ -110,7 +110,9 @@ Everything a player reads while playing is English, and the full test suite (`no
 - **Identifiers** — ids, enum values, buff keys, CSS classes and `data-*` attributes are never translated
   (see section 3).
 - **Not done yet: the launcher and setup output** — `scripts/launch.mjs`, `scripts/start*`, `scripts/install-service-windows.ps1`,
-  `tools/setup.mjs` and `tools/doctor.mjs` still print Chinese. They are the next translation target; see `HANDOFF.md`.
+  `tools/setup.mjs` and `tools/doctor.mjs` (about 180 string literals, plus the shell / batch / PowerShell start scripts) still
+  print Chinese. They are the next translation target: translate in place, together with the tests that assert them
+  (`test/doctor.test.js`), then drop this bullet and the matching row note in `docs/LOCALE.md`.
 
 ## 6. How the translation keeps tests green
 
@@ -119,3 +121,18 @@ text). A producing surface and the tests that assert it moved **in the same step
 text with the browser's data store, both read the English overlay, as in production. New tests pin the localization itself:
 `test/locale.test.js` (overlay mechanism, shipped tables, the coverage ratchet, official operator names) and
 `test/display.test.js` (the server's `L()` and the "no Chinese on the wire" check).
+
+The opt-in browser suites (`SP_E2E=1`, `SP_REAL_E2E=1`, `RENDER_E2E=1`: `test/ui/*.e2e.test.js`, `test/e2e/coop.e2e.mjs`) are not part
+of CI. Their Chinese UI-label expectations were moved to the English interface by reading the UI source, but they need Chrome and
+the downloaded art (`npm run assets`) and were **not run** where the localization was done: run them once before relying on them
+(`tools/locale-work/offline-chrome.sh` makes a sandboxed Chromium fail fast on the unreachable web-font hosts).
+
+## 7. Maintaining the localization
+
+- A data rebuild that adds or rewords Chinese display text fails `test/locale.test.js` until the overlay tables have the English:
+  `node tools/locale.mjs coverage --list` shows the gaps, `harvest --write` fills what the official Global English covers,
+  `check` validates the rest ([docs/LOCALE.md](docs/LOCALE.md)).
+- The terms are in [docs/GLOSSARY.md](docs/GLOSSARY.md) (official Arknights Global wording wins; its last section lists the
+  judgement calls that have no official source and should be checked against the game when one appears).
+- `tools/locale-work/` holds the scripts and briefs the translation was built with: batches of missing texts, merging and checking
+  them, reviewer input and fixes, the "no Chinese on the wire" audit and the screenshot tours (see its README).

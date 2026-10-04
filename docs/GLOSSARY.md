@@ -212,3 +212,17 @@ Gear and strategy texts, enemy abilities and the last operator skills (the offic
 | 某种天命 | 'A Certain Destiny' | the "a certain …" pattern |
 | 频次护盾 | Hit-Count Shield | the Shield that breaks after N hits |
 | 教鞭 | Teacher's Pointer | |
+
+## Open questions — judgement calls with no official source
+
+Check these against the game (or the official Global text, when it appears) and fix the table entry if the guess was wrong.
+
+- **失衡 → "Shift / shifted"** — the forced-movement status; the official Global text says "loses HP proportional to distance moved when shifted".
+- **Akkord, 震爆调谐** (`chess`): "triggers a sonic boom at every *other operator* within attack range" is literal; the target may really be the enemies around those operators.
+- **【斥退】 / 【物种爆发】**: "drains all targets' Life Points" mirrors the official wording of the same line.
+- **待部署区 → "the Reserve"** (the official text says "undeployed" for the same area); **部署费用 → "DP cost"**.
+- **Names invented for the Hidden Core bosses** (no official English yet): see the table above; also 角力对决 *Test of Strength*,
+  入戏 *in character*, 频次护盾 *Hit-Count Shield*, 奏 *Recital*.
+- **"Can store N charge(s)"** is the official wording of the skill table, kept for consistency although it reads oddly.
+- Alliance names inside `【X】盟约干员` read "[X] operator" (`node tools/locale.mjs check --terms` warns about the missing word *alliance*; intentional).
+- The harvested official texts say "Operator(s)" / "Units"; the hand-written ones say "operator(s)" — one casing could be chosen in a polish pass.

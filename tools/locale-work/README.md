@@ -1,9 +1,9 @@
 # tools/locale-work — the tooling the English localization was built with
 
 Work tools for maintaining `public/locales/en/*.json` (see [../../docs/LOCALE.md](../../docs/LOCALE.md) for the design and
-[../../HANDOFF.md](../../HANDOFF.md) for the state of the work). They are developer tools: nothing here ships to players and
-no test imports them. The checks themselves live in `tools/locale.mjs` (`coverage`, `check`, `sync`, `harvest`) and are run
-by `test/locale.test.js`; these scripts add the batch / review / audit workflow around it.
+[../../docs/GLOSSARY.md](../../docs/GLOSSARY.md) for the terms). They are developer tools: nothing here ships to players and no test
+imports them. The checks themselves live in `tools/locale.mjs` (`coverage`, `check`, `sync`, `harvest`) and are run by
+`test/locale.test.js`; these scripts add the batch / review / audit workflow around it.
 
 All scripts are run from the repo root. Scratch files (reference dictionaries, batches, reviewer outputs, screenshots) go to
 `.cache/locale-work/` (git-ignored); `LOCALE_WORK=/some/dir` overrides it.

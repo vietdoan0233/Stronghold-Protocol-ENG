@@ -3,6 +3,9 @@
 All files in `data/` except `data/assets.json` are produced by **`node tools/build-data.mjs`** (task F1) from the
 official zh_CN client data ([Kengxxiao/ArknightsGameData](https://github.com/Kengxxiao/ArknightsGameData)) joined
 with `docs/research/*.json`. Do not edit them by hand — change the build script and rebuild.
+**Language:** the display text in these files (names, descriptions, …) is the original Chinese and stays that way; the English the game
+shows is a read-time overlay in `public/locales/en/*.json`, keyed by the exact Chinese text (docs/LOCALE.md). The examples in this
+document are therefore the actual Chinese values.
 `data/assets.json` is written by `tools/fetch-assets.mjs`, which keeps the current file rather than drop entries whose
 downloads failed on this machine unless `--allow-shrink` (or `--prune`) is passed (docs/ASSETS.md, DESIGN §21.25).
 
