@@ -328,8 +328,8 @@ describe('user playtest #2 — UI fixes (mock harness, headless Chrome)', { skip
       // the playtest's case (a unit left of the board, card docked right) — the popup keeps clear of the underframe
       assert.equal(pop.coversButtons, false, `the bond popup (${pop.place}) keeps clear of the underframe buttons`);
       assert.ok(!pop.coversCard || pop.over, `the popup covers the card only when placed over it (${pop.place})`);
-      const iNow = pop.secs.findIndex((t) => t.includes('当前效果'));
-      const iDesc = pop.secs.findIndex((t) => t.includes('盟约效果'));
+      const iNow = pop.secs.findIndex((t) => t.includes('Current Effect'));
+      const iDesc = pop.secs.findIndex((t) => t.includes('Alliance Effect'));
       if (iNow >= 0) assert.ok(iNow < iDesc, `current effect before the description (${pop.secs})`);
       assert.ok(pop.factsIn);
       assert.ok(pop.btnTop.every(Boolean), 'the underframe stays above the bond popup');

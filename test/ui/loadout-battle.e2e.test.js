@@ -103,20 +103,20 @@ describe('user playtest #2 item 1 — loadout chosen in the UI fights in the loc
           module: document.querySelector('.dpanel .dmodule')?.textContent || '',
           none: !!document.querySelector('.dpanel .dmodule.is-none'),
           // the record (base) value: with live stats (user playtest #4 item 7: the start-of-battle preview) it is the
-          // cell's title "基础 N", else the value itself
+          // cell's title "Base N", else the value itself
           stats: Object.fromEntries([...document.querySelectorAll('.dpanel .dstat')].map((el) => [el.querySelector('.dstat__k')?.textContent,
-            (el.getAttribute('title') || '').replace(/^基础 /, '') || el.querySelector('.dstat__v')?.textContent])),
+            (el.getAttribute('title') || '').replace(/^Base /, '') || el.querySelector('.dstat__v')?.textContent])),
           trait: document.querySelector('.dpanel .dtrait')?.textContent || '',
         })), () => null);
         if (detail) break;
       }
       assert.ok(detail, 'the detail card opens for the placed elite');
-      assert.ok(detail.skill.includes(s1.name) && detail.tag, `detail card: ${s1.name} 已调配 (${JSON.stringify(detail)})`);
-      assert.ok(detail.none && detail.module.includes('未装备模组'), `detail card: 未装备模组 (${JSON.stringify(detail)})`);
-      // …and the stats / 特性 the unit fights with: no module (ATK 524, interval 1.00 s, "获得1点") — not the default module's
-      assert.equal(detail.stats['攻击'], String(rec.statsBase.atk), `detail card ATK without the module (${JSON.stringify(detail.stats)})`);
-      assert.equal(detail.stats['攻击间隔'], '1.00s', 'detail card interval: ASPD 100');
-      assert.match(detail.trait, /获得1点部署费用/, `detail card 特性 without the module (${detail.trait})`);
+      assert.ok(detail.skill.includes(s1.name) && detail.tag, `detail card: ${s1.name} Loadout tag (${JSON.stringify(detail)})`);
+      assert.ok(detail.none && detail.module.includes('No module equipped'), `detail card: No module equipped (${JSON.stringify(detail)})`);
+      // …and the stats / trait the unit fights with: no module (ATK 524, interval 1.00 s, "Obtain 1 DP") — not the default module's
+      assert.equal(detail.stats.ATK, String(rec.statsBase.atk), `detail card ATK without the module (${JSON.stringify(detail.stats)})`);
+      assert.equal(detail.stats['Atk Interval'], '1.00s', 'detail card interval: ASPD 100');
+      assert.match(detail.trait, /Obtain 1 DP/, `detail card trait without the module (${detail.trait})`);
       await c.shot('detail');
       await c.page.keyboard.press('Escape');
       await c.page.waitForFunction(() => !document.querySelector('.dpanel'), { timeout: 4000 });

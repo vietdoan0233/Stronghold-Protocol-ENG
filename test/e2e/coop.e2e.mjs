@@ -1285,7 +1285,7 @@ describe('browser E2E against the real server', { skip: !ENABLED && 'needs Chrom
       await solo.click('.gtop__exit');
       await sleep(300);
       await solo.shot('exit');
-      await solo.click('.modal__actions .btn', '放弃模拟');
+      await solo.click('.modal__actions .btn', 'Abandon Simulation');
       await solo.waitFor((s) => !s.room && !s.phase, 'back in the lobby', 20000);
       await solo.page.waitForSelector('.lobby-screen', { timeout: 10000 });
       assert.deepEqual(problemsOf([solo]), [], 'no console errors, page errors, failed requests or HTTP errors');

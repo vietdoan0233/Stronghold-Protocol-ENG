@@ -75,14 +75,14 @@ describe('0.1.1 gaps: 变形同构体 pairings and 调和\'s +1 (mock harness, h
       await page.screenshot({ path: path.join(OUT, `fb1-gaps-morph-shop-${name}.png`) });
       const shop = await measure(page, '.dpanel__scroll', '.dmorph__row');
       assert.equal(shop.rows.length, 14, 'one line per bond');
-      assert.deepEqual(shop.rows.filter((r) => r.off).map((r) => r.bond), ['lateranoShip', 'egirShip', 'kazimierzShip', 'arcaneShip', 'raidShip'], '标准: 本局禁用');
-      assert.ok(shop.rows.filter((r) => r.off).every((r) => /本局禁用/.test(r.text)));
-      assert.match(shop.rows.find((r) => r.bond === 'victoriaShip').text, /^【维多利亚】维式重锤、战栗维式重锤、坚固维式重锤、加速维式重锤、灼燃维式重锤$/);
+      assert.deepEqual(shop.rows.filter((r) => r.off).map((r) => r.bond), ['lateranoShip', 'egirShip', 'kazimierzShip', 'arcaneShip', 'raidShip'], 'Standard: disabled this match');
+      assert.ok(shop.rows.filter((r) => r.off).every((r) => /Disabled/.test(r.text)));
+      assert.match(shop.rows.find((r) => r.bond === 'victoriaShip').text, /^\[Victoria\]Vice Hammer, Frighten Vice Hammer, Sturdy Vice Hammer, Accelerate Vice Hammer, Burn Vice Hammer$/);
       assert.equal(shop.rows.filter((r) => r.worn).length, 0, 'no wearer: no highlight');
       assert.ok(shop.rows.every((r) => r.inside), 'every line inside the card');
       assert.equal(shop.sideways, false, 'no sideways scrolling');
       assert.ok(shop.rows.every((r) => r.font >= minFont), `font ${shop.rows[0].font} px`);
-      assert.match(await page.$eval('.dpanel .dmorph__lead', (el) => el.textContent), /搭配以下装备时，携带者视为对应盟约的成员：/);
+      assert.match(await page.$eval('.dpanel .dmorph__lead', (el) => el.textContent), /When paired with the gear below, the carrier counts as a member of the matching alliance:/);
       await page.evaluate(() => document.querySelector('.dpanel .dmorph__list')?.scrollIntoView({ block: 'start' }));
       await sleep(150);
       await page.screenshot({ path: path.join(OUT, `fb1-gaps-morph-shop-${name}-list.png`) });
@@ -99,9 +99,9 @@ describe('0.1.1 gaps: 变形同构体 pairings and 调和\'s +1 (mock harness, h
       const wearer = await measure(page, '.dpanel__scroll', '.dmorph__row');
       const worn = wearer.rows.filter((r) => r.worn);
       assert.deepEqual(worn.map((r) => r.bond), ['victoriaShip'], 'the pairing it wears');
-      assert.match(worn[0].text, /生效中$/);
+      assert.match(worn[0].text, /Active$/);
       assert.ok(wearer.rows.every((r) => r.inside) && !wearer.sideways);
-      assert.match(await page.$eval('.dpanel .dhint--morph', (el) => el.textContent.trim()), /与变形同构体一同装备时，携带者视为【维多利亚】成员生效中/);
+      assert.match(await page.$eval('.dpanel .dhint--morph', (el) => el.textContent.trim()), /When equipped with Polymorphic Isomorph, the carrier counts as a member of \[Victoria\]\.Active/);
       await page.keyboard.press('Escape');
       await sleep(300);
 
@@ -112,7 +112,7 @@ describe('0.1.1 gaps: 变形同构体 pairings and 调和\'s +1 (mock harness, h
       await page.waitForSelector('.bpop .bpop__harmony', { timeout: 5000 });
       await page.screenshot({ path: path.join(OUT, `fb1-gaps-harmony-${name}.png`) });
       const facts = await page.$eval('.bpop .bpop__facts', (el) => el.textContent);
-      assert.match(facts, /On Field\s*\d+\/\d+ \(incl\. (?:Harmony|调和) \+1\)/);
+      assert.match(facts, /On Field\s*\d+\/\d+ \(incl\. Harmony \+1\)/);
       const note = await page.$eval('.bpop .bpop__hnote', (el) => parseFloat(getComputedStyle(el).fontSize));
       assert.ok(note >= (touch ? 8 : 11.5), `the note at ${note} px`);
       await page.evaluate(() => document.querySelector('.bpop .bpop__harmony')?.scrollIntoView({ block: 'center' }));
@@ -120,13 +120,13 @@ describe('0.1.1 gaps: 变形同构体 pairings and 调和\'s +1 (mock harness, h
       await page.screenshot({ path: path.join(OUT, `fb1-gaps-harmony-${name}-row.png`) });
       const row = await measure(page, '.bpop', '.bpop__harmony');
       assert.equal(row.rows.length, 1);
-      assert.match(row.rows[0].text, /^(?:Harmony|调和) \+1(?:Muelsyse|缪尔赛思) on the field: Core Alliance member count \+1$/);
+      assert.match(row.rows[0].text, /^Harmony \+1Muelsyse on the field: Core Alliance member count \+1$/);
       // (inside the popup's box; the popup's own few px of sideways overflow on phones predate this row)
       assert.ok(row.rows[0].inside, 'inside the popup');
       assert.ok(row.rows[0].font >= minFont, `font ${row.rows[0].font} px`);
       // the 调和 row opens 缪尔赛思's card
       await tap('.bpop .bpop__harmony');
-      await page.waitForFunction(() => /缪尔赛思/.test(document.querySelector('.dpanel .dhead__name')?.textContent || ''), { timeout: 5000 });
+      await page.waitForFunction(() => /Muelsyse/.test(document.querySelector('.dpanel .dhead__name')?.textContent || ''), { timeout: 5000 });
       assert.deepEqual(problems, []);
       await page.close();
     });

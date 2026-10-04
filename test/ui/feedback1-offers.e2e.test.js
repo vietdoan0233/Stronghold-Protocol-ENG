@@ -158,7 +158,7 @@ describe('player report #6: 凯瑟琳\'s three free items after a level-up (real
       await c.page.waitForFunction(() => globalThis.__SP__.store.get().match.private?.shop?.rewardOffer?.queued === 1, { timeout: 8000 });
       await sleep(400);
       const pill = await c.page.evaluate(() => document.querySelector('.rewardpill')?.textContent.replace(/\s+/g, '') || '');
-      assert.match(pill, /定向投放 Pending/);
+      assert.match(pill, /TargetedDeliveryPending/);
       assert.match(pill, /\+1/, `the pill counts the offer behind (${pill})`);
       await c.shot('pill');
       await c.click('.rewardpill');

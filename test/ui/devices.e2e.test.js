@@ -414,7 +414,7 @@ describe('multi-device (Chrome device emulation)', { skip: !ENABLED && 'set SP_E
       emo: document.querySelector('.ewheel__btn')?.classList.contains('has-sprite'),
       label: document.querySelector('.ewheel__label')?.textContent,
     }));
-    assert.deepEqual(st, { chk: false, emo: false, label: '交流' }, 'CSS look-alikes');
+    assert.deepEqual(st, { chk: false, emo: false, label: 'Chat' }, 'CSS look-alikes');
     await page.screenshot({ path: path.join(OUT, 'device-iphone14-noart.png') });
     assert.deepEqual(await layoutProblems(page), []);
     assert.deepEqual(problems, []);

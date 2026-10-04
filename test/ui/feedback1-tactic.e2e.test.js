@@ -63,7 +63,7 @@ describe('战术决策: the same card twice (mock harness, headless Chrome)', { 
       assert.equal(c.length, 6);
       assert.deepEqual(c.map((x) => x.name), ['Supply', 'Supply', 'Kjerag Reinforcement', 'Outfitting', "Mostima's Oath", 'Sublimation']);
       assert.deepEqual([c[0].team, c[0].desc, Math.round(c[0].w)], [c[1].team, c[1].desc, Math.round(c[1].w)], 'the same face');
-      assert.ok(c[0].team && /2.*次刷新/.test(c[0].desc), `补给: ${c[0].desc}`);
+      assert.ok(c[0].team && /next 2 refreshes are free/.test(c[0].desc), `Supply: ${c[0].desc}`);
       assert.ok(c[0].taken && c[0].badge && c[0].disabled, 'the first twin: taken, with the taker\'s avatar');
       assert.ok(!c[1].taken && !c[1].badge && !c[1].disabled, 'the second twin: free');
       await page.screenshot({ path: path.join(OUT, `fb1-tactic-${name}.png`) });

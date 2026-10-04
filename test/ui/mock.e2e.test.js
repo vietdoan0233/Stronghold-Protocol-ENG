@@ -760,7 +760,7 @@ describe('in-match UI (mock harness, headless Chrome)', { skip: !ENABLED && 'set
       await page.mouse.up();
       await sleep(500);
       const toastText = await page.$eval('.toast', (el) => el.textContent).catch(() => null);
-      assert.match(String(toastText), /已达到部署上限|无法部署在该位置|近战单位只能部署在地面/, `${render}: toast explains the refusal`);
+      assert.match(String(toastText), /Deployment limit reached|Can't deploy on that tile|Melee units can only be deployed on ground tiles/, `${render}: toast explains the refusal`);
       assert.ok((await mockState(page)).hand.some((x) => x && x.uid === hc.uid), `${render}: the operator stays in the hand`);
       assert.deepEqual(problems, []);
       await page.close();
