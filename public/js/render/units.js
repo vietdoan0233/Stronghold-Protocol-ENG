@@ -8,7 +8,9 @@
 // (the plain 源石虫) is drawn tinted toward the slug's own colours (ALIAS_TINT). A model that failed or timed out is
 // loaded again after SPINE_RETRY_MS (bounded), and `retryAssets()` re-resolves a view's picture and model when the
 // asset manifest arrives after the view was built or the tab is shown again (render/app.js; public issue #8 item 5:
-// after a reload whose manifest was slow or failed, every operator stayed the image-less placeholder for good). Every
+// after a reload whose manifest was slow or failed, every operator stayed the image-less placeholder for good); a load
+// begun while the tab was hidden and still in flight SPINE_STUCK_MS after it is shown again is started again
+// (assets.js spine.restart: GitHub #68, such a load may never settle — its view stayed the placeholder). Every
 // bar is a tinted Texture.WHITE sprite, so HUDs batch into few draw calls.
 //
 // Placement: feet anchored at world (x, y, z); scale = camera px-per-tile at the feet × UNIT.modelScale, so
@@ -19,12 +21,15 @@
 // the legacy `facing` ±1): the Back model for UP (when one exists, research 07 §5.5), the Front model for RIGHT and
 // DOWN, mirrored for LEFT; the orange ground wedge "›" of prep board pieces points along `dir` (rotated on the ground
 // plane). `setDir(dir)` re-orients a live view (swapping Front ⇄ Back without a fallback flash). Enemies flip by the
-// sign of their horizontal velocity (with hysteresis).
+// sign of their horizontal velocity (with hysteresis). A dead or knocked-out operator facing UP falls and lies with its
+// Front model — 131 of the 135 Back skeletons have no Die clip (GitHub issue #25: the Back model went on with its
+// attack loop under the redeploy ring) — and stands up again with the Back model (`_wantsBack`, `_syncModel`).
 //
 // Knocked-out operators (user playtest #4 item 9, b.snap `down`): `setDown([id, respawnAt, respawnTime, state, row,
 // col])` keeps a dead operator on the tile it lies on (row / col: where it fell, or its home — sim Battle._layBody,
 // player report F5 after 0.1.0) in its knocked-down pose — the Spine Die clip played once and held on its last
-// frame (the collapsed / kneeling pose with closed eyes), slightly greyed — with a redeploy ring above its head:
+// frame (the collapsed / kneeling pose with closed eyes; the Front model's for one facing UP unless its Back skeleton has its own Die clip, see above), slightly
+// greyed — with a redeploy ring above its head:
 // a dark disc, a mint arc filling as the respawn timer runs and the seconds left; once the timer is done and it still
 // waits, a full amber ring with "DP" (not enough DP) or a red ring with "!" (its tile is taken). `onDeploy` (the
 // redeploy) plays the deploy clip and restores the normal look; `setDown(null)` on a dead view lets it fade out.
@@ -33,8 +38,9 @@
 // Enemy modes (the `form` of a sim fx — shared/protocol.js fxForm — → `setForm(form, fx)`): 掠海漂移体 dropping to 爬行模式
 // (user playtest #5 item 1) plays its skeleton's 'Change' clip once, then the crawl set (*_02); 暴鸰 flies on without its
 // bomb (*_2) after the drop (feedback D4); 转译基底's forms, the 逐火 embers, 再生's puppet, the leaders' 重生 and 守墓石像
-// likewise (user report after 0.1.0) — FORMS. A view built later (`info.form` = UnitInfo `form`, the sim's current form,
-// through render/app.js renderInfo) starts in the mode.
+// likewise (user report after 0.1.0) — FORMS; an operator's form is a 傀儡师's 替身 (GitHub issue #44). A view built later
+// (`info.form` = UnitInfo `form`, the sim's current form, through render/app.js renderInfo) starts in the mode; a dead
+// view keeps the form it died in (`_dieForm`) for a model built while it lies down.
 // Element gauges (b.snap `elem` → sample `el` / `elFill` / `elUntil` / `elDur`), the official form (PRTS 元素: "模型
 // 下部会显示对应的元素图标，并以白条显示剩余的元素值"; enemies "小尺寸图标（不显示元素图标，仅根据元素种类改变背景色）"): a row
 // right under the unit's own HP / SP bars and inside their span — the element's disc at the left (operators with its
@@ -62,7 +68,7 @@
 import { UF, ANIM } from '../../../shared/constants.js';
 import { SpineActor } from './spine.js';
 import { diamondTexture, shadowTexture, fxAtlas, tierChip, statusTexture, itemTexture, hudRings, ringArc, HUD_DISC, ELEMENT_RING } from './textures.js';
-import { COLORS, TIER_COLORS, ENEMY_FRAME, UNIT, PROJ, statusIconKey } from './style.js';
+import { COLORS, TIER_COLORS, ENEMY_FRAME, UNIT, PROJ, statusIconKey, statusIconSuppressed } from './style.js';
 import { drawCrate, rowDepthKey, ROW_KEY, deviceBoxOf, DEVICE_BOX } from './tiles.js';
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
@@ -81,9 +87,25 @@ export function enemyModelScale(rec) {
   const k = Number(rec && rec.modelScale);
   return Number.isFinite(k) && k > 0.05 && k < 20 ? k : 1;
 }
+/**
+ * Seconds of the death clip of a manifest Spine entry (`anims.die`, else a 'Die' clip, as SpineActor.dieClip; its
+ * `animations` duration), 0 when it has none — 131 of the 135 operator Back models (GitHub issue #25).
+ */
+export function dieClipDur(entry) {
+  const durs = entry && entry.animations && typeof entry.animations === 'object' ? entry.animations : null;
+  if (!durs) return 0;
+  const name = (entry.anims && typeof entry.anims.die === 'string' && entry.anims.die) || 'Die';
+  const d = Object.hasOwn(durs, name) ? Number(durs[name]) : NaN;
+  return Number.isFinite(d) && d > 0 ? d : 0;
+}
 /** World step (x = col, y = row) of a direction. */
 export const DIR_STEP = Object.freeze({ UP: [0, 1], RIGHT: [1, 0], DOWN: [0, -1], LEFT: [-1, 0] });
 const nowMs = () => (globalThis.performance ? globalThis.performance.now() : Date.now());
+/** Units with no art in the game data drawn as an ice diamond: 圣聆初雪 S2's frozen protection point (保护目标（冻结状态）, PRTS
+ *  无头像; data/assets.json has no avatar or model for it, so the token fallback showed 圣聆初雪's own face) — the marker of a
+ *  frozen gate. */
+const ICE_TOKENS = new Set(['token_10058_sbell2_icetgt']);
+const ICE_FRAME = 0x9fe6ff;
 /** How long a view waits for its avatar before showing the image-less placeholder diamond. */
 const PIC_WAIT_MS = 400;
 /**
@@ -92,6 +114,13 @@ const PIC_WAIT_MS = 400;
  * shown again). Counted from the failure; a hidden tab runs no frames, so nothing is retried while hidden.
  */
 export const SPINE_RETRY_MS = Object.freeze([2000, 6000, 15000, 30000]);
+/**
+ * A Spine load begun while the tab was hidden and still in flight this long (ms, real time) after the tab is shown again
+ * is started again (`retryAssets` arms it, `update` fires it; GitHub #68: such a load — a request the hidden tab left
+ * hanging — may never settle, and the view stayed the placeholder). A load that finishes within it is never doubled.
+ * [ASSUMED] the length: a healthy load finishes within a few seconds once the tab is visible.
+ */
+export const SPINE_STUCK_MS = 5000;
 
 /** Heights above this count as standing on a raised top (bench pads are the lowest raised tiles, 0.16). */
 const RAISED_Z = 0.12;
@@ -143,6 +172,16 @@ export const EL_BAR = Object.freeze({ icon: 0.15, min: 8, max: 15, enemy: 0.8, g
  *   clip (`end`) is timed from the 重生's `dur` (the 'telegraph' fx) to end with it, so the second form walks and
  *   attacks on its own clips at once (a view that missed the timing — built mid-重生 — skips the closing clip);
  * - 守墓石像 (forms 'stone' → 'fly'): the statue on Sleep [ASSUMED by name], then the flyer's *_2 clips.
+ * - the 傀儡师 operators' <替身> (sim professions.js installDollkeeper: form 'doll' from the start of the switch to it
+ *   until the switch back starts, GitHub issue #44): the skeletons draw it on their *_B clips (their own slots — the
+ *   本体's are hidden). 归溟幽灵鲨: Start_B fades it in (the 1 s switch), Idle_B (it never attacks), Die_B breaks it
+ *   apart over its last second (`end`, timed from the 'substitute' fx's `dur`), the 本体 comes back on Start_2 (`leave`:
+ *   played when the form ends); knocked out as the 替身 it collapses on Die_B_2 and stays down so. 风丸: Start_B, then
+ *   Idle_B / Attack_B (her 替身 attacks), Die_B; the 本体 comes back on Start. Facing UP: 归溟幽灵鲨's Back skeleton has
+ *   only Idle_B and Start_2, 风丸's Start_B, Idle_B and Attack_B — the clips a Back skeleton lacks are skipped; neither has
+ *   the 替身's death clip, so a 替身 knocked out lies on the Front model like every knocked-out operator facing UP
+ *   (_wantsBack). The sim resets the form right after the 'die' event; the form it died in (`_dieForm`) gives the model
+ *   built for the knock-out — and one rebuilt while it is down — the 替身's death clip; it stands up as the 本体.
  * A kind without a clip set of this skeleton (barriers, charges, …) changes nothing. 吉兆飞鳞's 晕眩模式 is its Stun clip.
  */
 const loop = (name, via = null) => Object.freeze(via ? { begin: null, loop: name, end: null, via } : { begin: null, loop: name, end: null });
@@ -166,7 +205,17 @@ const STATUE = Object.freeze({
   fly: Object.freeze({ change: null, roles: clipSet('Idle_2', 'Move_2', 'Die_2', 'Attack_2') }),
 });
 const JAKILL2 = clipSet('C2_Idle', 'C2_Move', 'C2_Die', 'C2_Attack');
+/** A 傀儡师's 替身 roles: idle `idle`, death `die`, attack `attack` (null: none), no skill clip of its own. */
+const dollRoles = (idle, die, attack = null) => Object.freeze({
+  idle, deploy: idle, die, attack: attack ? Object.freeze({ begin: null, loop: attack, end: null }) : null, attackDown: null, skill: null,
+});
 export const FORMS = Object.freeze({
+  char_1023_ghost2: Object.freeze({
+    doll: Object.freeze({ change: 'Start_B', end: 'Die_B', leave: 'Start_2', roles: dollRoles('Idle_B', 'Die_B_2') }),
+  }),
+  char_4016_kazema: Object.freeze({
+    doll: Object.freeze({ change: 'Start_B', leave: 'Start', roles: dollRoles('Idle_B', 'Die_B', 'Attack_B') }),
+  }),
   enemy_1040_bombd: Object.freeze({
     bombed: Object.freeze({
       roles: Object.freeze({
@@ -297,7 +346,8 @@ export class UnitView {
     this.shake = 0;
     this.screen = { x: 0, y: 0, s: 1, top: 0 };
     this.destroyed = false;
-    this.form = typeof info.form === 'string' ? info.form : null;   // an enemy's mode (setForm, FORMS)
+    this.form = typeof info.form === 'string' ? info.form : null;   // the unit's model form: an enemy's mode, a 傀儡师's 替身 (setForm, FORMS)
+    this._dieForm = null;         // the form it died in (die): a model built while it lies down shows that form's death
 
     // --- display objects
     this.shadow = new P.Sprite(ctx.shadowTex || shadowTexture());
@@ -325,9 +375,12 @@ export class UnitView {
     this.body.addChild(this.fallback);
     this.actor = null;
     this.spineReady = false;
+    this._modelDirty = false;            // died / stood up since the last frame: update() checks Front ⇄ Back (_syncModel)
     this._spineBusy = false;             // a Spine load of this view is in flight
     this._spineTries = 0;                // failed loads since the last model (SPINE_RETRY_MS)
     this._retryAt = 0;                   // when the next retry is due (ms, performance clock; 0 = none)
+    this._spineHidden = false;           // the load in flight began while the tab was hidden (SPINE_STUCK_MS)
+    this._stuckAt = 0;                   // when that load is started again unless it settled (ms; 0 = none)
     this.baseTint = 0xffffff;            // the drawn model's own tint (ALIAS_TINT), under the status tints
 
     this.hud = new P.Container();
@@ -343,6 +396,7 @@ export class UnitView {
 
   _frameColor() {
     if (this.isEnemy) return this.isBoss ? ENEMY_FRAME.boss : this.tier >= 2 ? ENEMY_FRAME.elite : ENEMY_FRAME.normal;
+    if (ICE_TOKENS.has(this.info.defId)) return ICE_FRAME;
     if (this.golden) return 0xffc600;
     return TIER_COLORS[this.tier] || TIER_COLORS[1];
   }
@@ -353,7 +407,8 @@ export class UnitView {
   // is missing or still loading after PIC_WAIT_MS).
   _loadPicture() {
     const a = this.ctx.assets;
-    const url = a && (a.picture ? a.picture(this.info.avatar) || a.picture(this.info.defId) || a.picture(this.info.spine) : null);
+    // (an ICE_TOKENS unit takes no picture: the token fallback would be its owner's face — assets.js tokenAvatarUrl)
+    const url = ICE_TOKENS.has(this.info.defId) ? null : a && (a.picture ? a.picture(this.info.avatar) || a.picture(this.info.defId) || a.picture(this.info.spine) : null);
     this._pic = { key: String(this.info.avatar || this.info.defId || 'unknown'), color: this._frameColor(), img: null, state: 'none', shown: null, t0: nowMs() };
     if (!url || !a.image) return;
     const cached = typeof a.imageNow === 'function' ? a.imageNow(url) : null;
@@ -372,7 +427,7 @@ export class UnitView {
     let want = pic.state === 'img' ? 'img' : 'placeholder';
     if (pic.state === 'wait' && nowMs() - pic.t0 < PIC_WAIT_MS) want = null;
     if (!want || pic.shown === want) return;
-    this.fallback.texture = diamondTexture(pic.key, want === 'img' ? pic.img : null, pic.color, { enemy: this.isEnemy, golden: this.golden });
+    this.fallback.texture = diamondTexture(pic.key, want === 'img' ? pic.img : null, pic.color, { enemy: this.isEnemy, golden: this.golden, ice: ICE_TOKENS.has(this.info.defId) });
     pic.shown = want;
   }
 
@@ -381,7 +436,8 @@ export class UnitView {
     const a = this.ctx.assets;
     if (!a || !a.spineEntry || !a.spine) return;
     const id = this.info.spine || this.info.defId;
-    // Front/Back rule (research 07 §5.5 / 09 §1.2): Front facing right/down (mirrored for left), Back facing up.
+    // Front/Back rule (research 07 §5.5 / 09 §1.2): Front facing right/down (mirrored for left), Back facing up — while
+    // standing (a knocked-out operator lies with the model that has a fall: _wantsBack).
     const back = this._wantsBack();
     const entry = id ? a.spineEntry(id, { back }) : null;
     if (!entry || this.ctx.settings?.quality === 'low' && this.isEnemy && !this.isBoss && this.ctx.crowded?.()) return;
@@ -393,12 +449,16 @@ export class UnitView {
    * Re-resolve what this view could not draw yet (public issue #8 item 5): the picture when it has none (no avatar URL —
    * the asset manifest arrived after the view was built — or the image failed) and, at once, the Spine model when none
    * is shown and none is loading (no manifest entry then, or a load that failed / timed out). render/app.js calls it for
-   * every view when a manifest arrives (assets.js onChange) and when the tab is shown again. Nothing to do otherwise.
+   * every view when a manifest arrives (assets.js onChange) and when the tab is shown again. A load still in flight that
+   * began while the tab was hidden gets SPINE_STUCK_MS from now (the tab visible) to finish, then `update` starts it again
+   * (GitHub #68). Nothing to do otherwise.
    */
   retryAssets() {
     if (this.destroyed) return;
     if (!this._pic || this._pic.state === 'none') this._loadPicture();
-    if (!this.actor && !this._spineBusy) { this._retryAt = 0; this._loadSpine(true); }
+    if (this.actor) return;
+    if (!this._spineBusy) { this._retryAt = 0; this._loadSpine(true); return; }
+    if (this._spineHidden && !this._stuckAt && !globalThis.document?.hidden) this._stuckAt = nowMs() + SPINE_STUCK_MS;
   }
 
   /**
@@ -413,8 +473,10 @@ export class UnitView {
     this.entry = entry;
     const req = this._spineReq = (this._spineReq || 0) + 1;
     this._spineBusy = true;
+    this._spineHidden = !!globalThis.document?.hidden;
+    this._stuckAt = 0;
     a.spine.acquire(entry, retry ? { retry: true } : undefined).then((data) => {
-      if (req === this._spineReq) this._spineBusy = false;
+      if (req === this._spineReq) { this._spineBusy = false; this._stuckAt = 0; }
       if (this.destroyed || req !== this._spineReq) { this._releaseEntry(entry); return; }
       this._spineTries = 0;
       this._retryAt = 0;
@@ -422,13 +484,18 @@ export class UnitView {
       try {
         actor = new SpineActor(data, entry);
         actor.setSkillIndex(this.info.skillIndex);
+        // enemies play their attack clip once per attack, then walk on (GitHub #58: the sim stands them for that clip)
+        actor.clipPerAttack = this.isEnemy;
       } catch (err) {
         console.warn('[render] spine build failed', id, err?.message || err);
         this._releaseEntry(entry);
         return;
       }
-      // a Front ⇄ Back swap (setDir) replaces the previous model in place: no fallback diamond in between
+      // a Front ⇄ Back swap (setDir, or knocked out / standing again: _syncModel) replaces the previous model in place:
+      // no fallback diamond in between; a deploy clip it was playing goes on on the new model (an operator facing UP
+      // redeployed: its Back model takes over from the Front model it lay down with)
       const swap = !!this.actor;
+      const deployed = swap && this.alive ? this.actor.deployElapsed() : null;
       if (swap) this._dropActor();
       this.actor = actor;
       this._actorEntry = entry;
@@ -437,8 +504,10 @@ export class UnitView {
       this.spineReady = true;
       this.swapT = swap ? 1 : 0;
       this.actor.spine.alpha = swap ? 1 : 0;
-      // a mode the unit is already in (a model built or rebuilt after the change): its clip set, no change clip
-      const f = this._formSpec();
+      // a mode the unit is already in (a model built or rebuilt after the change): its clip set, no change clip — a dead
+      // one lies in the form it died in (a 替身 knocked out: the sim resets the form at once, but the Front model it lies
+      // down with facing UP, §22.1, is built a frame later; a model rebuilt while it is down)
+      const f = this._formSpec() || (this.alive ? null : this._dieForm);
       if (f) this.actor.setForm(f.roles);
       // replay current state (a dead model resumes its Die clip where it would be — a knocked-down one holds its end)
       if (!this.alive) {
@@ -448,9 +517,10 @@ export class UnitView {
       } else {
         if (this.flags & UF.SKILL) this.actor.setSkill(true);
         this.actor.setBase(this._baseFromAnim());
+        if (deployed != null) { this.actor.deploy(); if (deployed > 0) this.actor.update(deployed); }
       }
     }, () => {
-      if (req === this._spineReq) this._spineBusy = false;
+      if (req === this._spineReq) { this._spineBusy = false; this._stuckAt = 0; }
       this._releaseEntry(entry);
       if (this.destroyed || req !== this._spineReq) return;
       if (entry.fallback) { this._acquireSpine(entry.fallback, id, retry); return; }
@@ -467,14 +537,15 @@ export class UnitView {
    * The unit changed mode (the `form` of a sim fx — shared/protocol.js fxForm; `fx` = that fx's extra): the mode's clip
    * set (FORMS) after its change clip, and its closing clip (`end`, landing in the `next` form's clips) timed to end
    * `fx.dur` game s later — the unit is still in this mode while it plays (an ember can be beaten in its last second),
-   * so this mode's death clip stays until the next mode's fx; null goes back to the manifest clips; a kind this skeleton
-   * has no clip set for (an arts barrier, a broken charge …) changes nothing. Kept for a model built later.
+   * so this mode's death clip stays until the next mode's fx; null goes back to the manifest clips (through the old
+   * mode's `leave` clip when it has one: a 替身's 本体 coming back); a kind this skeleton has no clip set for (an arts
+   * barrier, a broken charge …) changes nothing. Kept for a model built later.
    */
   setForm(kind, fx = null) {
     const k = typeof kind === 'string' ? kind : null;
     if (k === this.form) return;
     if (k && !FORMS[this.info.spine || this.info.defId]?.[k]) return;
-    const had = !!this._formSpec();
+    const prev = this._formSpec();
     this.form = k;
     this.info.form = k;
     const f = this._formSpec();
@@ -486,7 +557,7 @@ export class UnitView {
     const late = fx && Number(fx.late) > 0 ? Number(fx.late) : 0;
     const change = f && f.change && !(late > 0 && late >= (this.actor.dur?.(f.change) ?? Infinity)) ? f.change : null;
     if (f) this.actor.setForm(f.roles, change, f.end && dur > 0 ? { clip: f.end, in: dur, roles: next } : null);
-    else if (had) this.actor.setForm(null);
+    else if (prev) this.actor.setForm(null, prev.leave && !(late > 0 && late >= (this.actor.dur?.(prev.leave) ?? Infinity)) ? prev.leave : null);
   }
 
   // ---- HUD -------------------------------------------------------------------------------------------------
@@ -602,11 +673,27 @@ export class UnitView {
     else if (this.dir === 'LEFT') this.setDir('RIGHT');
   }
 
-  /** Whether this unit should show its Back model (facing UP and a Back model exists). */
+  /**
+   * Whether this unit should show its Back model: facing UP and a Back model exists — while it stands. A dead or
+   * knocked-out one keeps the Back model only when that skeleton has a fall of its own (4 of the 135 Back models); the
+   * others have no Die clip, so the Front model shows the fall and the held knocked-down pose (GitHub issue #25: the
+   * Back model went on with its attack loop under the redeploy ring) [ASSUMED: no source says which model the official
+   * client lies down with; a Back skeleton without a Die clip cannot show a fall].
+   */
   _wantsBack() {
     const a = this.ctx.assets;
     const id = this.info.spine || this.info.defId;
-    return !this.isEnemy && this.dir === 'UP' && !!id && !!a && typeof a.hasBack === 'function' && !!a.hasBack(id);
+    if (this.isEnemy || this.dir !== 'UP' || !id || !a || typeof a.hasBack !== 'function' || !a.hasBack(id)) return false;
+    return this.alive || dieClipDur(typeof a.spineEntry === 'function' ? a.spineEntry(id, { back: true }) : null) > 0;
+  }
+
+  /**
+   * Load the model the unit wants when it is not the one shown or loading (Front ⇄ Back: its direction, or it went down /
+   * stood up again). A swap replaces the model in place (_acquireSpine: no diamond in between; a fall or a deploy clip
+   * goes on where it is). Nothing before the first model was asked for (no manifest entry yet).
+   */
+  _syncModel() {
+    if (this.entry && this._wantsBack() !== !!this.entryBack) this._loadSpine();
   }
 
   /**
@@ -623,7 +710,7 @@ export class UnitView {
     this.facing = d === 'LEFT' ? -1 : 1;
     this.visFacing = this.facing;
     if (this.imp) this.imp.dirty = true;
-    if (this.entry && this._wantsBack() !== !!this.entryBack) this._loadSpine();
+    this._syncModel();
   }
 
   _releaseEntry(entry) {
@@ -637,6 +724,7 @@ export class UnitView {
       this.imp = null;
     }
     this._box = null;
+    this._tint = undefined;   // the next model gets the current tint on its first frame (a knocked-down one its grey)
     const old = this.actor;
     this.actor = null;
     this.spineReady = false;
@@ -705,11 +793,20 @@ export class UnitView {
   /**
    * The unit died: its Die clip plays, then it fades (unless it stays down, setDown). `instant`: it starts on the held
    * end of the clip — a unit that is already down (a field joined mid-battle, an operator entering 联防 knocked out).
+   * An operator facing UP whose Back model has no Die clip (GitHub issue #25) falls with its Front model: the swap is
+   * made by this frame's update (`_modelDirty` → _syncModel, after every event and snapshot of the frame, so a death
+   * and a redeploy in one frame — a 突袭 jump, a 不屈 revive, a backlog after a hidden tab — load nothing); meanwhile the
+   * Back model holds still (SpineActor.die), and the Front model's Die clip times the fade. The form it dies in
+   * (`_dieForm`: a 傀儡师's 替身, which the sim resets right after the 'die' event) gives that model — and any built while
+   * it lies down — its death clip, until it stands up again.
    */
   die(instant = false) {
     if (!this.alive) return;
     this.alive = false;
-    const d = this.actor ? this.actor.die() : 0;
+    this._modelDirty = true;
+    this._dieForm = this._formSpec();
+    let d = this.actor ? this.actor.die() : 0;
+    if (this.actor && !d) d = this._fallDur();
     const rate = this.ctx.animRate?.() || 1;
     this.dieT = 0;
     this.dying = clamp(d / rate, 0.35, 1.6) + 0.55;
@@ -717,8 +814,20 @@ export class UnitView {
     if (instant) { this.dieT = 30; if (this.actor) this.actor.update(30); }
   }
 
+  /** Seconds of the fall of the model the unit wants now (its manifest entry's Die clip), 0 without one. */
+  _fallDur() {
+    const a = this.ctx.assets;
+    const id = this.info.spine || this.info.defId;
+    return a && typeof a.spineEntry === 'function' && id ? dieClipDur(a.spineEntry(id, { back: this._wantsBack() })) : 0;
+  }
+
+  /** Standing again (a redeploy, a revive): an operator facing UP gets its Back model back (this frame's update). */
   revive() {
     this.alive = true;
+    this._modelDirty = true;
+    // a model built while it lay in a form's death pose (_dieForm) stands up on the unit's own clips
+    if (this._dieForm && this.actor && !this._formSpec()) this.actor.setForm(null);
+    this._dieForm = null;
     this.dying = 0; this.remove = false; this.alpha = 1;
     this.down = null;
     this.hp = this.maxHp; this.ghostHp = this.hp;
@@ -761,8 +870,15 @@ export class UnitView {
   update(dt, cam, t) {
     if (this.destroyed) return;
     const P = this.P;
+    // the model for the state the frame's events and snapshot left (Front ⇄ Back when it went down / stood up: die, revive)
+    if (this._modelDirty) { this._modelDirty = false; this._syncModel(); }
     // a failed / timed-out model load is tried again once its wait is over (SPINE_RETRY_MS; frames only: never hidden)
     if (this._retryAt && nowMs() >= this._retryAt) { this._retryAt = 0; if (!this.actor && !this._spineBusy) this._loadSpine(true); }
+    // a load begun in a hidden tab and still in flight SPINE_STUCK_MS after it came back: started again (GitHub #68)
+    if (this._stuckAt && nowMs() >= this._stuckAt) {
+      this._stuckAt = 0;
+      if (!this.actor && this._spineBusy && this.entry) { this._spineHidden = false; this.ctx.assets?.spine?.restart?.(this.entry); }
+    }
     if (this.zTarget != null && this.z !== this.zTarget) {
       const d = this.zTarget - this.z;
       this.z = Math.abs(d) < 1e-3 ? this.zTarget : this.z + d * Math.min(1, dt * 12);
@@ -789,8 +905,9 @@ export class UnitView {
     if (this.dimmed) alpha *= 0.35;
     this.alpha = alpha;
 
-    // body placement
-    const lungeK = this.lunge > 0 ? Math.sin(this.lunge * Math.PI) * 0.12 : 0;
+    // body placement — the 0.12-tile jolt toward the target on an attack stands in for the avatar diamond's missing attack
+    // clip; a Spine model plays its own and keeps its place (GitHub #61: every ranged attack shoved the model aside)
+    const lungeK = this.lunge > 0 && !(this.actor && this.spineReady) ? Math.sin(this.lunge * Math.PI) * 0.12 : 0;
     this.lunge = Math.max(0, this.lunge - dt * 5);
     const lx = this.lungeDir.x * lungeK, ly = this.lungeDir.y * lungeK;
     let bx = p.x, by = p.y;
@@ -1242,6 +1359,7 @@ export class UnitView {
       // a burst's lock ('burnBurst', 'neuralBurst' … — the 爆发冷却) is shown by the element gauge row under the bars
       // (b.snap `elem`); only a feed without gauges (an older recording) shows it as a status
       if (this.el && k.endsWith('Burst')) continue;
+      if (statusIconSuppressed(k, this.statuses)) continue; // 折射 while silenced
       const icon = statusIconKey(k);
       // flag-driven states are authoritative (a stale 'stun' status must not outlive the flag)
       if (!icon || icon === 'stun' || icon === 'freeze' || icon === 'sleep' || icon === 'stealth' || icon === 'invuln') continue;

@@ -24,15 +24,18 @@
 // getter re-read 4× a second: current HP, max HP, ATK, DEF, RES, attack interval, block), in prep the stats the own
 // board's units start their next battle with (m.unitStats: equipment, bonds / layers, 特质, band and 机变 effects). Each
 // value is coloured against the unit's base like the official card — green when it helps (higher, or a shorter attack
-// interval) with the difference beside it, red when it hurts — and a 实时 / 开战时 tag says which it is. The 攻击范围
+// interval) with the difference beside it, red when it hurts — and a 实时 / 开战时 tag says which it is. The Attack Range
 // mini-map follows the live entry's `range` too (cardRangeGrid: the grid the unit attacks with now — a running skill's
 // range such as 烛煌 S3's 4-11, rangeExtend included; community report E1 after 0.1.0, it used to stay the base grid);
 // a grid larger than the box (RANGE_FIT) draws smaller cells (rangeGridStyle), a whole-field one reads 全场.
+// The stats block (chessStatsBlock), the 特性 text (traitText) and the talent list (chessTalents) are exported: the 干员调配
+// screen's 局内数值 section draws the same ones for the chosen skill / module, without a live entry (GitHub issue #64).
 
 import { html, Icon, TierChip, MicroLabel, Button, confirmDialog, useTicker, roman } from './components.js';
 import { Img, RichText, UnitThumb, BondGlyph, GIcon } from './gameComponents.js';
 import { attackInterval, rangeGridBox, fmtNum, tileKey, chessLoadout, nextThreshold, bondTier, briefingBondTip, pieceBondIds, grantedBonds, morphPairings } from './gameLogic.js';
 import { chessPortraitUrl, skillIconUrl, skillRecordIconUrl, profIconUrl, subProfIconUrl, itemIconUrl, enemyIconUrl, tokenAvatarUrl, factionIconUrl, uiUrl, moduleTypeIconUrl } from './assetUrls.js';
+import { abilityRows } from './abilityLines.js';
 import { data } from '../data.js';
 import { attackRangeGrid } from '../../../shared/loadoutRecord.js';
 import { SKILL_SUMMON_START_DEPLOY } from '../../../shared/constants.js';
@@ -50,7 +53,7 @@ const EVENT_ICON = { IN_BATTLE: 's_icon_battle', SERVER_GAIN: 's_icon_bond', SER
 const RANK = { NORMAL: 'Normal', ELITE: 'Elite', BOSS: 'Leader' };
 const DMG = { phys: 'Physical', arts: 'Arts', heal: 'Healing', true: 'True', none: 'None' };
 
-/** A range grid of at least this many tiles covers the field (纯烬艾雅法拉 S3 "攻击范围扩大至整个战场"): named, not drawn. */
+/** A range grid of at least this many tiles covers the field (纯烬艾雅法拉 S3 "Attack Range扩大至整个战场"): named, not drawn. */
 export const FIELD_WIDE_CELLS = 400;
 /**
  * Columns × rows of the mini-map's own cells (.14rem, 2px apart) the card's range box holds without growing: the widest
@@ -69,9 +72,9 @@ export function rangeGridStyle(box) {
 }
 
 /**
- * The grid the card's 攻击范围 shows: the live entry's `range` (shared/protocol.js unitStatsEntry — what the unit attacks
+ * The grid the card's Attack Range shows: the live entry's `range` (shared/protocol.js unitStatsEntry — what the unit attacks
  * with now: a running skill's range, rangeExtend included), else the loadout record's attack range at deployment
- * (shared/loadoutRecord.js attackRangeGrid: an elite's module grid, a passive range skill, the 特性's 攻击距离 — the same
+ * (shared/loadoutRecord.js attackRangeGrid: an elite's module grid, a passive range skill, the 特性's ATK距离 — the same
  * tiles as the board overlay and the deploy wheel), else the record's own.
  * @param {any} live unitStatsEntry (+ src) or null @param {any} rec loadout-resolved record @param {any} chess
  * @returns {number[][]|null}
@@ -269,12 +272,14 @@ export function BondChips({ bondIds, bonds = [], onBond = null, off = null, gran
 
 /**
  * 特性 text of the record the unit fights with (DESIGN §16: `lo.record` = the chosen module's traitOverride, or the
- * no-module traitBase for 不装备 — data `trait` is the default module's).
+ * no-module traitBase for 不装备 — data `trait` is the default module's). Also the 干员调配 screen's (screens/loadout.js).
  */
-function traitText(c, golden, lo) {
+export function traitText(c, golden, lo) {
   const t = (lo?.record || c).trait || {};
   const base = t.descRaw || t.desc || '';
-  if (!golden || lo?.record !== c) return base;
+  if (!golden) return base;
+  // the record's own module line, also for a record cloned for another skill or module (a 不装备 record carries none) —
+  // until 0.1.2 a clone fell back to the class trait (Grok review of GitHub #64; the in-match card had it too)
   return t.moduleDescRaw || base;
 }
 
@@ -312,6 +317,45 @@ function GarrisonBlock({ garrison, m }) {
   </section>`;
 }
 
+/** The talents the card lists (天赋): the loadout record's named, not hidden ones. */
+export function chessTalents(rec) {
+  return (Array.isArray(rec?.talents) ? rec.talents : []).filter((t) => t && t.name && !t.hidden);
+}
+
+/**
+ * The card's stats block (block key "stats"): the eight stats and the Attack Range mini-map. `rec` = the loadout-resolved
+ * record the unit fights with (chessLoadout `.record`: the chosen module's stats, the chosen skill's passive range),
+ * `chess` the chess record (the range's fallback), `live` the live / start-of-battle entry (liveStat) or null — the
+ * record's own numbers, untagged. A plain function (its root node keeps the key), shared by the detail card and the
+ * 干员调配 screen (screens/loadout.js 局内数值, GitHub issue #64): one block, so the two never disagree.
+ * @param {{ rec: any, chess: any, live?: any }} p
+ */
+export function chessStatsBlock({ rec, chess, live = null }) {
+  const s = rec?.stats || {};
+  const interval = attackInterval(s.bat, s.aspd);
+  // live (battle) / start-of-battle (prep) values against the base, else the record's (liveStat)
+  const st = {
+    maxHp: liveStat(live, 'maxHp', s.maxHp), atk: liveStat(live, 'atk', s.atk), def: liveStat(live, 'def', s.def),
+    res: liveStat(live, 'res', s.res ?? 0, fmtRes), interval: liveStat(live, 'interval', interval, fmtInterval),
+    blockCnt: liveStat(live, 'blockCnt', s.blockCnt, (v) => String(v)),
+  };
+  return html`
+    <div key="stats" class=${cx('dstats-wrap', live && 'is-live')} data-live=${live ? live.src || 'prep' : undefined}>
+      <div class="dstats">
+        <${LiveTag} live=${live} />
+        <${Stat} k="Max HP" ...${st.maxHp} />
+        <${Stat} k="ATK" ...${st.atk} />
+        <${Stat} k="DEF" ...${st.def} />
+        <${Stat} k="RES" ...${st.res} />
+        <${Stat} k="Attack Interval" ...${st.interval} />
+        <${Stat} k="Block" ...${st.blockCnt} />
+        <${Stat} k="DP Cost" v=${s.cost ?? '—'} />
+        <${Stat} k="Redeploy" v=${s.respawnTime != null ? `${s.respawnTime}s` : '—'} />
+      </div>
+      <div class="drange"><span class="dstat__k">Attack Range</span><${RangeGrid} grid=${cardRangeGrid(live, rec, chess)} /></div>
+    </div>`;
+}
+
 export function ChessDetail({ chess, piece, unit, snapHp, editable, onSell, bonds, offBonds = null, loadout, onBond, live = null, hint = null, unitItems = null }) {
   const m = data.get('assets');
   const hp = hpOf(live, snapHp);
@@ -319,9 +363,7 @@ export function ChessDetail({ chess, piece, unit, snapHp, editable, onSell, bond
   const c = chess;
   // stats / talents the unit fights with: the chosen module's (or none — statsBase) for an elite (DESIGN §16)
   const fr = lo?.record || c;
-  const s = fr.stats || {};
   const golden = !!(c.isGolden || piece?.golden);
-  const interval = attackInterval(s.bat, s.aspd);
   const sk = lo?.skill || c.skill || null;
   // a chosen skill the manifest has no icon for (only the default skills' icons are fetched): its slot letter
   const skIcon = sk && lo && !lo.defaultSkill ? skillRecordIconUrl(m, sk, { empty: false }) : skillIconUrl(m, c);
@@ -363,27 +405,7 @@ export function ChessDetail({ chess, piece, unit, snapHp, editable, onSell, bond
     </div>`;
   blocks.garrison = garrison ? html`<${GarrisonBlock} key="garrison" garrison=${garrison} m=${m} />` : null;
   blocks.trait = c.trait?.desc ? html`<p key="trait" class="dtrait"><${Icon} name="info" /><${RichText} text=${traitText(c, golden, lo)} /></p>` : null;
-  // live (battle) / start-of-battle (prep) values against the base, else the record's (liveStat)
-  const st = {
-    maxHp: liveStat(live, 'maxHp', s.maxHp), atk: liveStat(live, 'atk', s.atk), def: liveStat(live, 'def', s.def),
-    res: liveStat(live, 'res', s.res ?? 0, fmtRes), interval: liveStat(live, 'interval', interval, fmtInterval),
-    blockCnt: liveStat(live, 'blockCnt', s.blockCnt, (v) => String(v)),
-  };
-  blocks.stats = html`
-    <div key="stats" class=${cx('dstats-wrap', live && 'is-live')} data-live=${live ? live.src || 'prep' : undefined}>
-      <div class="dstats">
-        <${LiveTag} live=${live} />
-        <${Stat} k="Max HP" ...${st.maxHp} />
-        <${Stat} k="ATK" ...${st.atk} />
-        <${Stat} k="DEF" ...${st.def} />
-        <${Stat} k="RES" ...${st.res} />
-        <${Stat} k="Atk Interval" ...${st.interval} />
-        <${Stat} k="Block" ...${st.blockCnt} />
-        <${Stat} k="DP Cost" v=${s.cost ?? '—'} />
-        <${Stat} k="Redeploy" v=${s.respawnTime != null ? `${s.respawnTime}s` : '—'} />
-      </div>
-      <div class="drange"><span class="dstat__k">Attack Range</span><${RangeGrid} grid=${cardRangeGrid(live, fr, c)} /></div>
-    </div>`;
+  blocks.stats = chessStatsBlock({ rec: fr, chess: c, live });
   blocks.skill = sk ? html`<${Section} key="skill" title="Skill" micro="SKILL" class="dsec--skill">
       <div class="dskill" data-skill=${sk.skillId || ''}>
         <${Img} src=${skIcon} class="dskill__icon" fallback=${html`<span class="dskill__icon dskill__icon--empty">${skSlot ? html`<b class="num">${skSlot}</b>` : null}</span>`} />
@@ -417,8 +439,9 @@ export function ChessDetail({ chess, piece, unit, snapHp, editable, onSell, bond
     : !piece && carried.length ? html`<${Section} key="equip" title="Gear" micro=${`GEAR ${carried.length}/2`} class="dsec--equip">
       ${carried.map((id, i) => html`<${ItemRow} key=${`${i}:${id}`} itemId=${id} carried=${carried} off=${offBonds} />`)}
     <//>` : null;
-  blocks.talents = Array.isArray(fr.talents) && fr.talents.some((t) => t && t.name && !t.hidden) ? html`<${Section} key="talents" title="Talent" micro="TALENT" class="dsec--talent">
-      ${fr.talents.filter((t) => t && t.name && !t.hidden).map((t, i) => html`<div key=${i} class="dtalent"><b>${t.name}</b><${RichText} text=${t.descRaw || t.desc} class="dtext" /></div>`)}
+  const talents = chessTalents(fr);
+  blocks.talents = talents.length ? html`<${Section} key="talents" title="Talent" micro="TALENT" class="dsec--talent">
+      ${talents.map((t, i) => html`<div key=${i} class="dtalent"><b>${t.name}</b><${RichText} text=${t.descRaw || t.desc} class="dtext" /></div>`)}
     <//>` : null;
   blocks.actions = piece && editable && piece.kind !== 'item' ? html`<div key="actions" class="dactions">
       <${Button} variant="amber" icon="close" class="dpanel__sell" onClick=${() => onSell(piece, c)}>Sell<span class="dsell num">+${sell}</span><//>
@@ -502,7 +525,7 @@ function EnemyDetail({ enemy, snapHp, count, live = null }) {
     </div>
     ${imm.length ? html`<p class="dhint"><${Icon} name="shield" />Immunities: ${imm.join(', ')}</p>` : null}
     ${Array.isArray(enemy.abilities) && enemy.abilities.length ? html`<${Section} title="Abilities" micro="ABILITIES">
-      <ul class="dabil">${enemy.abilities.map((a, i) => html`<li key=${i}><${RichText} text=${typeof a === 'string' ? a : a.textRaw || a.text} /></li>`)}</ul>
+      <ul class="dabil">${abilityRows(enemy.abilities, !!live?.silenced).map((a, i) => html`<li key=${i} class=${a.off ? 'is-off' : null}><${RichText} text=${a.text} /></li>`)}</ul>
     <//>` : enemy.descRaw || enemy.desc ? html`<${Section} title="Description"><${RichText} as="p" text=${enemy.descRaw || enemy.desc} class="dtext" /><//>` : null}`;
 }
 
@@ -555,7 +578,7 @@ export function TokenDetail({ token, piece, ownerId = null, snapHp = null, live 
     maxHp: liveStat(live, 'maxHp', s.maxHp), atk: liveStat(live, 'atk', s.atk), def: liveStat(live, 'def', s.def),
     blockCnt: liveStat(live, 'blockCnt', s.blockCnt, (v) => String(v)),
   };
-  // what the summon does lives in its talent (凯瑟琳's 支援装置: "使攻击范围内一名友方干员获得…屏障") or token skill (诅咒娃娃)
+  // what the summon does lives in its talent (凯瑟琳's 支援装置: "使Attack Range内一名友方干员获得…屏障") or token skill (诅咒娃娃)
   const talents = (v0?.talents || []).filter((t) => t && t.name && t.desc);
   const skill = v0?.skill && v0.skill.desc && !/^skcom_withdraw/.test(String(v0.skill.skillId || '')) ? v0.skill : null;
   const hint = piece ? summonDeployHint(token) : null;
@@ -608,6 +631,8 @@ export function resolveDetail(target, pieces) {
     const u = target.unit || {};
     const own = Number.isInteger(u.uid) ? pieces?.get(u.uid) : null;
     if (u.side === 'enemy') { const en = data.lookup('enemies', u.defId); return en ? { type: 'enemy', enemy: en, unitId: u.id } : null; }
+    // a hand item on a scouted prep board (m.field units, kind 'item'): the item's own card
+    if (u.kind === 'item') { const it = data.lookup('items', u.defId); return it ? { type: 'item', item: it } : null; }
     const c = data.lookup('chess', u.defId);
     if (c) return { type: 'chess', chess: c, piece: own?.piece || null, unitId: u.id, unitItems: Array.isArray(u.items) ? u.items : null };
     const t = data.lookup('tokens', u.defId);

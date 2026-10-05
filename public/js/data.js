@@ -6,7 +6,10 @@
 // GAME_FILES) in the background once the player is in a room, and the match screen waits for them, so no text of the
 // match UI ever appears late. A transient failure (network error, HTTP 5xx) is retried twice (RETRY_DELAYS_MS); files
 // that stay unavailable (404, repeated failures, bad JSON) resolve to `null` and are reported once on the console — the
-// UI must degrade gracefully while data is being generated.
+// UI must degrade gracefully while data is being generated. The emote manifests (`local`, `assets`) are the exception:
+// one attempt is abandoned after ART_MANIFEST_TIMEOUT_MS (GitHub #99) and reported `missing` at once, so the 交流 button
+// draws its glyph instead of staying blank; a later retry that succeeds replaces the glyph. Other files stay `loading`
+// across their retries.
 //
 // Each file is indexed tolerantly so the getters work whether a file is
 //   - an array of records carrying an id field (id / chessId / bondId / itemId / …),
@@ -38,6 +41,7 @@ export const DATA_FILES = Object.freeze({
   config: 'config.json',
   assets: 'assets.json',
   // Optional art extracted from a local game client (DESIGN §13): { groups: { '<subdir>': { name: { path, w, h } } } }.
+  // The emotes and the 玩法说明 pages are in data/assets.json too (downloaded from the mirror): artUrls().
   local: 'local-assets.json',
 });
 
@@ -85,6 +89,16 @@ export function buildIndex(name, json) {
 export const RETRY_DELAYS_MS = Object.freeze([600, 2000]);
 
 /**
+ * How long one attempt at an emote manifest (`local`, `assets`) may hang before it counts as a failure.
+ * [ASSUMED] 8 s: long enough for a slow link, short enough that the 交流 button does not stay blank for the session
+ * (GitHub #99). Other files are not on this clock.
+ */
+export const ART_MANIFEST_TIMEOUT_MS = 8000;
+
+/** Manifests the emote button waits on. A hang here used to leave every cell blank (GitHub #99). */
+const ART_MANIFESTS = new Set(['local', 'assets']);
+
+/**
  * A failed load worth retrying: the request itself failed (network error) or the server answered 5xx / 408 / 429 — not a
  * definite 4xx (the file is not there) nor a delivered file that is not valid JSON (`badJson`).
  */
@@ -98,10 +112,12 @@ const transientFailure = (err) => {
  * Create a data store bound to a fetch implementation (injectable for tests).
  * A file is downloaded once per page (the texts of the game are static data, never fetched again during a match —
  * user playtest #3 item 9); a transient failure is retried (RETRY_DELAYS_MS) while the file stays 'loading', so a
- * network hiccup does not leave the texts of a whole session missing.
- * `locale` ('en' …) switches the English overlay on (default: off — the original Chinese data); `localeBase` is where the
- * tables are served.
- * @param {{ fetch?: typeof fetch, base?: string, locale?: string|null, localeBase?: string, retryDelays?: number[], wait?: (ms: number) => Promise<void> }} [opts]
+ * network hiccup does not leave the texts of a whole session missing. `locale` (`en` …) enables the English overlay
+ * (default: off — the original Chinese data); `localeBase` is where the tables are served. `local` and `assets` are
+ * reported `missing` on the first failure or timeout (the emote glyph) and stay that way through a retry; a later
+ * success is `ready`.
+ * @param {{ fetch?: typeof fetch, base?: string, locale?: string|null, localeBase?: string, retryDelays?: number[], wait?: (ms: number) => Promise<void>, timeoutMs?: number, setTimeout?: typeof setTimeout, clearTimeout?: typeof clearTimeout }} [opts]
+ *   `timeoutMs` 0 turns the art-manifest clock off. `setTimeout` / `clearTimeout` let a test fire that clock.
  */
 export function createDataStore(opts = {}) {
   const base = opts.base ?? '/data/';
@@ -110,6 +126,9 @@ export function createDataStore(opts = {}) {
   const doFetch = opts.fetch || ((...a) => globalThis.fetch(...a));
   const retryDelays = Array.isArray(opts.retryDelays) ? opts.retryDelays : RETRY_DELAYS_MS;
   const wait = opts.wait || ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
+  const timeoutMs = opts.timeoutMs === undefined ? ART_MANIFEST_TIMEOUT_MS : Number(opts.timeoutMs);
+  const armTimer = opts.setTimeout || ((fn, ms) => setTimeout(fn, ms));
+  const disarmTimer = opts.clearTimeout || ((id) => clearTimeout(id));
   /** @type {Map<string, { status: 'loading'|'ready'|'missing', promise: Promise<any>, value: any, index: Map<string, any>|null }>} */
   const entries = new Map();
   const listeners = new Set();
@@ -155,37 +174,84 @@ export function createDataStore(opts = {}) {
     }
   }
 
+  /**
+   * One attempt at a file. Art manifests reject with a transient `{ timeout: true }` when the clock fires; a response
+   * that arrives after that is ignored (the retry is a new request).
+   */
+  function readJson(name) {
+    const run = async () => {
+      const res = await doFetch(urlFor(name), { cache: 'no-cache' });
+      if (!res || !res.ok) throw Object.assign(new Error(`HTTP ${res ? res.status : '???'}`), { status: res ? res.status : null });
+      try {
+        return await res.json();
+      } catch (err) {
+        throw Object.assign(err instanceof Error ? err : new Error(String(err)), { badJson: true });
+      }
+    };
+    if (!ART_MANIFESTS.has(name) || !(timeoutMs > 0)) return run();
+    let timer = null;
+    let done = false;
+    const finish = () => {
+      if (done) return false;
+      done = true;
+      if (timer != null) disarmTimer(timer);
+      return true;
+    };
+    const timed = new Promise((_, reject) => {
+      timer = armTimer(() => {
+        if (!finish()) return;
+        reject(Object.assign(new Error('timeout'), { timeout: true }));
+      }, timeoutMs);
+    });
+    const req = run().then(
+      (json) => { finish(); return json; },
+      (err) => { finish(); throw err; },
+    );
+    return Promise.race([req, timed]);
+  }
+
   function load(name) {
     if (typeof name !== 'string' || !/^[A-Za-z0-9_-]+$/.test(name)) return Promise.resolve(null);
     const cur = entries.get(name);
     if (cur) return cur.promise;
     const entry = { status: 'loading', promise: null, value: null, index: null };
+    const art = ART_MANIFESTS.has(name);
     entry.promise = (async () => {
       const table = fetchTable(name, () => entries.get(name) === entry); // in parallel with the file itself
       let loaded = false;
+      let toldMissing = false;
       for (let attempt = 0; ; attempt++) {
         try {
-          const res = await doFetch(urlFor(name), { cache: 'no-cache' });
-          if (!res || !res.ok) throw Object.assign(new Error(`HTTP ${res ? res.status : '???'}`), { status: res ? res.status : null });
-          let json;
-          try { json = await res.json(); } catch (err) { throw Object.assign(err instanceof Error ? err : new Error(String(err)), { badJson: true }); }
-          entry.value = json;
+          entry.value = await readJson(name);
           loaded = true;
           break;
         } catch (err) {
-          // a transient failure is tried again (still 'loading'), unless the load was superseded meanwhile
-          if (transientFailure(err) && attempt < retryDelays.length && entries.get(name) === entry) {
+          const current = entries.get(name) === entry;
+          // Decided before notify. Invalidating inside that notify leaves `again` true; the wait then sees
+          // the superseded entry and stops, so this attempt does not fetch again.
+          const again = transientFailure(err) && attempt < retryDelays.length && current;
+          // Emote art: glyph now. Stay `missing` through the retry wait — flipping back to `loading` blanks the button.
+          if (art && current && entry.status !== 'missing') {
+            entry.value = null;
+            entry.index = null;
+            entry.status = 'missing';
+            toldMissing = true;
+            notify(name);
+          }
+          if (again) {
             await wait(retryDelays[attempt]);
             if (entries.get(name) === entry) continue;
-            entry.status = 'missing'; // superseded by invalidate() meanwhile: the new load reports for itself
             break;
           }
-          if (!warned.has(name)) {
-            warned.add(name);
-            console.warn(`[data] ${urlFor(name)} unavailable (${err?.message || err}); continuing without it`);
+          if (current) {
+            if (!warned.has(name)) {
+              warned.add(name);
+              console.warn(`[data] ${urlFor(name)} unavailable (${err?.message || err}); continuing without it`);
+            }
+            entry.value = null;
+            entry.index = null;
+            entry.status = 'missing';
           }
-          entry.value = null;
-          entry.status = 'missing';
           break;
         }
       }
@@ -195,7 +261,8 @@ export function createDataStore(opts = {}) {
         entry.status = 'ready';
       }
       // A load superseded by invalidate() must not announce itself (its entry is no longer cached).
-      if (entries.get(name) === entry) notify(name);
+      // An art manifest already announced `missing` does not announce that same status again.
+      if (entries.get(name) === entry && !(toldMissing && entry.status === 'missing')) notify(name);
       return entry.value;
     })();
     entries.set(name, entry);
@@ -277,6 +344,39 @@ export function localAsset(group, name) {
   const g = data.get('local')?.groups?.[group];
   const e = g && typeof g === 'object' ? g[name] : null;
   return e && typeof e.path === 'string' && e.path ? e.path : null;
+}
+
+/**
+ * Candidate URLs, best first, of art that both the local client and the public mirror have — the 36 battle emotes and
+ * the 19 玩法说明 pages (GitHub issue #42: a server without the client showed default emote icons): the local-client
+ * entry (`localAsset(group, name)`), then the copy tools/fetch-assets.mjs downloads, which data/assets.json lists under
+ * the same group and name as `ui['<group>/<name>']` (tools/assets/plan.mjs UI_EXTRAS). Empty when neither manifest
+ * lists it (callers draw their own fallback); a caller skips a URL that fails to load and tries the next. Load both
+ * files first (`useData('local', 'assets')`).
+ * @param {string} group e.g. 'emoticon/basic', 'guide'
+ * @param {string} name entry name without extension
+ * @returns {string[]}
+ */
+export function artUrls(group, name) {
+  const out = [];
+  const local = localAsset(group, name);
+  if (local) out.push(local);
+  const ui = data.get('assets')?.ui;
+  const key = `${group}/${name}`;
+  const web = ui && typeof ui === 'object' && Object.hasOwn(ui, key) ? ui[key] : null;
+  if (typeof web === 'string' && web && web !== local) out.push(web);
+  return out;
+}
+
+/**
+ * The URL to show from an artUrls() list: the first one that has not failed to load (a local file listed by a copied
+ * data/local-assets.json without its files falls through to the mirror copy), or null when none is left.
+ * @param {string[]} urls
+ * @param {Set<string>} [failed] URLs whose image fired an error
+ */
+export function nextArtUrl(urls, failed) {
+  for (const u of Array.isArray(urls) ? urls : []) if (typeof u === 'string' && u && !failed?.has(u)) return u;
+  return null;
 }
 
 /**

@@ -67,7 +67,7 @@ Evidence was extracted to the scratchpad `research2/`: guide pages, video frames
 | Moving a deployed unit | Drag the unit to any legal tile, **including its own tile**. The same diamond opens. The original stays visible until confirmed; cancelling leaves the unit and its facing unchanged. Re-orienting in place = drag the unit onto its own tile and swipe a new direction. | WIKI + ASSUMED (own-tile case) |
 | Tap a deployed unit | Opens the selection diamond (underframe) around the unit and shows its **attack range tiles** on the board (orange). Buttons on the diamond: **撤退** (red runner icon, upper-left; unit returns to the bench) and **出售 +1** (coin badge, upper-right). The left side shows the detail card: portrait, tier, LV, ATK/DEF/RES/block/cost, an "攻击范围" mini-grid, bond icons, and tabs 特质/技能/特性/天赋/装备. You cannot rotate from this menu. | DATA + WIKI |
 | Default facing | Every player-initiated placement goes through the wheel, so there is no silent default. Server-created board units (effects such as 外勤医疗 or 预备干员, bots, and back-compat) default to **RIGHT**, toward the gates. | ASSUMED |
-| Persistence | Facing is stored with the position and survives round changes. At combat start units auto-deploy on their tiles **with their facing**, in order **top→bottom, then left→right** (盟约下). | DATA (positions) + COMM (order) |
+| Persistence | Facing is stored with the position and survives round changes. At combat start units auto-deploy on their tiles **with their facing**, in order **从上到下>从左到右** (盟约下): down each column, the columns left to right (research 01 §4.3). | DATA (positions) + COMM (order) |
 | Melee, ranged, medic | All use the same wheel. The range preview uses the unit's own rangeGrid (heal range for medics). Blocking and "front" logic use the facing vector. | DATA |
 | Summons (tokens) | Each summon is its own bench card ("干员及其召唤物会自动加入整备区"), placed and moved freely with the same wheel. Retreating the owner also retreats its summons. | WIKI |
 | Equipment | Dragged onto a unit (board or bench). No direction step. A third item opens the equip-replace dialog (`UseEquipUp { charChessInstId, equipChessInstId, isChangeEquip, unloadInstId }`). | DATA |
@@ -288,6 +288,8 @@ All in `StreamingAssets/AB/Windows/ui/emoticon/theme/`:
 | `[uc]emoticon_foolsday_wisdel.ab` | pic_foolwisdel_0{1..6}_battle (112×115) |
 
 The autochess **room** pics (pic_hello, pic_question, pic_waiting, pic_working, pic_sorry_2, …) are **not** in any local bundle. Keep room emotes out of scope, or reuse the battle glyphs.
+
+The public mirror (ArknightsAssets2 `cn`, `ui/emoticon/theme/[uc]<themeId>/icon/<picId>.png`) has the same 36 battle sprites, at the same sizes (checked 2026-10-03); since v0.1.2 `tools/fetch-assets.mjs` downloads them and the client uses them when the local art is absent (DESIGN §22.5, GitHub issue #42).
 
 ---
 

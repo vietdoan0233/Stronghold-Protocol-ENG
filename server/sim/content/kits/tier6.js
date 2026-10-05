@@ -51,9 +51,12 @@
 //  6_16 溯光星源 link transfers the pre-mitigation arts amount × share to the other locked target(s); 能源解析 = the
 //                脆弱 status (同名效果取最高).
 //  6_17 耀骑士临光 "上一名部署干员" = the op of the same owner deployed right before her (deploy order).
-//  6_18 荒芜拉普兰德 S3 drones are virtual (fx events), move at projectile_move_speed tiles/s, she stops attacking
-//                while they roam; 头狼 stage 2 "特殊能力失效" = silence; stage 3 = +1 drone (normal attacks hit once
-//                more, S3 releases one more drone). Base drone count 1.
+//  6_18 荒芜拉普兰德 S3 drones are virtual (fx events) flying PRTS's 技能流程 (spread attack@times s, chase 2.0 → 4.0
+//                tiles/s; [ASSUMED] the turn rate is not modelled: straight at the target); every drone is out, so she
+//                makes no normal attack herself, while each drone on its target attacks like a normal drone (her attack
+//                interval, ATK × its own funnel ramp; neither attack nor skill damage — PRTS 备注); 头狼 stage 2
+//                "特殊能力失效" = silence; stage 3 = +1 drone (normal attacks hit once more; S3 releases one more drone,
+//                mid-skill too). Base drone count 1.
 //  6_19 锏       10 slashes every d_hit_interval, pulls every p_hit_interval, final blow (skill range) at the end;
 //                S3 slashes and pulls air units too (PRTS 备注 "可对空"; a 静态刚体 — every drone of the mode — is hit
 //                but stays put: Battle._displaceable).
@@ -70,9 +73,11 @@
 //  6_01 S2 the aim (disarmed meanwhile) spends its bullet when it begins; target = a wanted enemy (lowest DEF first).
 //  6_02 S1 casts with an enemy in her range (data SEARCH read as "search in range" [ASSUMED]; the engine SEARCH =
 //       any enemy on the field wasted both charges); the snow spreads along her facing line (≤ trig_cnt tiles);
-//       S2 "目标点变为冻结状态" = the frozen 保护目标 token (icetgt, one at a time) on the tile reaching max snow, whose
-//       snow is used up; spreads go to the thinnest 4-neighbour; the 20 % DoT ticks once per second.
-//  6_03 S2 teleport = the ground-reachable (grid path) enemies of the skill grid moved onto his tile.
+//       S2 "目标点变为冻结状态" = the frozen 保护目标 token (icetgt, one at a time) on a protection point (goal tile) reaching
+//       max snow, deploy attributes ignored, whose snow is used up (PRTS 备注; until 0.1.3 any standable tile froze, never the
+//       gate); spreads go to the thinnest 4-neighbour; the 20 % DoT ticks once per second.
+//  6_03 S2 teleport = the ground-reachable (grid path) enemies of the skill grid moved onto his tile, in the cast's
+//       tick (PRTS: 0.13 s after the damage), leaders included unless 自缚.
 //  6_04 S1 transfer: the ally takes ×(1 − share), she takes the rest as true damage from the attacker; module 新生代
 //       "30点伤害减免" = +30 effective DEF (physical) / −30 ÷ (1 − RES) before mitigation (arts).
 //  6_06 S2 the ASPD stacks last the whole battle; S1 "异常状态时可以释放" = cleanse + cast (tick check).
@@ -106,7 +111,7 @@ import { absoluteRangeKeys, sortEnemyTargets, canTargetEnemy, aggroCmp } from '.
 import { aggregateMods } from '../../buffs.js';
 import { COLS, ROWS, PULL_STOP_RADIUS, CHAIN_RADIUS } from '../../constants.js';
 import { rotateOffset } from '../../dir.js';
-import { bodyDist, bodyInKeys, bodyInRadius, bodyKeys } from '../../body.js';
+import { bodyDist, bodyInKeys, bodyKeys } from '../../body.js';
 import { hasHp } from '../../damage.js';
 import { summonToken, TOKEN_IDS } from '../tokens.js';
 
@@ -199,12 +204,15 @@ function cleanseAbnormal(battle, u) {
 }
 /**
  * "传送至自身位置": a ground enemy that can reach `unit`'s tile on the ground grid is moved onto it (unblocked, its
- * route re-planned from there — the engine then blocks it on that tile when capacity allows). Flyers / bosses stay, and
- * so does a 自缚 unit (flag `selfBound`, e.g. 守墓石像's 转换模式): PRTS 余 S2 备注 "处于消失状态的/持有自缚的单位不视为可达
- * 目标" (束缚 alone does not exempt it, so not `noMove`).
+ * route re-planned from there — the engine then blocks it on that tile when capacity allows). Flyers stay, and so does a
+ * 自缚 unit (flag `selfBound`: 守墓石像's 转换模式, the 7 huge leaders, the 胄 parts' anchor): PRTS 余 S2 备注 "处于消失状态的/
+ * 持有自缚的单位不视为可达目标" (束缚 alone does not exempt it, so not `noMove`). Being a leader is no exemption: PRTS gives
+ * 卢西恩 and 假想敌：铳 (both sections) 传送抗性 无 — they are teleported like any ground enemy and walk on from his tile (a
+ * patrol keeps looping: content/bosses.js patrolLoop). 静态刚体 forbids physical movement, not a teleport (the 备注 names
+ * only 消失 / 自缚 / 免疫传送); every 静态刚体 of the mode flies or is 自缚 anyway.
  */
 function teleportEnemy(battle, unit, e) {
-  if (!e || !e.alive || e.isFlying || e.isBoss || e.s.flags.selfBound) return false;
+  if (!e || !e.alive || e.isFlying || e.s.flags.selfBound) return false;
   const r = unit.tileR, c = unit.tileC;
   if (!battle.grid.groundPassable(r, c)) return false;
   const er = Math.round(e.y), ec = Math.round(e.x);
@@ -605,16 +613,20 @@ function sbell2(bb, chess, def) {
   /**
    * S2 霜涛覆岭 while it runs (`unit.mem.sbellS2`): a layer landing on a tile already at max snow spreads one layer to
    * a neighbouring ground tile (at most max_cast_tile_count spreads per activation); ground enemies on snow take
-   * s2_magic_scale × ATK arts per second; an enemy leaving snow gets `cold` s of 寒冷; a tile reaching max snow turns
-   * into the frozen 保护目标 (token icetgt: blocks 3, one at a time) and its snow is used up.
+   * s2_magic_scale × ATK arts per second; an enemy leaving snow gets `cold` s of 寒冷; "积雪在目标点积累至5层时，使目标点变为
+   * 冻结状态": a protection point (the blue gate) reaching max snow turns into the frozen 保护目标 (freezeTile).
    */
   const addSnow = (battle, unit, k) => {
     const snow = unit.mem.snow;
     if (!snow) return false;
     const r = (k / COLS) | 0, c = k % COLS;
     if (!battle.grid.inRect(r, c) || !battle.grid.groundPassable(r, c, true)) return false;
+    // PRTS 备注 "存在自身的该召唤物的地块不会积雪"
+    if (battle.allyUnits.some((t) => isTok(t, iceId, unit) && t.alive && t.tileR === r && t.tileC === c)) return false;
     const S2 = unit.mem.sbellS2;
     const cur = snow.get(k) ?? 0;
+    // a protection point already at max snow (its freeze waited for her other token to go) freezes on its next layer
+    if (S2 && cur >= maxL && freezeTile(battle, unit, k)) return true;
     if (cur >= maxL) {
       if (!S2 || S2.spreadLeft <= 0) return false;
       // "积雪超过5层时会向周围扩散一层": the thinnest neighbouring ground tile gets the layer
@@ -633,14 +645,24 @@ function sbell2(bb, chess, def) {
     if (S2 && cur + 1 >= maxL) freezeTile(battle, unit, k);
     return true;
   };
+  /**
+   * "使目标点变为冻结状态" — PRTS 圣聆初雪 S2 备注: "目标点冻结的实际效果为令圣聆初雪在该地块上召唤一个保护目标（冻结状态）（无视部署
+   * 属性），并去除相应地块上的积雪", "可以被'变为冻结状态'的目标点包括常规的保护目标点与促融共竞的保护目标点"; the token's page:
+   * "技能发动后于保护目标叠加5层积雪". So only a protection point (a goal tile, glyph E) freezes, whatever its deploy attributes
+   * (nobody may stand on a gate): her token icetgt (blocks 3; one at a time, maxDeployCount 1) appears on it and blocks the
+   * enemies walking in, and that tile's snow is used up. Until 0.1.3 (community report #32): any free tile a melee
+   * operator could stand on froze at max snow, and the gate never did. Returns true when the token appeared.
+   */
   const freezeTile = (battle, unit, k) => {
     const r = (k / COLS) | 0, c = k % COLS;
-    if (battle.allyUnits.some((t) => isTok(t, iceId, unit) && t.alive)) return;
-    if (battle.isReservedTile(r, c) || !battle.grid.canStand(r, c, { ranged: false })) return;
+    if (battle.grid.tile(r, c).special !== 'end') return false;
+    if (battle.allyUnits.some((t) => isTok(t, iceId, unit) && t.alive)) return false;
+    if (battle.isReservedTile(r, c)) return false;
     const ice = battle.spawnToken(unit, iceId, r, c);
-    if (!ice) return;
+    if (!ice) return false;
     unit.mem.snow.delete(k);
     battle.fx('summon', { x: c, y: r, id: ice.id, src: unit.id });
+    return true;
   };
   const talents = [
     { install(battle, unit) { // 无垠的雪景 (+ S2 snow rules)
@@ -811,9 +833,12 @@ function yu(bb, chess, def) {
     // S1 今日做东 (TAKE_DAMAGE, hurt SP): passive taunt +taunt_level; active: HP / DEF +, every attack taken ⇒
     // ep_damage_ratio × ATK 灼燃损伤 on the attacker (install below)
     skchr_yu_1: { kind: 'duration', mods: { hpPct: num(bb.max_hp), defPct: num(bb.def) } },
-    // S2 厚礼上宾: atk_scale × ATK arts on every enemy of the skill range + the ground-reachable ones teleported onto his
-    // tile; block +block_cnt, HP / ATK +, normal attacks deal arts damage. The burst hits air units too [ASSUMED: no 对空
-    // note on PRTS]; the teleport takes ground units only ("地面可达目标")
+    // S2 厚礼上宾 (cast with an enemy on its x-1: the data's SKILL_RANGE, a deliberate deviation from the 重装 TAKE_DAMAGE
+    // row — tools/build-data.mjs TRIGGER_DEVIATIONS, DESIGN §22.10): atk_scale × ATK arts on every enemy of the skill range
+    // + the ground-reachable ones teleported onto his tile (leaders too, unless 自缚: teleportEnemy); block +block_cnt, HP /
+    // ATK +, normal attacks deal arts damage. The burst hits air units too [ASSUMED: no 对空 note on PRTS]; the teleport
+    // takes ground units only ("地面可达目标"). The 'pull' fx only when someone was teleported (each one also gets its own
+    // 'teleport' fx). PRTS's 0.13 s between the damage and the teleport is not modelled (same tick).
     skchr_yu_2: {
       kind: 'duration',
       mods: { hpPct: num(bb.max_hp), atkPct: num(bb.atk), blockCnt: num(bb.block_cnt) },
@@ -824,7 +849,7 @@ function yu(bb, chess, def) {
         for (const e of foes) battle.dealDamage(unit, e, { amount: unit.s.atk * num(bb.atk_scale, 1), type: 'arts', isSkill: true, tags: ['skill'] });
         let n = 0;
         for (const e of foes) if (teleportEnemy(battle, unit, e)) n++;
-        battle.fx('pull', { x: unit.x, y: unit.y, id: unit.id, n });
+        if (n > 0) battle.fx('pull', { x: unit.x, y: unit.y, id: unit.id, n });
       },
     },
   };
@@ -1445,7 +1470,7 @@ function reed2(bb, chess, def) {
         }
       },
       onTick({ battle, unit, dt }) {
-        const cd = Math.max(0.1, num(bb.cooldown, 1.5)), ratio = num(unit.profile?.healRatio, num(tb.scale, 0.5));
+        const cd = Math.max(0.1, num(bb.cooldown, 1.5));
         for (const F of unit.mem.reedFire || []) {
           if (!live(F.a)) continue;
           F.acc += dt;
@@ -1455,9 +1480,10 @@ function reed2(bb, chess, def) {
           if (!c.length) c = enemiesIn(battle, unit);
           if (!c.length) continue;
           sortEnemyTargets(battle, F.a, c, null);
-          const dealt = battle.dealDamage(unit, c[0], { amount: unit.s.atk * num(bb.atk_scale, 1), type: 'arts', isSkill: true, tags: ['skill', 'fireball'] });
+          // "每1.5秒对一名敌人造成…法术伤害并仅对该干员触发焰影苇草特性": the trait heal (professions.js
+          // installIncantation) runs for this damage and names the carrier instead of the lowest-HP ally in range
+          battle.dealDamage(unit, c[0], { amount: unit.s.atk * num(bb.atk_scale, 1), type: 'arts', isSkill: true, tags: ['skill', 'fireball'], traitAlly: F.a });
           battle.fx('strike', { x: c[0].x, y: c[0].y, id: c[0].id, src: F.a.id });
-          if (dealt > 0 && ratio > 0) battle.heal(unit, F.a, dealt * ratio, { tags: ['incantation'] });
         }
       },
       onEnd({ battle, unit }) {
@@ -2754,14 +2780,118 @@ function nearl2(bb, chess, def) {
 // ------------------------------------------------------------------------------------------------------------------
 // 荒芜拉普兰德 chess_char_6_18 (驭械术师) — S3 终幕·浩劫; 头狼; 叙拉古的荣幸
 
+/**
+ * S3 终幕·浩劫's drone flight — PRTS 荒芜拉普兰德 S3 备注 "技能流程": ① for `attack@times` (1.3) s after the cast, or after
+ * a drone is added ("补充浮游单元"), the drones spread evenly outward from her, one along her facing ("散开的方向始终包括
+ * 自身的朝向"): 初速度 0.1, 加速度 1.9, 最大速度 2.0 — [ASSUMED] after an addition (头狼 stage 3 mid-skill) only the added
+ * drone spreads, along her facing, while the others carry on; ② then each picks the target nearest to itself, ties
+ * nearest to her ("距离自身最近>距离本体最近"), anywhere on the field, and flies at it: 初速度 2.0, 加速度 1.0, 最大速度
+ * 4.0, restarting at 2.0 whenever its target leaves or turns unselectable on the way; ③ once there it stays on the target
+ * and attacks it like a normal drone ("此状态下的攻击行为同正常浮游单元"); when that target leaves / turns unselectable it
+ * reappears at a random point of the 1.5-side square around it and picks again (②). With no selectable target it circles
+ * (radius 0.9, 1.0 tiles/s, counter-clockwise) with its heading as the tangent, the circle on its left. Speeds in tiles/s.
+ */
+const WHITW2_SPREAD = Object.freeze({ v0: 0.1, acc: 1.9, max: 2 });
+const WHITW2_CHASE = Object.freeze({ v0: 2, acc: 1, max: 4 });
+const WHITW2_REAPPEAR_SIDE = 1.5;
+const WHITW2_ORBIT = Object.freeze({ r: 0.9, v: 1 });
+
 function whitw2(bb, chess, def) {
   const t0 = tbb(def, 0), t1 = tbb(def, 1);
   const sid = selectedSkill(chess, def);
-  const speed = Math.max(0.1, num(bb['attack@projectile_move_speed'], 1)), R = num(bb['attack@range_radius'], 0.9);
+  const spreadTime = Math.max(0, num(bb['attack@times'], 1.3)), R = num(bb['attack@range_radius'], 0.9);
   const dmgScale = num(bb['attack@magic_atk_scale'], 1), fear = num(bb['attack@fear']), slow = num(bb['attack@move_speed']);
   // "非移动敌人": blocked, or not walking (stunned, bound, asleep, waiting, speed 0 …)
   const still = (e) => !!e.blockedBy || e.moving === false || !(e.s.moveSpeed > 0) || !!(e.s.flags.stun || e.s.flags.freeze || e.s.flags.bind || e.s.flags.sleep || e.s.flags.noMove);
   const skillGridW = skillGridOf(def);
+
+  // ---- S3 drones (virtual: positions in unit.mem.drones, fx events for the client) --------------------------------
+  const droneCount = (unit) => 1 + Math.floor(num(bb['attack@cnt'])) + ((unit.mem.wolfStage || 0) >= 3 ? 1 : 0);
+  // ① `k` drones leave her evenly spread, the first along her facing (row 0 is the bottom row: angles in the (col, row)
+  // plane, counter-clockwise)
+  const releaseDrones = (unit, k) => {
+    const a0 = Math.atan2(unit.fwd[0], unit.fwd[1]);
+    for (let i = 0; i < k; i++) {
+      const a = a0 + (2 * Math.PI * i) / k;
+      unit.mem.drones.push({ x: unit.x, y: unit.y, hx: Math.cos(a), hy: Math.sin(a), v: WHITW2_SPREAD.v0, age: 0, phase: 'spread', t: null, cd: 0, rampId: null, ramp: 0, orbit: null });
+    }
+  };
+  // speed v → v + acc·dt (capped); the distance covered at the mean of the two (exact under constant acceleration)
+  const accelerate = (d, lim, dt) => { const v1 = Math.min(lim.max, d.v + lim.acc * dt), s = ((d.v + v1) / 2) * dt; d.v = v1; return s; };
+  // ② the selectable enemy nearest to the drone, ties broken by the one nearest to her. [ASSUMED] distances are measured
+  // to every enemy's position (a huge enemy's centre, its 判定中心) — the owner's decision of 2026-10-04: the centre, so
+  // leader rounds stay close to 0.1.1; the sim's general convention for operator-side distance picks, the hit rectangle
+  // (body.js bodyDist: targeting.js sortEnemyTargets 'nearest', tier3 enemiesAround, 异客 / 溯光星源's chains), was
+  // considered — it made a huge leader (胄, 管) the nearest enemy of every drone around it (DESIGN §22.9)
+  const pickTarget = (battle, unit, d, ok) => {
+    let best = null, bd = Infinity, bh = Infinity;
+    for (const e of battle.enemies) {
+      if (!ok(e)) continue;
+      const de = Math.hypot(e.x - d.x, e.y - d.y), dh = Math.hypot(e.x - unit.x, e.y - unit.y);
+      if (de < bd - 1e-9 || (de <= bd + 1e-9 && dh < bh - 1e-9)) { best = e; bd = de; bh = dh; }
+    }
+    return best;
+  };
+  // nothing selectable: circle counter-clockwise on its left, its heading the tangent
+  const circle = (d, dt) => {
+    const { r, v } = WHITW2_ORBIT;
+    if (!d.orbit) d.orbit = { cx: d.x - d.hy * r, cy: d.y + d.hx * r };
+    const a = Math.atan2(d.y - d.orbit.cy, d.x - d.orbit.cx) + (v / r) * dt;
+    d.x = d.orbit.cx + r * Math.cos(a); d.y = d.orbit.cy + r * Math.sin(a);
+    d.hx = -Math.sin(a); d.hy = Math.cos(a);
+  };
+  // one tick of one drone: spread → (pick) → chase → on the target, attacking like a normal drone. [ASSUMED] its attack
+  // clock runs all the time (one attack per interval of hers at most, whatever it chased in between) and its first hit
+  // lands as it arrives when the clock is ready; [ASSUMED] a drone on a target sits at its position (a huge enemy's
+  // centre, its 判定中心), and it reaches a huge enemy when it touches the hit rectangle. [ASSUMED] the turn rate (PRTS
+  // 转向速度 1/6 per frame = attack@projectile_turn_speed × 1/30 s) is not modelled: a chasing drone heads straight at
+  // its target. [ASSUMED] the fear's source is her (the enemy flees from her, not from the drone).
+  const flyDrone = (battle, unit, d, dt, ok) => {
+    d.cd = Math.max(0, d.cd - dt);
+    if (d.phase === 'spread') {
+      const s = accelerate(d, WHITW2_SPREAD, dt);
+      d.x += d.hx * s; d.y += d.hy * s;
+      d.age += dt;
+      if (d.age + 1e-9 < spreadTime) return;
+      d.phase = 'seek';
+    }
+    if (d.phase === 'lock' && !ok(d.t)) {
+      // ③ its target left / is no longer selectable: it reappears at a random point of the square around that spot (the
+      // draw taken in her facing-RIGHT frame, so a battle turned with her direction plays the same)
+      const h = WHITW2_REAPPEAR_SIDE / 2;
+      const [ar, ac] = rotateOffset(battle.rng.range(-h, h), battle.rng.range(-h, h), unit.dir);
+      d.x = d.t.x + ac;
+      d.y = d.t.y + ar;
+      d.t = null; d.phase = 'seek';
+    } else if (d.phase === 'chase' && !ok(d.t)) { d.t = null; d.phase = 'seek'; }
+    if (d.phase === 'seek') {
+      const t = pickTarget(battle, unit, d, ok);
+      if (!t) { circle(d, dt); return; }
+      d.t = t; d.phase = 'chase'; d.v = WHITW2_CHASE.v0; d.orbit = null;
+      battle.fx('droneLock', { x: t.x, y: t.y, id: t.id, src: unit.id }); // PRTS: the red wolf-eye mark over the target
+    }
+    const t = d.t;
+    if (d.phase === 'chase') {
+      const s = accelerate(d, WHITW2_CHASE, dt);
+      if (bodyDist(t, d.x, d.y) > s + 1e-9) {
+        const dx = t.x - d.x, dy = t.y - d.y, L = Math.hypot(dx, dy);
+        if (L > 1e-9) { d.hx = dx / L; d.hy = dy / L; }
+        d.x += d.hx * s; d.y += d.hy * s;
+        return;
+      }
+      d.phase = 'lock'; // reached: "追上时使目标恐惧…并锁定其攻击"
+      if (fear > 0) battle.applyStatus(t, 'fear', { duration: fear, source: unit });
+    }
+    d.x = t.x; d.y = t.y;
+    if (d.cd > 1e-9 || !ok(t) || !unit.alive) return; // (the fear's hooks could have knocked her out)
+    d.cd = unit.s.interval;
+    const f = unit.profile?.funnel || { init: 0.2, delta: 0.15, max: 1.1 };
+    d.ramp = d.rampId === t.id ? Math.min(f.max, d.ramp + f.delta) : f.init;
+    d.rampId = t.id;
+    battle.fx('drone', { x: d.x, y: d.y, id: unit.id });
+    battle.dealDamage(unit, t, { amount: unit.s.atk * unit.s.atkScaleMul * d.ramp, type: 'arts', tags: ['droneAttack'] });
+  };
+
   const skills = {
     // S1 慵怠者悲鸣: passive 浮游单元+1 (trait: one more hit per attack); toggled on: ATK +atk and the drones lock a random
     // non-moving enemy anywhere on the field (re-locking when it moves or falls; install), else her range. The whole-field
@@ -2836,51 +2966,56 @@ function whitw2(bb, chess, def) {
         }, { owner: unit });
       }
     },
+    // S3 终幕·浩劫: ATK +atk; 1 + attack@cnt drones (+1 from 头狼 stage 3) fly the PRTS 技能流程 (WHITW2_* above). Every
+    // drone is out, so she makes no normal attack of her own (`noAttack`); a drone on its target attacks it every attack
+    // interval of hers (her live ASPD; [ASSUMED] the first hit as it arrives) for ATK × its OWN funnel ramp — the trait's
+    // init, +delta per hit on the same target, the cap (头狼 stage 1 raises it), back to init on a new target (PRTS 分支特性
+    // 信息 驭械术师 "浮游单元攻击不同目标…时，上述的伤害立刻恢复至初始值"). That damage is arts and neither a normal attack
+    // nor skill damage (PRTS S3 备注 "该技能释放的浮游单元造成的伤害不属于普通攻击/技能直接伤害", which for this skill
+    // overrides the branch note "通过技能释放的浮游单元造成技能直接伤害": no 'attack' hook, isAttack / isSkill false — the
+    // on-attack items skip it; it is still 普通伤害, so the 叙拉古 6 proc rolls on it, bonds/core.js siracusaRolls), and
+    // 缴械 does not stop it (PRTS 驭械术师 "…不受缴械类效果
+    // 制约"); [ASSUMED] nor do her stun, freeze or silence (PRTS names only 缴械) — the skill ticks on and so do the drones.
+    // Around every drone (attack@range_radius): move speed attack@move_speed and, once per second, attack@magic_atk_scale
+    // × ATK arts (不叠加: one hit per enemy whatever the number of drones); [ASSUMED] that area hit keeps `isSkill` (a skill
+    // DoT — the 备注 speaks of 直接伤害) and is 持续伤害 (tag dot: PRTS 备注 "持续法术伤害" — no 叙拉古 6 roll, 锡人's
+    // 凋敝魂灵 raises it). A knocked-out / withdrawn wolf (onEnd cleared the drones mid-tick, e.g. from a
+    // kill hook) deals nothing more in that tick.
     skill: {
       kind: 'duration',
       mods: { atkPct: num(bb.atk) },
       attack: { noAttack: true },
       onStart({ battle, unit }) {
-        const n = 1 + Math.floor(num(bb['attack@cnt'])) + ((unit.mem.wolfStage || 0) >= 3 ? 1 : 0);
-        unit.mem.drones = Array.from({ length: n }, () => ({ x: unit.x, y: unit.y, t: null, locked: null }));
+        unit.mem.drones = [];
         unit.mem.droneAcc = 0;
-        battle.fx('drones', { x: unit.x, y: unit.y, id: unit.id, n });
+        releaseDrones(unit, droneCount(unit));
+        battle.fx('drones', { x: unit.x, y: unit.y, id: unit.id, n: unit.mem.drones.length });
       },
       onTick({ battle, unit, dt }) {
         const D = unit.mem.drones;
         if (!D) return;
+        const gone = () => !unit.alive || unit.mem.drones !== D;
+        // 头狼 stage 3 reached while the skill runs: the extra drone is released (PRTS ① "补充浮游单元"; [ASSUMED] only it spreads)
+        const add = droneCount(unit) - D.length;
+        if (add > 0) { releaseDrones(unit, add); battle.fx('drones', { x: unit.x, y: unit.y, id: unit.id, n: add }); }
         const ok = (e) => e && e.alive && !e.hidden && canTargetEnemy(unit, e, ANY);
-        const taken = new Set(D.filter((d) => ok(d.t)).map((d) => d.t));
         for (const d of D) {
-          if (!ok(d.t)) {
-            let best = null, bd = Infinity, bestFree = null, bfd = Infinity;
-            for (const e of battle.enemies) {
-              if (!ok(e)) continue;
-              const dist = bodyDist(e, d.x, d.y);
-              if (dist < bd - 1e-9) { bd = dist; best = e; }
-              if (!taken.has(e) && dist < bfd - 1e-9) { bfd = dist; bestFree = e; }
-            }
-            d.t = bestFree ?? best;
-            d.locked = null;
-            if (d.t) taken.add(d.t);
-          }
-          if (!d.t) continue;
-          const dx = d.t.x - d.x, dy = d.t.y - d.y, dist = Math.hypot(dx, dy), step = speed * dt;
-          if (dist <= step) { d.x = d.t.x; d.y = d.t.y; } else { d.x += (dx / dist) * step; d.y += (dy / dist) * step; }
-          if (d.locked !== d.t && bodyInRadius(d.t, d.x, d.y, R)) {
-            d.locked = d.t;
-            if (fear > 0) battle.applyStatus(d.t, 'fear', { duration: fear, source: unit });
-            battle.fx('droneLock', { x: d.x, y: d.y, id: d.t.id, src: unit.id });
-          }
+          if (gone()) return;
+          flyDrone(battle, unit, d, dt, ok);
         }
+        if (gone()) return;
         const near = new Set();
         for (const d of D) for (const e of battle.foesInRadius(d.x, d.y, R)) if (ok(e)) near.add(e);
         if (slow) for (const e of near) battle.addBuff(e, { key: 'whitw2:slow', duration: 0.2, refresh: 'replace', mods: { moveMul: Math.max(0, 1 + slow) }, source: unit });
         unit.mem.droneAcc += dt;
         if (unit.mem.droneAcc + 1e-9 >= 1) {
           unit.mem.droneAcc -= 1;
-          for (const e of near) if (e.alive) battle.dealDamage(unit, e, { amount: unit.s.atk * dmgScale, type: 'arts', isSkill: true, tags: ['skill', 'drone'] });
-          for (const d of D) battle.fx('drone', { x: d.x, y: d.y, id: unit.id });
+          for (const e of near) {
+            if (gone()) return;
+            if (e.alive) battle.dealDamage(unit, e, { amount: unit.s.atk * dmgScale, type: 'arts', isSkill: true, tags: ['skill', 'drone', 'dot'] });
+          }
+          // (a drone on its target already pulses with each of its attacks)
+          for (const d of D) if (d.phase !== 'lock') battle.fx('drone', { x: d.x, y: d.y, id: unit.id });
         }
       },
       onEnd({ unit }) { unit.mem.drones = null; },

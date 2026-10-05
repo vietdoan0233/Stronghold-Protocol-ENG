@@ -94,13 +94,13 @@ export function Underframe({ view, uid = null, row, col, actions, name = '', bus
       <path class="uframe__corner" d="M-100 0 L-86 -14 M-100 0 L-86 14 M100 0 L86 -14 M100 0 L86 14 M0 -100 L-14 -86 M0 -100 L14 -86 M0 100 L-14 86 M0 100 L14 86" />
     </svg>
     ${actions.retreat ? html`<button type="button" class="uframe__btn uframe__btn--retreat" disabled=${busy} onPointerDown=${stop}
-        onClick=${(e) => { stop(e); onRetreat?.(); }} title="Retreat to the Reserve" aria-label="Retreat">
-      <${RetreatGlyph} /><span class="uframe__label">Retreat</span>
+        onClick=${(e) => { stop(e); onRetreat?.(); }} title=${actions.sell != null ? 'Retreat to the Reserve (Q)' : 'Retreat to the Reserve'} aria-label="Retreat" aria-keyshortcuts=${actions.sell != null ? 'Q' : undefined}>
+      <${RetreatGlyph} /><span class="uframe__label">${actions.sell != null ? 'Retreat [Q]' : 'Retreat'}</span>
     </button>` : null}
     ${actions.sell != null ? html`<button type="button" class="uframe__btn uframe__btn--sell" disabled=${busy} onPointerDown=${stop}
-        onClick=${(e) => { stop(e); onSell?.(); }} title=${`Sell (+${fundsText(actions.sell)})`} aria-label=${`Sell for ${fundsText(actions.sell)}`}>
+        onClick=${(e) => { stop(e); onSell?.(); }} title=${`Sell (+${fundsText(actions.sell)} Funds, X)`} aria-label=${`Sell for ${fundsText(actions.sell)} Funds`} aria-keyshortcuts="X">
       <${PlateIcon} sprite="icon_sell" glyph="sell" tone="sell" />
-      <span class="uframe__label">Sell</span>
+      <span class="uframe__label">Sell [X]</span>
       <${HexBadge} value=${`+${actions.sell}`} tone="gold" size="sm" class="uframe__price" />
     </button>` : null}
     ${actions.destroy ? html`<button type="button" class=${cx('uframe__btn', 'uframe__btn--destroy')} disabled=${busy} onPointerDown=${stop}

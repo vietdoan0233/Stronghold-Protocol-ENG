@@ -835,7 +835,7 @@ export function fxAtlas() {
   return _fx;
 }
 
-export const STATUS_KEYS = ['stun', 'freeze', 'cold', 'stealth', 'shield', 'fragile', 'sleep', 'invuln', 'silence', 'slow', 'bind', 'fear', 'weaken', 'levitate', 'taunt', 'burn', 'neural', 'necrosis', 'blocked', 'skill'];
+export const STATUS_KEYS = ['stun', 'freeze', 'cold', 'stealth', 'shield', 'fragile', 'sleep', 'invuln', 'silence', 'slow', 'bind', 'fear', 'weaken', 'levitate', 'taunt', 'burn', 'neural', 'necrosis', 'blocked', 'skill', 'doll', 'healFree', 'refraction'];
 
 function drawStatusIcon(c, key, x, y, s) {
   const cx = x + s / 2, cy = y + s / 2;
@@ -883,6 +883,13 @@ function drawStatusIcon(c, key, x, y, s) {
       c.fillStyle = '#d8e0ff'; c.font = 'bold 14px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('Zz', cx, cy + 1);
       break;
     }
+    case 'refraction': {
+      // 折射: a split beam. Drawn only while the buff is on; units.js drops it under silence.
+      disc('rgba(12,36,48,0.92)', '#7ee0ff');
+      c.strokeStyle = '#d8f7ff'; c.lineWidth = 2;
+      c.beginPath(); c.moveTo(cx - 8, cy + 6); c.lineTo(cx - 1, cy - 8); c.lineTo(cx + 8, cy + 6); c.moveTo(cx + 2, cy - 2); c.lineTo(cx + 9, cy - 8); c.stroke();
+      break;
+    }
     case 'silence': {
       disc('rgba(45,20,55,0.92)', '#e08bff');
       c.strokeStyle = '#f0c4ff'; c.lineWidth = 2.2;
@@ -928,6 +935,25 @@ function drawStatusIcon(c, key, x, y, s) {
     case 'skill': {
       disc('rgba(60,40,5,0.92)', '#ffe066');
       c.fillStyle = '#ffe066'; star(c, cx, cy, 10, 4.5);
+      break;
+    }
+    case 'doll': {
+      // a 傀儡师's <替身>: a puppet hanging from two strings
+      disc('rgba(40,25,55,0.92)', '#d8b0ff');
+      c.strokeStyle = '#f0dcff'; c.lineWidth = 1.2;
+      c.beginPath(); c.moveTo(cx - 6, cy - 12); c.lineTo(cx - 6, cy - 1); c.moveTo(cx + 6, cy - 12); c.lineTo(cx + 6, cy - 1); c.stroke();
+      c.fillStyle = '#f0dcff';
+      c.beginPath(); c.arc(cx, cy - 5, 3.2, 0, Math.PI * 2); c.fill();
+      c.beginPath(); c.moveTo(cx - 6, cy - 1); c.lineTo(cx + 6, cy - 1); c.lineTo(cx + 3, cy + 5); c.lineTo(cx + 5, cy + 11); c.lineTo(cx + 1.5, cy + 11);
+      c.lineTo(cx, cy + 6); c.lineTo(cx - 1.5, cy + 11); c.lineTo(cx - 5, cy + 11); c.lineTo(cx - 3, cy + 5); c.closePath(); c.fill();
+      break;
+    }
+    case 'healFree': { // 禁疗: a green heal cross struck through in red
+      disc('rgba(15,40,20,0.92)', '#7ee08a');
+      c.fillStyle = '#9dffa8';
+      c.fillRect(cx - 2.5, cy - 9, 5, 18); c.fillRect(cx - 9, cy - 2.5, 18, 5);
+      c.strokeStyle = '#ff5a5a'; c.lineWidth = 3;
+      c.beginPath(); c.moveTo(cx - 10, cy + 10); c.lineTo(cx + 10, cy - 10); c.stroke();
       break;
     }
     default: disc('rgba(30,30,30,0.9)', '#ccc');
@@ -1058,7 +1084,7 @@ const DIAMOND_MAX = 160;       // ≈ 16 MB of 160×160 canvases at most (plus t
  * @param {{ enemy?: boolean, golden?: boolean }} [o]
  */
 export function diamondTexture(key, img, color, o = {}) {
-  const k = `${key}|${img ? 1 : 0}|${color}|${o.golden ? 1 : 0}`;
+  const k = `${key}|${img ? 1 : 0}|${color}|${o.golden ? 1 : 0}|${o.ice ? 1 : 0}`;
   let tex = _diamonds.get(k);
   if (tex) { _diamonds.delete(k); _diamonds.set(k, tex); return tex; }
   const P = PIXI();
@@ -1076,6 +1102,18 @@ export function diamondTexture(key, img, color, o = {}) {
     const sc = Math.max((S - 20) / img.width, (S - 20) / img.height) * 1.02;
     const w = img.width * sc, hh = img.height * sc;
     try { c.drawImage(img, h - w / 2, h - hh / 2, w, hh); } catch { /* tainted/broken image */ }
+  } else if (o.ice) {
+    // 圣聆初雪's frozen gate (保护目标（冻结状态）, PRTS 无头像, no model in the manifest): a snowflake on a frosty field
+    const g = c.createRadialGradient(h, h, 4, h, h, h);
+    g.addColorStop(0, 'rgba(205,240,255,0.95)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+    c.fillStyle = g; c.fillRect(0, 0, S, S);
+    c.strokeStyle = '#f2fbff'; c.lineWidth = 6; c.lineCap = 'round';
+    for (let i = 0; i < 6; i++) {
+      const a = (i * Math.PI) / 3, x1 = h + Math.cos(a) * 34, y1 = h + Math.sin(a) * 34;
+      c.beginPath(); c.moveTo(h, h); c.lineTo(x1, y1); c.stroke();
+      const bx = h + Math.cos(a) * 20, by = h + Math.sin(a) * 20;
+      for (const s of [-1, 1]) { c.beginPath(); c.moveTo(bx, by); c.lineTo(bx + Math.cos(a + s * 0.8) * 11, by + Math.sin(a + s * 0.8) * 11); c.stroke(); }
+    }
   } else {
     // procedural glyph (e.g. 心烛 enemy_5601_entlec has no art anywhere)
     const g = c.createRadialGradient(h, h, 4, h, h, h);

@@ -1,6 +1,6 @@
 {
   "name": "stronghold-protocol-alliance",
-  "version": "0.1.1",
+  "version": "0.1.3",
   "private": true,
   "description": "An unofficial fan remake of Arknights' \"Stronghold Protocol: Alliance\" as an online web game (1–4 player co-op, Node.js server + browser client)",
   "license": "GPL-3.0-or-later",

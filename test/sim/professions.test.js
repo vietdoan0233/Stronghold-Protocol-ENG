@@ -159,21 +159,43 @@ test('geek loses HP over time; merchant drains DP and retreats when broke; charg
   approx(h3.b.getPlayer('p1').dp, 13);
 });
 
-test('dollkeeper swaps to a substitute on fatal damage and swaps back after 20 s', () => {
+test('dollkeeper: fatal damage ⇒ a 1 s switch, 20 s as the substitute (block 0, 阻回), the switch back; the substitute dies ⇒ the unit dies', () => {
   const h = makeBattle({ defs: { chess: { t_dollkeeper: mk('dollkeeper', 'SPECIAL', { stats: { maxHp: 2000, blockCnt: 2 } }) } }, units: [{ chessId: 't_dollkeeper', row: 9, col: 5 }], content: 'none' });
   h.step();
   const u = h.unit('t_dollkeeper');
   h.b.dealDamage(null, u, { amount: 1e5, type: 'true' });
   assert.equal(u.alive, true, 'substitute instead of death');
   assert.equal(u.s.blockCnt, 0);
-  assert.ok(u.trait.doll);
-  h.run(20.1);
-  assert.equal(u.trait.doll, false);
-  approx(u.hp, 2000);
-  assert.equal(u.s.blockCnt, 2);
+  assert.ok(u.trait.doll && u.trait.dollSwitching, 'the switch animation');
+  assert.equal(u.form, 'doll');
+  approx(u.hp, 2000); // no 替身 token: its own max HP
+  // the switch animation (PRTS 分支特性信息 傀儡师): 无敌, 不死 (a 流失 stops at 1 HP), 阻回, 眩晕 immunity
   h.b.dealDamage(null, u, { amount: 1e5, type: 'true' });
+  approx(u.hp, 2000); // 无敌
+  assert.equal(h.b.applyStatus(u, 'stun', { duration: 5 }), false, '眩晕 immune');
+  h.b.loseHp(u, 1e5);
+  assert.ok(u.alive && u.trait.doll && u.hp >= 1, '不死');
+  const low = u.hp;
+  assert.ok(u.s.flags.noHeal && u.s.flags.healFree, '禁疗 during the switch');
+  assert.equal(h.b.heal(u, u, 500), 0, 'a self-heal does not land');
+  approx(u.hp, low);
+  u.hp = 2000;
+  h.run(1.05);
+  assert.ok(u.trait.doll && !u.trait.dollSwitching, 'fighting as the substitute');
+  h.run(19.9);
+  assert.ok(u.trait.doll && u.s.flags.noSp, 'the 20 s form, 阻回');
+  h.run(0.1);
+  assert.ok(!u.trait.doll && u.trait.dollSwitching && u.form === null, 'switching back');
+  assert.equal(u.s.blockCnt, 2, 'blocks again from the start of the switch back');
+  approx(u.hp, 2000);
+  h.run(1.05);
+  assert.ok(!u.trait.dollSwitching && !u.s.flags.noSp, 'the body again, no 阻回');
+  h.b.dealDamage(null, u, { amount: 1e5, type: 'true' });
+  h.run(1.05);
   h.b.dealDamage(null, u, { amount: 1e5, type: 'true' });
   assert.equal(u.alive, false, 'substitute dies ⇒ unit dies');
+  assert.ok(!u.trait.doll && u.form === null, 'the redeploy is the body again');
+  checkInvariants(h.b);
 });
 
 test('phalanx never attacks until its skill; librator ramps ATK while idle and resets on skill end', () => {
@@ -326,6 +348,16 @@ test('incantation medics heal an ally for 50 % of damage dealt; wandermedics cle
   h.unit('t_tank').hp = 1000;
   h.run(0.5);
   approx(h.unit('t_tank').hp, 1000 + 500, 1e-6);
+  // …and not only for attacks: the official trait buff is ON_AFTER_OUTPUT_DAMAGE (`vendla_tr` / `reed2_tr` / `titi_tr`),
+  // so ANY damage the 咒愈师 deals heals. The sim used to run the trait from the attack path (`profile.afterHit`) only,
+  // which is why 缇缇's 凝固的时光 ticks — and every 咒愈师 skill that damages without an attack — healed nothing.
+  h.unit('t_tank').hp = 1000;
+  h.b.dealDamage(h.unit('t_inc'), h.enemy('enemy_dummy'), { amount: 400, type: 'arts', isSkill: true });
+  approx(h.unit('t_tank').hp, 1000 + 200, 1e-6, 'skill damage heals 50 %');
+  // a gauge fill removes no HP: it is not "伤害" for the trait
+  h.unit('t_tank').hp = 1000;
+  h.b.emit?.('damaged', { source: h.unit('t_inc'), target: h.enemy('enemy_dummy'), amount: 400, type: 'element', dmg: null });
+  approx(h.unit('t_tank').hp, 1000, 1e-6, 'element 损伤 does not heal');
   const wm = chessRec({ id: 't_wm', profession: 'MEDIC', subProfessionId: 'wandermedic', attackKind: 'heal', dmgType: 'heal', rangeGrid: R3, skill: null, stats: { atk: 400 } });
   const h2 = makeBattle({ defs: { chess: { t_wm: wm, t_tank: tank } }, units: [{ chessId: 't_wm', row: 10, col: 4 }, { chessId: 't_tank', row: 10, col: 5 }], content: 'none' });
   h2.step();
@@ -350,4 +382,34 @@ test('resolveProfile: data fields win over table defaults; kit trait overrides w
   assert.ok(medic.heal);
   const bard = resolveProfile(ds.getChess('chess_char_4_25_a'));
   assert.equal(bard.noAttack, true);
+});
+
+test('fortress (号角 / 灰毫) is ground-only and never fires at FLY enemies', () => {
+  const ds = getDefaultSource();
+  for (const id of ['chess_char_2_18_a', 'chess_char_2_18_b', 'chess_char_5_08_a', 'chess_char_5_08_b']) {
+    const p = resolveProfile(ds.getChess(id));
+    assert.equal(p.canHitFly, false, `${id}: cannot hit fly`);
+    assert.equal(p.groundOnly, true, `${id}: ground only`);
+  }
+  // the data's generic ranged default would set canHitFly (resolveProfile derives it from attackKind),
+  // so this checks the branch guard rather than the generated field
+  const fort = () => mk('fortress', 'TANK', {
+    attackKind: 'ranged', projectile: 'bomb',
+    rangeGrid: [[0, 0], [0, 1], [0, 2], [1, 0], [1, 1], [1, 2], [-1, 0], [-1, 1], [-1, 2]],
+    stats: { blockCnt: 3, maxHp: 1e6 },
+  });
+  const fly = makeBattle({
+    defs: { chess: { t_fortress: fort() }, enemies: { enemy_fly: enemyRec({ key: 'enemy_fly', hp: 1e6, speed: 0, motion: 'FLY' }) } },
+    units: [{ chessId: 't_fortress', row: 10, col: 5 }], enemies: [{ key: 'enemy_fly', pos: [10, 7] }], content: 'none', autoFinish: false,
+  });
+  fly.run(8);
+  assert.equal(fly.unit('t_fortress').stats.attacks, 0, 'no normal attack against air only');
+  assert.equal(fly.enemy('enemy_fly').hp, 1e6, 'the FLY enemy is untouched');
+  const ground = makeBattle({
+    defs: { chess: { t_fortress: fort() }, enemies: { enemy_g: enemyRec({ key: 'enemy_g', hp: 1e6, speed: 0 }) } },
+    units: [{ chessId: 't_fortress', row: 10, col: 5 }], enemies: [{ key: 'enemy_g', pos: [10, 7] }], content: 'none', autoFinish: false,
+  });
+  ground.run(8);
+  assert.ok(ground.unit('t_fortress').stats.attacks > 0, 'ground enemies are still attacked');
+  assert.ok(ground.enemy('enemy_g').hp < 1e6, 'and take splash damage');
 });

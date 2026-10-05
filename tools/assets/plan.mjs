@@ -15,12 +15,14 @@
 // act2autochess match (07 enemy list ∪ act1autochess wave/boss levels used by
 // act2 modes ∪ bosses ∪ their summons ∪ enemy units spawned by operator kits),
 // the 23 bonds, 59 shop items, 40 bands,
-// default-skill icons, profession icons, autochess UI sprites, BGM and SFX.
+// default-skill icons, profession icons, autochess UI sprites (the 36 battle
+// emotes and the 19 玩法说明 pages included: UI_EXTRAS), BGM and SFX.
 
 import { RAW, joinUrl, safeName, urlBase, urlDir } from './sources.mjs';
 import { kindOf } from './formats.mjs';
 import { pickUnitSfx, UI_SFX, BATTLE_SFX, resolveSpec } from './audio.mjs';
 import { literal } from './manifest.mjs';
+import { EMOTE_CATALOG } from '../../shared/constants.js';
 
 /**
  * Enemies whose Spine no community dump carries: the web model is another enemy's (research 07 §5.6). Their official
@@ -38,8 +40,26 @@ const LOADING_USED = new Set(['loading_ac_core', 'loading_ac_prototype', 'loadin
 
 const PROFESSIONS = ['caster', 'medic', 'pioneer', 'sniper', 'special', 'support', 'tank', 'warrior'];
 
-/** Extra UI sprites (not in 07-assets.json groups): [group, key, path under ArknightsAssets2 cn assets/dyn]. */
-const UI_EXTRAS = (() => {
+/**
+ * The 19 official 玩法说明 (tutorial) pages, in the reading order of public/js/ui/guide.js GUIDE_CHAPTERS (a test keeps
+ * the two identical): 基础规则 home 1–9, 调度手册 shop 1–6, 进阶图鉴 handbook 1–4.
+ */
+export const GUIDE_PAGES = Object.freeze([
+  ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => `autochess_home_${i}`),
+  ...[1, 2, 3, 4, 5, 6].map((i) => `autochess_shop_${i}`),
+  ...[1, 2, 3, 4].map((i) => `autochess_handbook_${i}`),
+]);
+
+/**
+ * Extra UI sprites (not in 07-assets.json groups): [group, key, path under ArknightsAssets2 cn assets/dyn].
+ * The last two blocks are art that used to come from the local client only (tools/local-extract, DESIGN §13) and that
+ * the mirror carries too (GitHub issue #42: a server without the client showed default emote icons): the 36 battle
+ * emotes (shared/constants.js EMOTE_CATALOG; the bundle ui/emoticon/theme/[uc]<themeId>.ab → its icon/<picId>.png) and
+ * the 19 玩法说明 pages (arts/guidebookpages/[pack]autochess.ab, 1024² like the local copies: displayed at 16:9). Their
+ * manifest keys are the data/local-assets.json group and name — ui['emoticon/<dir>/<picId>'], ui['guide/<key>'] — so
+ * the client looks both up by the same names (public/js/data.js artUrls: the local file first, then this copy).
+ */
+export const UI_EXTRAS = (() => {
   const L = [];
   const mc = 'ui/autochess/[uc]autochessouter/modechoice/auto_chess_mode_choice_state/';
   for (const m of ['normal', 'hard', 'abyss', 'funny']) L.push(['modeChoice', `${m}_rhodes_island`, `${mc}${m}_rhodes_island.png`]);
@@ -67,7 +87,9 @@ const UI_EXTRAS = (() => {
   L.push(['prepReady', 'countdown_arrow', `${pr}countdown_arrow.png`]);
   const si = 'ui/autochess/[uc]autochessouter/stageinfo/auto_chess_stage_info_state/';
   for (const k of ['img_title_mode_abyss', 'img_title_mode_funny', 'img_title_mode_hard', 'img_title_mode_normal', 'btn_confirm', 'btn_confirmed']) L.push(['stageInfo', k, `${si}${k}.png`]);
-  return L;
+  for (const e of EMOTE_CATALOG) L.push([`emoticon/${e.dir}`, e.picId, `ui/emoticon/theme/[uc]${e.themeId}/icon/${e.picId}.png`]);
+  for (const k of GUIDE_PAGES) L.push(['guide', k, `arts/guidebookpages/[pack]autochess/${k}.png`]);
+  return Object.freeze(L.map((x) => Object.freeze(x)));
 })();
 
 /** Renames of research 07 `arts` groups to manifest UI groups. */
@@ -105,6 +127,23 @@ function soundAlt(path, sub = 'sfx') {
 
 function soundLeaf(paths, sub = 'sfx', max = 4) {
   return leaf((paths || []).slice(0, max).map((p) => soundAlt(p, sub)));
+}
+
+/**
+ * A unit's SFX roles (pickUnitSfx) → { roles: { attack?, hit?, die?, born? } sound leaves, mix: { [role]: { p?, vol? } }
+ * | null } — the official play chance / volume of each role's bank (audio.mjs bankMix; community report #30: 猎狗's
+ * attack bank is 80 % silence). The caller stores `mix` last in the unit's entry (sfx.units[id].mix).
+ */
+function unitSounds(audio, sfx) {
+  const roles = {};
+  let mix = null;
+  for (const r of ['attack', 'hit', 'die', 'born']) {
+    if (!sfx[r]) continue;
+    roles[r] = soundLeaf(sfx[r]);
+    const m = typeof audio.mixOf === 'function' ? audio.mixOf(sfx[r]) : null;
+    if (m) (mix || (mix = {}))[r] = m;
+  }
+  return { roles, mix };
 }
 
 /** Expected bytes for a 07 {url, bytes} record when it matches `url`. */
@@ -264,8 +303,7 @@ export function buildPlan({ assets07, ops03, enemies05, maps05, audio, modelsDat
     const short = id.replace(/^char_\d+_/, '');
     const sfx = pickUnitSfx(audio.unitBanks.get(id), { operator: true, projectile: {
       born: audio.bank(`battle.ON_PROJECTILE_BORN.projectile_chr_${short}`), hit: audio.bank(`battle.ON_PROJECTILE_HIT.projectile_chr_${short}`) } });
-    const u = {};
-    for (const r of ['attack', 'hit', 'die', 'born']) if (sfx[r]) u[r] = soundLeaf(sfx[r]);
+    const { roles: u, mix } = unitSounds(audio, sfx);
     const skillSfx = {};
     for (const i of idx) {
       const s = (o.skills || []).find((k) => k.index === i);
@@ -279,6 +317,7 @@ export function buildPlan({ assets07, ops03, enemies05, maps05, audio, modelsDat
     const primarySkill = skillSfx[String(idx[0])];
     if (primarySkill) u.skill = primarySkill;
     if (Object.keys(skillSfx).length > 1) u.skills = skillSfx;
+    if (mix) u.mix = mix;
     if (Object.keys(u).length) unitsSfx[id] = u;
   }
 
@@ -312,9 +351,8 @@ export function buildPlan({ assets07, ops03, enemies05, maps05, audio, modelsDat
     }
     entry.spine = model;
     tokens[id] = entry;
-    const sfx = pickUnitSfx(audio.unitBanks.get(id));
-    const u = {};
-    for (const r of ['attack', 'hit', 'die', 'born']) if (sfx[r]) u[r] = soundLeaf(sfx[r]);
+    const { roles: u, mix } = unitSounds(audio, pickUnitSfx(audio.unitBanks.get(id)));
+    if (mix) u.mix = mix;
     if (Object.keys(u).length) unitsSfx[id] = u;
   }
 
@@ -384,9 +422,8 @@ export function buildPlan({ assets07, ops03, enemies05, maps05, audio, modelsDat
       if (banks?.size) break;
       if (other) banks = audio.unitBanks.get(other);
     }
-    const sfx = pickUnitSfx(banks);
-    const u = {};
-    for (const r of ['attack', 'hit', 'die', 'born']) if (sfx[r]) u[r] = soundLeaf(sfx[r]);
+    const { roles: u, mix } = unitSounds(audio, pickUnitSfx(banks));
+    if (mix) u.mix = mix;
     if (Object.keys(u).length) unitsSfx[id] = u;
   }
 
@@ -455,11 +492,17 @@ export function buildPlan({ assets07, ops03, enemies05, maps05, audio, modelsDat
     }
     return node;
   };
+  // 联防 BGM: the official 联防 levels (`escaped_single` / `escaped_multi`) declare `bgmEvent = corrosion` — a
+  // 卡西米尔 act13d5d0 battle track — so the rescue phase does NOT reuse the 作战's track. Kept out of `bgm` when the
+  // bank is missing (the client then falls back to `bgm.combat`; public/js/audio.js resolveBgm), so the manifest stays
+  // valid for an older audio_data.
+  const unite = flatBgm(bgmLeaf('battle.ON_GAME_READY.corrosion'));
   const bgm = {
     lobby: flatBgm(bgmLeaf('sys.ON_ACTIVITY_LOADED.act2autochess')),
     prep: flatBgm(bgmLeaf('battle.ON_GAME_READY.act1autochess_shop')),
     combat: flatBgm(bgmLeaf('battle.ON_GAME_READY.act1autochess_shop')),
     boss: flatBgm(bgmLeaf('battle.ON_GAME_READY.rglk1phantomcastle')),
+    ...(unite ? { unite } : {}),
   };
   const bossBgm = {};
   for (const lv of Object.values(maps05?.roundLevels || {})) {

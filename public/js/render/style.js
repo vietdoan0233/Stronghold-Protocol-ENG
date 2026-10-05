@@ -125,6 +125,12 @@ export const STATUS_ICON = Object.freeze({
   silence: 'silence', slow: 'slow', sluggish: 'slow', bind: 'bind', fear: 'fear', tremble: 'fear', weaken: 'weaken',
   levitate: 'levitate', taunt: 'taunt', defDown: 'weaken', resDown: 'weaken', aspdDown: 'slow', disarm: 'silence',
   burn: 'burn', burnBurst: 'burn', neural: 'neural', neuralBurst: 'neural', necrosis: 'necrosis', apoptosis: 'necrosis',
+  // a 傀儡师 fighting as its <替身> (sim professions.js buff 'trait:substitute', the 20 s form)
+  substitute: 'doll',
+  // 禁疗 (sim status 'healFree': 史尔特尔's 余烬 — no heal reaches her until she leaves)
+  healFree: 'healFree',
+  // 折射 (sim buff 'ab:refraction', visible while the RES bonus is on). The tail of 'ab:refraction' hits this key.
+  refraction: 'refraction',
 });
 
 /** Keyword fallbacks for namespaced / content status keys ('ab:frost', 'reed2:scorch', 'skill:shotst_shred' …). */
@@ -135,6 +141,18 @@ const STATUS_GUESS = [
   [/invul|immun/i, 'invuln'], [/stealth|camou|invis/i, 'stealth'], [/levit|float/i, 'levitate'], [/taunt/i, 'taunt'],
   [/neural/i, 'neural'], [/necro|apopt|erosion/i, 'necrosis'],
 ];
+
+/**
+ * The 折射 icon is not drawn while the unit is silenced: the RES bonus is already off (enemies.js refraction)
+ * and the status must not keep looking active. Other icons stay.
+ * @param {string} key a b.ev status key
+ * @param {Set<string>|string[]|null} statuses
+ */
+export function statusIconSuppressed(key, statuses) {
+  if (key !== 'ab:refraction' && key !== 'refraction') return false;
+  if (!statuses) return false;
+  return typeof statuses.has === 'function' ? statuses.has('silence') : Array.isArray(statuses) && statuses.includes('silence');
+}
 
 /** Icon key (textures STATUS_KEYS) for a b.ev status key or flag name; null when it has no icon. */
 export function statusIconKey(key) {

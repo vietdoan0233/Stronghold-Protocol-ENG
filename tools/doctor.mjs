@@ -18,6 +18,7 @@ import { fileURLToPath } from 'node:url';
 import {
   ROOT, MIN_NODE, IS_WIN, IS_MAC, c, mark, capture, padDisplay, displayWidth,
   checkNode, checkDeps, checkVendor, checkData, checkAssets, checkLocal, findClient, findPython,
+  LOCAL_ART_FALLBACK, LOCAL_ART_COPY_HINT,
 } from './setup.mjs';
 
 // ---------------------------------------------------------------------------------------------------
@@ -25,8 +26,8 @@ import {
 // ---------------------------------------------------------------------------------------------------
 
 // 名字里带这些的网卡不对局域网开放：虚拟机 / 容器 / WSL / 代理软件的 TUN 适配器（Mihomo、Clash）。
-// 这里不再列 `^tun\d`：下面 VPN_IF 的 `tun\d` 先判定，任何能被 `^tun\d` 命中的名字也一定被它命中，
-// 于是 tun0/tap0 一律归为 vpn（那正是同组好友互连用的地址）。写在两处只会让人以为顺序无关。
+// tun0 / tap0 不归这一类：classifyAddresses 先判下面的 VPN_IF，它的 `tun\d` / `tap` 是子串匹配，
+// tun0 / tap0 先被它命中，归为 vpn（那正是同组好友互连用的地址）。
 const VIRTUAL_IF = /(vethernet|virtualbox|vmware|vmnet|docker|^br-|^veth|wsl|hyper-v|vboxnet|bridge\d|utun|awdl|llw|parallels|loopback|mihomo|clash|sing-?box)/i;
 // 点对点 VPN：这些地址就是同组好友互相访问用的（Tailscale / ZeroTier / WireGuard / Radmin VPN / Hamachi）。
 const VPN_IF = /(tailscale|zerotier|^zt|wireguard|^wg\d|tun\d|tap|radmin|hamachi)/i;
@@ -192,7 +193,7 @@ async function main() {
   const client = findClient(null);
   row(local.manifest ? 'ok' : 'skip', 'Local client assets (optional)', local.manifest
     ? `${local.count} extracted${local.board3d ? '; 3D board available' : '; no board textures (using the 2D board)'}${local.board3d && !local.tiles ? '; tiles.json missing → node tools/setup.mjs' : ''}`
-    : client ? `Detected ${client.kind} client → node tools/setup.mjs --local` : 'not extracted (the game is unaffected)');
+    : client ? `Detected ${client.kind} client → node tools/setup.mjs --local` : `Not extracted: ${LOCAL_ART_FALLBACK} (see docs/DEPLOY.md §6). ${LOCAL_ART_COPY_HINT}.`);
   if (client || local.manifest) {
     const py = findPython();
     row(py ? 'ok' : 'skip', 'Python (for extraction only)', py ? `${py.cmd} ${py.version}` : 'Python 3.8+ not found');

@@ -99,6 +99,19 @@ test('联防 helpers follow unite.helperOrder (units > active bond > standing > 
   const c = player('c', 2, 2, 5, true);     // most units + an active bond
   const order = helperOrder(m, [a, b, c], new Map()).map((p) => p.playerId);
   assert.deepEqual(order, ['c', 'b'], 'LP never decides; the first helper (right-hand field) is c');
+  // the tie-break is the layers the 联防 will fight with: stored plus this round's pending gains, capped at 999
+  const reached = (playerId, seat, stored, pending) => ({
+    playerId, seat, lp: 10, deployCount: 4, board: new Map(),
+    layers: { bond_x: stored },
+    pendingLayerGains: pending,
+    bonds: { bond_x: { active: true, layers: stored } },
+  });
+  const hi = reached('A', 0, 200, { bond_x: 50 }); // fights at 250
+  const lo = reached('B', 1, 230, null);          // fights at 230
+  assert.deepEqual(helperOrder(m, [lo, hi], new Map()).map((p) => p.playerId), ['A', 'B']);
+  const capped = reached('C', 2, 990, { bond_x: 50 }); // 999, not 1040
+  const under = reached('D', 3, 995, null);
+  assert.deepEqual(helperOrder(m, [under, capped], new Map()).map((p) => p.playerId), ['C', 'D']);
   assert.ok(!/highest LP, then seat/.test(DESIGN), 'DESIGN §6.1 no longer picks helpers by LP');
   assert.match(DESIGN, /helperOrder/);
   assert.match(META, /unite\.js helperOrder/);
@@ -339,7 +352,7 @@ test('user playtest #5 (DESIGN §19): blocking, 联防 forced exit, huge bosses,
   assert.match(SIM, /taken over by another operator in contact with room, else they walk on/);
   // #2 联防: carryState { down: true } → FORCED_EXIT (code = §5.1 / §5.5 / §6.1 / §18.3)
   assert.equal(FORCED_EXIT, 'forcedExit');
-  assert.match(DESIGN, /carryState\?: \{ hpPct, sp, skillActive \} \| \{ down: true \}/);
+  assert.match(DESIGN, /carryState\?: \{ hpPct, sp \} \| \{ sp \} \| \{ down: true \}/);
   assert.match(DESIGN, /or `FORCED_EXIT`, entering 联防 knocked out/);
   assert.match(sec(6), /knocked out at the end of its own combat enters down/);
   assert.match(PLAYING, /operators already knocked down when combat ends lie on their tile/);
@@ -515,7 +528,8 @@ test('user playtest #6 follow-up: a merge consuming a deployed copy puts the eli
   assert.equal(promo.eliteTileAmongSeveralDeployed?.assumed, true);
   for (const [name, text] of [['research 01', R01], ['00-INDEX', INDEX], ['META', META], ['SIM', SIM], ['PlayerState', PS]]) assert.match(text.replace(/\s+|\/\/\s/g, ''), official, `${name} quotes PRTS`);
   assert.match(INDEX, /to \*\*that copy's board position\*\*/);
-  assert.match(META, /of several, the one that deploys first \(row desc, then col asc; `board\.js mergeTile`/);
+  // the deployment order is by column since 0.1.3 (Battle.start; DESIGN §23.f4), so is the merge's tile among several copies
+  assert.match(META, /of several, the one that deploys first \(col asc, then row desc; `board\.js mergeTile`/);
   assert.ok(!/it takes a freed\s+board tile of a consumed copy only when the hand and temp are both full/.test(META), 'META: the old fallback-only wording is gone');
   assert.ok(!/only with the hand and temp both full does it take a/.test(PS), 'PlayerState header: the old fallback-only wording is gone');
   assert.match(PLAYING, /the Elite appears directly on \*\*that operator's tile\*\*/);
@@ -747,9 +761,11 @@ test('batch 6 QA residuals (DESIGN §21.21–§21.25): the lock per deployment f
   assert.ok(!/the carrier's own non-initial `deploy` re-arms it/.test(SIM), 'SIM: the per-grant deploy hook is gone');
   assert.match(PLAYING, /revived by M3 Cocoon \/ Irene\), it can lock again, and the hammer borrowed via Narantuya's strategy/);
   assert.ok(!/First time per battle carrier would take lethal damage/.test(doc('docs/research/04-items.md')), 'research 04: once per deployment');
-  // F3: 卢西恩 / 锏 count only the allies they can hurt; the player text keeps auras and counters
-  assert.match(doc('server/sim/content/bosses.js'), /LUCIEN_AOE_RADIUS\)\.some\(\(u\) => !evadesGround\(e, u\)\)/);
-  assert.match(doc('server/sim/content/enemies.js'), /const inR = \(b, e, s\) => b\.alliesInRadius\([^\n]*\.some\(\(u\) => !evadesGround\(e, u\)\)/);
+  // F3: 卢西恩 / 锏 count only the allies they can hurt — since 0.1.2 (§22.12) the targets of their trigger selection
+  // (targetsNear → canTargetAlly, which skips an airborne 起飞 ally for a ground enemy); the player text keeps auras and counters
+  assert.match(doc('server/sim/content/bosses.js'), /cond: \(b\) => targetsNear\(b, e, LUCIEN_AOE_RADIUS\)\.length > 0/);
+  assert.match(doc('server/sim/content/enemies.js'), /const inR = \(b, e, s\) => targetsNear\(b, e, [^\n]*\)\.length > 0/);
+  assert.match(doc('server/sim/targeting.js'), /if \(f\.liftoff && evadesGround\(e, a\)\) return false;/);
   assert.match(sub(22), /they count only the allies they can hurt \(`!evadesGround`\)/);
   assert.match(sub(20), /an area skill cast because allies are near counts only those it can hurt/);
   assert.ok(!/燃烧区域和减益都落不到她身上/.test(PLAYING), 'PLAYING: no blanket 减益 claim');

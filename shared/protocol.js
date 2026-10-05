@@ -219,6 +219,8 @@ export function unitStatsEntry(u, s = null) {
     ...statView(cur),
     base: statView(base),
     ...(range ? { range } : {}),
+    // the enemy card greys a SILENCE-format line (折射) from this; absent flags ⇒ not silenced
+    silenced: !!(cur.flags && cur.flags.silence),
   };
 }
 
@@ -245,9 +247,17 @@ export const C2S = {
   'room.setDifficulty': { difficulty: (v) => DIFFICULTIES.includes(v) },
   'room.addBot': {},
   'room.removeBot': { seat: (v) => isInt(v, 0, MAX_SEATS - 1) },
+  // the host removes another human before the match (server/lobby.js kick; community report #17); playerId = the one the
+  // host confirmed — a seat that changed hands meanwhile is refused
+  'room.kick': { seat: (v) => isInt(v, 0, MAX_SEATS - 1), playerId: isId },
   'room.start': {},
   // operator loadout (DESIGN §16): stored per session/seat; accepted until the match leaves INFO_CHECK
   'room.loadout': { entries: isLoadoutEntries },
+  // spectator seats (remake feature, community report #26; MAX_SPECTATORS): take one of a co-op room's spectator seats —
+  // in its lobby or while its match runs — never a player seat; the host frees one by playerId (the spectator gets
+  // room.closed { reason: 'kicked' }). room.leave / g.leave leave a spectator seat like a player seat.
+  'room.spectate': { code: (v) => isStr(v, ROOM_CODE_LEN + 2) && /^[A-Za-z0-9]+$/.test(v) },
+  'room.removeSpectator': { playerId: isId },
 
   // match
   'g.infoReady': {},
@@ -337,8 +347,8 @@ export const EV = Object.freeze({
 
 /**
  * The model form a `b.ev` 'fx' tuple ['fx', kind, x, y, extra] puts its unit in: `extra.form` (sim content/enemies.js
- * setForm — 转译基底·α's forms, a 逐火 余烬 and its revival, a leader's 重生, 守墓石像's modes, 掠海漂移体's crawl; a string is
- * that clip set, null the base one), undefined for any other tuple. A form is state, not decoration: a view that misses
+ * setForm — 转译基底·α's forms, a 逐火 余烬 and its revival, a leader's 重生, 守墓石像's modes, 掠海漂移体's crawl; a 傀儡师's 替身,
+ * sim professions.js; a string is that clip set, null the base one), undefined for any other tuple. A form is state, not decoration: a view that misses
  * the fx keeps drawing the old model (player report #5 after 0.1.0), so the client's catch-up frames, its hidden-tab
  * backlog (battle/runner.js) and the events buffered before a field is entered (screens/game.js) keep these tuples.
  */

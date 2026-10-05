@@ -8,7 +8,7 @@
 //   2. Dependencies: `npm ci` (falls back to `npm install`) when node_modules is missing or incomplete.
 //   3. Client libraries in public/vendor (tools/vendor.mjs) when any is missing.
 //   4. Game data (data/*.json, committed) present and parseable.
-//   5. Art/audio (tools/fetch-assets.mjs, ~250 MB into public/assets, resumable, mirror fallback) when public/assets
+//   5. Art/audio (tools/fetch-assets.mjs, ~270 MB into public/assets, resumable, mirror fallback) when public/assets
 //      is missing or data/assets.json lists files that are not on disk. A failure is a warning: the game still runs
 //      with fallback visuals and the next run resumes.
 //   6. Optional: official board/UI art from a locally installed Arknights client (Windows native install, CrossOver
@@ -188,6 +188,16 @@ export function checkAssets() {
   }
   return { ok: present && missing.length === 0 && urls.length > 0, present, manifest: true, total: urls.length, missing: missing.length, sample: missing.slice(0, 5), bytes: Number(m.stats?.bytes) || 0 };
 }
+
+/**
+ * What the game draws instead when the local-client art is absent (DESIGN §13, docs/DEPLOY.md §6). The battle emotes and
+ * the 玩法说明 pages are not in the list: step 5 downloads them from the public mirror with the other assets (GitHub
+ * issue #42). Shown by setup and doctor.
+ */
+export const LOCAL_ART_FALLBACK = 'The board uses 2D; some official UI icons and the Hot / Blazing Originium Slug models use replacements';
+/** Where a machine without the client gets the local art (docs/DEPLOY.md §6「本地客户端素材」); shown by doctor (setup's row,
+ * printed on every start by scripts/launch.mjs, only points to that section). */
+export const LOCAL_ART_COPY_HINT = 'If another compatible installation has these assets, copy public/assets/local and data/local-assets.json together';
 
 /**
  * Local-client art (optional): manifest entry count, whether the 3D board atlas is on disk and whether the extraction
@@ -422,7 +432,7 @@ async function main() {
     const already = local.manifest && local.dirPresent;
     if (!client) {
       if (already && local.board3d && !local.tiles && !opts.check) cropBoardTiles(log);
-      add(already ? 'ok' : 'skip', 'Local client assets (optional)', already ? `${local.count} extracted` : (opts.game ? `Could not find ${opts.game}` : 'No Arknights client detected (the game is unaffected)'));
+      add(already ? 'ok' : 'skip', 'Local client assets (optional)', already ? `${local.count} extracted` : `${opts.game ? `Could not find ${opts.game}` : 'No Arknights client detected'}: ${LOCAL_ART_FALLBACK} (see docs/DEPLOY.md §6).`);
     } else if (!client.autochess) {
       add(already ? 'ok' : 'warn', 'Local client assets (optional)', `${client.kind} client is missing Stronghold Protocol assets. Download all resources in-game: ${client.path}`);
     } else if (already && opts.local !== 'force') {
@@ -438,7 +448,7 @@ async function main() {
         let go = opts.local === 'force' || opts.yes;
         if (go || !state.localDeclined) {
           log(`\n${c.cyan('▶')} Detected a local Arknights client (${client.kind}):\n  ${c.dim(client.path)}`);
-          log('  Extract official board textures, UI icons, emotes, and other assets from it (local use only; usually 1–5 minutes; about 40 MB of Python dependencies installed in the project’s .venv-extract).');
+          log('  Extract the official 3D board, selected UI icons, and client-only enemy models (local use only; usually 1–5 minutes; about 40 MB of Python dependencies installed in the project’s .venv-extract). Emotes and tutorial pages download during normal setup.');
         }
         let unattended = false;
         if (!go && !state.localDeclined) {
@@ -457,7 +467,7 @@ async function main() {
             if (r.ok) cropBoardTiles(log);
             const after = checkLocal();
             if (r.ok && after.manifest) { add('ok', 'Local client assets (optional)', `${after.count} extracted${after.board3d ? '; 3D board available' : ''}`); saveState({ localDeclined: false, localExtractedFrom: client.path }); }
-            else add('warn', 'Local client assets (optional)', `Extraction failed (exit code ${r.code}); the game is unaffected. Try again later with node tools/setup.mjs --local.`);
+            else add('warn', 'Local client assets (optional)', `Extraction failed (exit code ${r.code}); ${LOCAL_ART_FALLBACK}. Try again later with node tools/setup.mjs --local.`);
           }
         }
       }

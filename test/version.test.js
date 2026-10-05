@@ -30,7 +30,7 @@ test('CHANGELOG.md opens with the release version, and the README links it', () 
   assert.match(log, /^## 0\.1\.0 — 2026-10-02/m, 'the first public release stays listed');
   const readme = read('README.md');
   assert.match(readme, /\[CHANGELOG\.md\]\(CHANGELOG\.md\)/);
-  assert.match(readme, new RegExp(`badge/version-${APP_VERSION.replace(/\./g, '\\.')}-`), 'the README badge');
+  assert.match(readme, new RegExp(`badge/source%20baseline-${APP_VERSION.replace(/\./g, '\\.')}-`), 'the README source baseline badge');
 });
 
 test('the release version is what players see', () => {
@@ -39,6 +39,21 @@ test('the release version is what players see', () => {
   const server = read('server/index.js');
   assert.match(server, /Stronghold Protocol: Alliance v\$\{APP_VERSION\}/, 'boot banner');
   assert.match(server, /app: APP_VERSION/, '/healthz');
+});
+
+test('the English title is the official one: Stronghold Protocol: Alliance (as in the reply to GitHub issue #38, which stays open)', () => {
+  // EN client data, activity_table basicInfo.act2autochess.name = "Stronghold Protocol: Alliance" (CN 卫戍协议:盟约);
+  // the project used to call it "Covenant". The Chinese title stays 卫戍协议：盟约; the repository keeps its name.
+  const readme = read('README.md');
+  assert.match(readme.split('\n')[0], /^# Stronghold Protocol: Alliance — English translation by \[sganggs\]\(https:\/\/github\.com\/sganggs\) of the \[original Chinese repository\]\(https:\/\/github\.com\/sganggs\/Stronghold-Protocol\)$/, 'README title and translation attribution');
+  assert.match(readme, /seasonal auto-chess tower-defense mode "Stronghold Protocol: Alliance"/, 'README English summary');
+  assert.match(read('server/index.js'), /Stronghold Protocol: Alliance v/, 'English boot banner');
+  assert.equal(pkg.name, 'stronghold-protocol-alliance');
+  assert.equal(lock.name, pkg.name);
+  assert.equal(lock.packages[''].name, pkg.name);
+  for (const f of ['README.md', 'server/index.js', 'package.json', 'package-lock.json', 'NOTICE.md', 'public/index.html', 'docs/DEPLOY.md']) {
+    assert.ok(!/covenant/i.test(read(f)), `${f}: no "Covenant" title left`);
+  }
 });
 
 test('GPL-3.0-or-later: LICENSE, package metadata and notices', () => {

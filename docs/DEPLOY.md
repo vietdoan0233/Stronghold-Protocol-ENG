@@ -1,6 +1,6 @@
 # Deployment guide
 
-Goal: run a server long-term on a home Windows mini-PC so friends can play over a LAN or the internet. macOS / Linux / Docker come later.
+This guide covers a source install on a home Windows mini-PC and equivalent hosting options for other platforms.
 All commands are run from the project root. When something goes wrong, run `node tools/doctor.mjs` first (read-only diagnostics).
 
 ## 0. Resource needs
@@ -10,7 +10,7 @@ All commands are run from the project root. When something goes wrong, run `node
 | Server CPU | Combat is simulated in each player's browser (DESIGN §14); the server only handles rounds, economy and verification: **about 1 ms CPU per room per combat round**. Battlefields for AI teammates / disconnected players are simulated by the server: at the start of combat, 3 AI battlefields take about 0.2–0.5 s CPU on a dev machine, and possibly a few seconds on a mini-PC (run in 8 ms slices, so other rooms don't stall). `SP_VERIFY=all` re-checks every human battlefield, raising CPU noticeably; on a mini-PC prefer `off` or `sample`. |
 | Server memory | About 100 MB idle, plus a few MB per match in progress. |
 | Network | In a 4-player match the server sends about 0.25 MB down per round (measured, DESIGN §14). On first entering the game the browser downloads the needed images / Spine models / audio from the host (loaded on demand, then served from the browser cache), and the first load is slower over a low-bandwidth public tunnel. |
-| Disk | Assets about 250 MB (`public/assets`) + dependencies about 125 MB (`node_modules`); the optional local extraction is about 40 MB (`.venv-extract`) + 70 MB of textures. |
+| Disk | Downloaded assets about 270 MB (`public/assets`) + dependencies about 125 MB (`node_modules`); the optional local extraction is about 40 MB (`.venv-extract`) + 70 MB of textures. |
 | Player device | A modern browser with WebGL support (latest Chrome / Edge / Firefox / Safari), on a desktop, phone or tablet (landscape). Older devices can lower the quality in Settings or visit `/?board=2d`. |
 
 The server is **stateless**: rooms and matches live only in memory, with no database or save files, so **no backup is needed**. Restarting the server ends matches in progress (including a Solo Simulation that could otherwise be resumed within 24 hours after a disconnect).
@@ -19,23 +19,21 @@ The server is **stateless**: rooms and matches live only in memory, with no data
 
 ### 1.1 Install and first launch
 
-1. Install Node.js 22 LTS and Git (in PowerShell or "Terminal"; Git is not needed when using the all-in-one bundle below):
+1. Install Node.js 22 or 24 (LTS) and Git:
    ```powershell
    winget install OpenJS.NodeJS.LTS
    winget install Git.Git
    ```
-   After installing, **close and reopen** the terminal; `node -v` should show v22 or higher (winget's LTS is currently v24.x, which also works). Without winget, download installers from <https://nodejs.org/en/download> and <https://git-scm.com/download/win>.
-2. Download, one of two ways. It's best to use a fixed, short directory that is **not inside OneDrive's sync range**, such as `C:\Stronghold-Protocol`:
-   - **All-in-one bundle (recommended)**: on the repo's [Releases](https://github.com/vietdoan0233/Stronghold-Protocol-ENG/releases) page download the latest version's (currently v0.1.1) all-in-one bundle zip (already includes dependencies, front-end libraries and all assets, including the official 3D board), unzip it, and put the `Stronghold-Protocol` folder inside at the location above. Git is not needed, and the first launch won't download assets. The assets are copyright of Shanghai Hypergryph / Yostar, for non-commercial use only — see [NOTICE.md](../NOTICE.md).
-   - **Source**:
-     ```powershell
-     git clone https://github.com/vietdoan0233/Stronghold-Protocol-ENG.git C:\Stronghold-Protocol
-     ```
-3. Double-click `C:\Stronghold-Protocol\scripts\start-windows.bat`. The first run will: install dependencies (`npm ci`; skipped with the bundle, which already has them) → copy front-end libraries → download about 250 MB of assets (skipped with the bundle; shows progress, and re-launching after an interruption resumes) → if a local Arknights client is detected, ask whether to extract the official textures (can be skipped) → start the server and open the browser.
+   After installing, close and reopen the terminal; `node -v` should show v22 or v24. Without winget, use the official installers at <https://nodejs.org/en/download> and <https://git-scm.com/download/win>.
+2. Clone this English edition into a fixed, short directory outside OneDrive sync, such as `C:\Stronghold-Protocol`:
+   ```powershell
+   git clone https://github.com/vietdoan0233/Stronghold-Protocol-ENG.git C:\Stronghold-Protocol
+   ```
+   There is no published English release bundle yet. You can build one locally with `node scripts/make-windows-bundle.mjs` if the required assets are available; source install is the supported route.
+3. Double-click `C:\Stronghold-Protocol\scripts\start-windows.bat`. The first run installs dependencies, copies browser libraries, downloads about 270 MB of assets (resuming if interrupted), optionally offers to extract local-client art, then starts the server and opens the browser.
 4. The window prints an address friends can use, such as `http://192.168.1.23:3000`. Open it on another device to confirm it works. Closing the window stops the server.
 
-The equivalent manual commands: `npm ci`, `node tools/setup.mjs`, `npm start`.
-
+The equivalent manual commands are `npm ci`, `node tools/setup.mjs`, then `npm start`.
 ### 1.2 Firewall
 
 - On the first launch Windows shows a "Windows Security Alert": tick **Private networks** and click "Allow access".
@@ -102,7 +100,7 @@ node tools/setup.mjs                # download any newly added assets (existing 
 powershell -ExecutionPolicy Bypass -File scripts\install-service-windows.ps1 -Restart
 ```
 
-Without start-on-boot, make the last step double-clicking `start-windows.bat` again. With a Releases all-in-one bundle: stop the server, unzip the new version's bundle into a new directory and launch from there (assets are included; with start-on-boot installed, run `install-service-windows.ps1` once more in the new directory). With a GitHub "Download ZIP" source package: after unzipping the new version, copy `public\assets`, `public\fonts`, `.cache` and `data\local-assets.json` (if present) from the old directory over, to avoid re-downloading.
+Without start-on-boot, make the last step double-clicking `start-windows.bat` again. For upstream source updates, follow the merge workflow in [docs/UPSTREAM.md](UPSTREAM.md) so Chinese game data and the English locale overlays remain easy to merge.
 
 ## 2. Letting friends on another network join
 
@@ -177,7 +175,7 @@ On https / wss: when the page is opened over https the client connects to `wss:/
 ## 3. Docker
 
 ```bash
-# A) download assets at build time (needs internet, about 250 MB)
+# A) download assets at build time (needs internet, about 270 MB)
 docker build -t stronghold-protocol --build-arg FETCH_ASSETS=1 .
 docker run -d --name stronghold -p 3000:3000 --restart unless-stopped stronghold-protocol
 
@@ -237,6 +235,13 @@ services:
 | Friends can't open the page | Firewall rule / network type (1.2); confirm they're using the `LAN` address, not `localhost`; guest Wi-Fi often has "AP isolation" on; if not on the same network, see section 2 |
 | Placeholder images, no sound | Assets didn't finish downloading: re-run `node tools/setup.mjs` (it resumes); the missing details are in `.cache/assets-report.json`. When the GitHub raw address fails it switches to the jsDelivr mirror automatically |
 | Asset download is slow / fails | Network issues can be interrupted at any time, and re-running skips finished files; `node tools/fetch-assets.mjs --concurrency=4` lowers the concurrency. When some files didn't download, the asset manifest `data/assets.json` stays unchanged (the script lists the missing entries and exits non-zero; in-game a missing image uses a placeholder and a missing sound doesn't play), so just re-run to top it up |
-| Local extraction fails | Doesn't affect the game. Confirm the client has downloaded all its resources; when a too-new Python version breaks dependency installation, install Python 3.12, delete `.venv-extract`, then run `node tools/setup.mjs --local` |
+| Emotes or How to Play pages are missing | Run `node tools/setup.mjs` to download mirror assets; rerun setup to retry files that failed |
+| Local extraction fails | The game still runs with its 2D board and replacement art. Confirm the client has downloaded all its resources; when a too-new Python version breaks dependency installation, install Python 3.12, delete `.venv-extract`, then run `node tools/setup.mjs --local` |
 | The 3D board doesn't appear | Needs locally extracted board textures (`node tools/doctor.mjs` shows "3D board available") and a browser that supports WebGL2 |
 | Disconnected | Reopen the page in the same browser within 10 minutes (Alliance Simulation) or 24 hours (Solo Simulation, `config.constants.singleReconnectTime`) to return to your seat automatically. While an alliance seat is dropped it fights automatically with its existing formation and readies up on time (nothing is bought for you; to let an AI play, use "Leave simulation → Step out (AI takeover)"); a Solo Simulation is untimed and waits for you to return |
+
+## 6. Optional local-client art
+
+The game works without a local Arknights client. Normal setup downloads the 36 battle emotes and 19 How to Play pages from the public mirror. If setup detects a compatible PC client, it can optionally extract the official 3D board textures, selected UI icons, and enemy models unavailable from the public asset sources. Without those local files, the board uses the 2D renderer and selected art uses replacements.
+
+If another compatible installation already has these optional files, copy both `public/assets/local/` and `data/local-assets.json` together. The manifest references files under that directory; copying only one side leaves local assets incomplete. See [docs/ASSETS.md](ASSETS.md) for asset paths and fallback behavior.

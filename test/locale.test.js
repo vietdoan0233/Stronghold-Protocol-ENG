@@ -418,6 +418,20 @@ describe('shipped tables (public/locales/en)', () => {
     }
   });
 
+  test('player-facing strings contain no review-note placeholders and call Alliance counts stacks', () => {
+    const reviewNote = /\b(?:digits for numbers|official English:\s*the English has|audit note|reviewer note|TODO|TBD)\b/i;
+    const allianceCounterSource = /(?:盟约|同盟)[\s\S]{0,24}(?:层数|叠加)|(?:层数|叠加)[\s\S]{0,24}(?:盟约|同盟)|【[^】]+】[\s\S]{0,12}(?:层数|叠加)|(?:层数|叠加)[\s\S]{0,12}【[^】]+】/;
+    for (const f of files) {
+      const json = readJson(`public/locales/en/${f}`);
+      for (const [zh, en] of Object.entries(json.strings)) {
+        assert.doesNotMatch(en, reviewNote, `${f}: ${JSON.stringify(zh)} contains a reviewer note`);
+        if (allianceCounterSource.test(zh)) {
+          assert.doesNotMatch(en, /\blayers?\b/i, `${f}: ${JSON.stringify(zh)} calls an Alliance count a layer`);
+        }
+      }
+    }
+  });
+
   test('the shipped tables, applied to the real data, leave everything but display text untouched', () => {
     for (const f of files) {
       const t = parseLocaleTable(readJson(`public/locales/en/${f}`));

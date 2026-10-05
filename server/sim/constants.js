@@ -13,7 +13,11 @@ export const COLS = GEO.COLS;
 
 /** tilesPerSecond = moveSpeed × MOVE_SCALE (DESIGN §3). */
 export const MOVE_SCALE = 0.5;
-/** Ranged enemies stop moving this long after each attack (DESIGN §5.5). */
+/**
+ * An unblocked ranged enemy stands for each attack's clip (ai.js attackStand, GitHub #58); one whose model has no attack
+ * clip known (no `attackAnim` in data/enemies.json) stands this long after each attack instead, as do all after an
+ * attack 麻痹 interrupts (DESIGN §5.5).
+ */
 export const ATTACK_PAUSE = 0.35;
 /**
  * Collider radius of an allied unit (PRTS 作战机制 §碰撞体积与位置识别: "我方干员碰撞体积基本均为以0.25格为半径的圆形" —
@@ -31,6 +35,13 @@ export const ALLY_COLLIDER_RADIUS = 0.25;
  */
 export const BLOCK_RADIUS = Object.freeze({ ground: 0.70709997, fly: 0.8944, device: 0.4472 });
 export const BLOCK_RADIUS_SQ = Object.freeze({ ground: 0.49999037, fly: 0.79995137, device: 0.4472 * 0.4472 });
+/**
+ * An enemy's 隐匿 after a block ends (s): PRTS 作战机制 §隐匿 "对于绝大部分可隐匿的敌人而言，在被我方单位阻挡后会解除隐匿，不被
+ * 阻挡的3秒后重新进入隐匿" / §隐匿与Buff的关系 "阻挡状态解除后3s开关重新被开启而恢复隐匿". An enemy page's "（解除阻挡N秒后
+ * 恢复）" overrides it per 隐匿 source (buff `data.stealthRestore`: content/enemies.js). Battle._stealthSwitch; our
+ * operators' 隐匿 / 迷彩 are never lifted by blocking ("我方干员并不会因为阻挡而解除隐匿").
+ */
+export const STEALTH_RESTORE = 3;
 /** Default projectile speed in tiles/s for ranged operators/enemies. */
 export const PROJECTILE_SPEED = 12;
 /**
@@ -118,7 +129,10 @@ export const PULL_ORIGIN = 0.5;
 export const PULL_STOP_RADIUS = 0.6708;
 export const PUSH_DIRECTIONAL_MIN_DIST = 0.25;
 
-/** Freeze caused by cold on cold (DESIGN §5.3). */
+/**
+ * Fallback freeze when a second 寒冷 lands and neither the remaining cold nor the incoming one has a duration
+ * (Battle.applyStatus). A real duration uses max(remaining, incoming) — PRTS 术语释义 寒冷 「持续时间取双方之中最高」.
+ */
 export const COLD_FREEZE_DURATION = 3;
 /** 浮空 (ba.levitate): the duration is halved on units heavier than this weight (massLevel). */
 export const LEVITATE_HALF_WEIGHT = 3;

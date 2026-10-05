@@ -42,23 +42,28 @@ test('attack-SP ammo skill: no SP from any ammo shot, including the last one', (
   assert.equal(u.skill.sp, 1);
 });
 
-test('unite carryState {sp: 0, skillActive: true} (what unitsEnd reports) resumes the timed skill without a charge', () => {
+test('unite carryState: a skill running at the end of the own combat is not carried — unitsEnd reports sp 0 and the skill enters 联防 off', () => {
+  // community report #34 / GitHub #82: the carried skillActive used to restart the skill for free (bar empty, skill on)
   const h = makeBattle({
-    defs: { chess: { t_sn: sniper({ duration: 10, spCost: 10, initSp: 0, bb: { atk: 1 } }) } },
-    units: [{ chessId: 't_sn', row: 10, col: 4, carryState: { hpPct: 0.6, sp: 0, skillActive: true } }], content: 'generic',
+    defs: { chess: { t_sn: sniper({ duration: 10, spCost: 10, initSp: 10, bb: { atk: 1 } }) }, enemies: { e_dummy: enemyRec({ key: 'e_dummy', hp: 1e9, speed: 0 }) } },
+    units: [{ chessId: 't_sn', row: 10, col: 4 }], enemies: [{ key: 'e_dummy', pos: [10, 6] }], content: 'generic', autoFinish: false,
   });
-  h.step();
-  const u = h.unit('t_sn');
-  approx(u.hpRatio, 0.6, 1e-9);
-  assert.equal(u.skill.active, true);
-  assert.equal(u.skill.charges, 0);
-  assert.ok(u.skill.sp < 0.01);
-  approx(u.s.atk, 200);
-  // and a real end-of-battle report round-trips: unitsEnd of a running skill carries sp 0 + skillActive
+  h.runUntil(() => h.unit('t_sn').skill.active, 10);
   h.run(1);
   const end = h.result().perPlayer.p1.unitsEnd[0];
-  assert.equal(end.skillActive, true);
-  assert.equal(end.sp, 0);
+  assert.equal(end.skillActive, true, 'reported');
+  assert.equal(end.sp, 0, 'the SP was spent at the activation (PRTS 技能 "触发技能后…消耗相应的技力")');
+  const u2 = makeBattle({
+    defs: { chess: { t_sn: sniper({ duration: 10, spCost: 10, initSp: 0, bb: { atk: 1 } }) } },
+    units: [{ chessId: 't_sn', row: 10, col: 4, carryState: { hpPct: 0.6, sp: end.sp, skillActive: end.skillActive } }], content: 'generic',
+  });
+  u2.step();
+  const u = u2.unit('t_sn');
+  approx(u.hpRatio, 0.6, 1e-9);
+  assert.equal(u.skill.active, false);
+  assert.equal(u.skill.charges, 0);
+  assert.ok(u.skill.sp < 0.2);
+  approx(u.s.atk, 100);
 });
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -253,14 +258,16 @@ test('librator module (玛恩纳 elite init_atk): +100 % ATK right after deploym
   approx(n.unit('chess_char_5_19_a').s.atk, n.unit('chess_char_5_19_a').base.atk, 1e-6);
 });
 
-test('dollkeeper without a substitute token (归溟幽灵鲨) uses half its own HP, not 风丸\'s 纸偶', { skip: !hasGeneratedData() }, () => {
+test('dollkeeper without a substitute token (归溟幽灵鲨) keeps its own max HP, not 风丸\'s 纸偶', { skip: !hasGeneratedData() }, () => {
   const h = makeBattle({ defs: { enemies: { enemy_dummy: dummy() } }, units: [{ chessId: 'chess_char_5_13_a', row: 9, col: 5 }], content: 'none', autoFinish: false, timeLimit: 30 });
   h.step();
   const u = h.unit('chess_char_5_13_a');
   const full = u.s.maxHp;
   h.b.dealDamage(null, u, { amount: 1e7, type: 'true' });
   assert.ok(u.alive && u.hasBuff('trait:substitute'));
-  approx(u.s.maxHp, full * 0.5, 1e-6);
+  // PRTS 分支特性信息 傀儡师 "重设自身生命至最大值"; the trait's 替身 HP bonus (bb max_hp) is 0 and 风丸's 纸偶 has her own HP
+  approx(u.s.maxHp, full, 1e-6);
+  approx(u.hp, full, 1e-6);
 });
 
 // ---------------------------------------------------------------------------------------------------------------

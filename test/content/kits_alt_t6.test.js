@@ -194,12 +194,16 @@ test('6_02 圣聆初雪 S1 铃音吹雪: 2 charges (cast with enemies in range);
   }
 });
 
-test('6_02 圣聆初雪 S2 霜涛覆岭: toggle; group attacks at atk_scale_s2 × ATK; ground enemies on snow take 20 %/s, leaving snow chills, 5 layers freeze the tile (保护目标)', () => {
+// PRTS 圣聆初雪 S2 霜涛覆岭 "积雪在目标点积累至5层时，使目标点变为冻结状态", 备注 "目标点冻结的实际效果为令圣聆初雪在该地块上召唤一个保护目标
+// （冻结状态）（无视部署属性），并去除相应地块上的积雪（且存在自身的该召唤物的地块不会积雪）", "可以被'变为冻结状态'的目标点包括常规的保护目标点…";
+// the token's page: "技能发动后于保护目标叠加5层积雪". Community report #32: until 0.1.3 any free standable tile froze and the blue
+// gate never did (nobody can stand on it).
+test('6_02 圣聆初雪 S2 霜涛覆岭: toggle; group attacks at atk_scale_s2 × ATK; ground enemies on snow take 20 %/s, leaving snow chills, 5 layers on the protection point freeze it (保护目标（冻结状态）), no other tile', () => {
   for (const id of both('chess_char_6_02')) {
     const sid = 'skchr_sbell2_2', bb = bbOf(id, sid);
     const h = run({
       defs: { enemies: { e: dummy('e'), w: enemyRec({ key: 'w', hp: 1e7, speed: 1 }) } },
-      units: [U(id, sid, 10, 4, { carryState: READY })], enemies: [{ key: 'e', pos: [10, 5] }, { key: 'w', route: 0, time: 1 }],
+      units: [U(id, sid, 10, 3, { carryState: READY })], enemies: [{ key: 'e', pos: [10, 5] }, { key: 'w', route: 0, time: 1 }, { key: 'w', route: 0, time: 40 }],
     });
     const u = h.unit(id);
     usesSkill(u, sid);
@@ -218,13 +222,30 @@ test('6_02 圣聆初雪 S2 霜涛覆岭: toggle; group attacks at atk_scale_s2 �
     approx(dot[0].amount, u.s.atk * bb['talent@s2_magic_scale'] * u.s.dmgDealtMul, '20 % ATK per second');
     assert.ok(h.runUntil(() => statuses(h, 'cold', (c) => c.source === u && isKey(c.target, 'w')).length > 0, 20), 'leaving snow ⇒ cold');
     approx(statuses(h, 'cold', (c) => c.source === u && isKey(c.target, 'w'))[0].duration, bb['talent@cold'], 'cold duration');
-    // a free ground tile of her range at 4 layers: the next layer freezes it
+    const iceOf = () => h.b.allyUnits.find((t) => t.defId === 'token_10058_sbell2_icetgt' && t.alive);
+    // a free ground tile of her range reaching 5 layers: no freeze (until 0.1.3 it turned into the token)
     const fk = 11 * COLS + 4;
+    assert.ok(u.rangeKeys.includes(fk));
     u.mem.snow.set(fk, 4);
-    assert.ok(h.runUntil(() => h.b.allyUnits.some((t) => t.defId === 'token_10058_sbell2_icetgt' && t.alive), 7), '保护目标（冻结状态）');
-    const ice = h.b.allyUnits.find((t) => t.defId === 'token_10058_sbell2_icetgt' && t.alive);
-    assert.deepEqual([ice.tileR, ice.tileC], [11, 4]);
+    h.run(7);
+    assert.equal(u.mem.snow.get(fk), 5);
+    assert.equal(iceOf(), undefined, 'only a protection point freezes');
+    // the blue gate (9,2) — build NONE, nobody may stand there — at 4 layers: the next layer freezes it
+    const gk = 9 * COLS + 2;
+    assert.equal(h.b.grid.tile(9, 2).special, 'end');
+    assert.ok(u.rangeKeys.includes(gk));
+    u.mem.snow.set(gk, 4);
+    assert.ok(h.runUntil(() => !!iceOf(), 7), '保护目标（冻结状态）');
+    const ice = iceOf();
+    assert.deepEqual([ice.tileR, ice.tileC], [9, 2]);
     assert.equal(ice.s.blockCnt, 3);
+    assert.equal(u.mem.snow.get(gk), undefined, 'its snow is used up');
+    h.run(7);
+    assert.equal(u.mem.snow.get(gk), undefined, 'no snow gathers under her token');
+    // a walker reaching the gate is held there by it, not leaked
+    const leaks0 = h.result().perPlayer.p1.leaked.length;
+    assert.ok(h.runUntil(() => h.b.enemies.some((x) => x.alive && isKey(x, 'w') && x.blockedBy === ice), 60), 'blocked by the frozen gate');
+    assert.equal(h.result().perPlayer.p1.leaked.length, leaks0);
     done(h);
   }
 });
@@ -261,7 +282,7 @@ test('6_03 余 S1 今日做东: taunt +1 while carried; TAKE_DAMAGE cast, HP/DEF
   assert.equal(d.unit('chess_char_6_03_a').s.taunt, 0);
 });
 
-test('6_03 余 S2 厚礼上宾: cast when hit (重装 TAKE_DAMAGE); atk_scale × ATK arts around him, reachable ground enemies teleported onto his tile; block +2, HP/ATK +, arts attacks', () => {
+test('6_03 余 S2 厚礼上宾: cast with an enemy on its x-1 (SKILL_RANGE — a deliberate deviation from the 重装 TAKE_DAMAGE, DESIGN §22.10); atk_scale × ATK arts around him, reachable ground enemies teleported onto his tile; block +2, HP/ATK +, arts attacks', () => {
   for (const id of both('chess_char_6_03')) {
     const sid = 'skchr_yu_2', bb = bbOf(id, sid);
     const h = run({
@@ -272,6 +293,7 @@ test('6_03 余 S2 厚礼上宾: cast when hit (重装 TAKE_DAMAGE); atk_scale ×
     const u = h.unit(id);
     usesSkill(u, sid);
     assert.ok(h.runUntil(() => u.skill.active, 10));
+    assert.equal(started(h, u)[0].reason, 'SKILL_RANGE');
     const t0 = started(h, u)[0].t;
     const burst = dealt(h, u, (c) => c.t === t0 && c.dmg.isSkill && !c.dmg.isAttack);
     assert.equal(burst.length, 3);
@@ -1160,7 +1182,7 @@ test('default-skill-only hooks do not run under an alternate skill (余 / 维娜
   // 余 S2 active: 闲云隐市 is NOT given to every operator (S3 only)
   {
     const h = run({
-      defs: { chess: { o1: plain('o1'), o2: plain('o2'), o3: plain('o3') }, enemies: { e: dummy('e', { atk: 100, bat: 1 }) } }, // (重装: TAKE_DAMAGE)
+      defs: { chess: { o1: plain('o1'), o2: plain('o2'), o3: plain('o3') }, enemies: { e: dummy('e', { atk: 100, bat: 1 }) } }, // (S2: an enemy on x-1)
       units: [U('chess_char_6_03_a', 'skchr_yu_2', 10, 4, { carryState: READY }), { chessId: 'o1', row: 9, col: 6 }, { chessId: 'o2', row: 11, col: 6 }, { chessId: 'o3', row: 12, col: 6 }],
       enemies: [{ key: 'e', pos: [10, 4] }],
     });

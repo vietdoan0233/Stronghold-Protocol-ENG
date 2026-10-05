@@ -6,9 +6,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { createDisplay, L } from '../server/display.js';
+import { createDisplay, DISPLAY_LANG, L } from '../server/display.js';
 import { derivedSources } from '../tools/locale.mjs';
 import { bountyText, isMultiRoundBounty } from '../server/match/choices.js';
+import { makeCtx } from '../server/match/effectsMeta.js';
 import { makeMatch, DATA } from './match/harness.js';
 
 const HAN = /[一-鿿぀-ヿ]/;
@@ -60,6 +61,20 @@ test('the shipped tables: operator, family, effect and title names resolve in th
   assert.equal(L('升华'), 'Sublimation');
   assert.equal(L('坚若磐石'), 'Rock Solid');
   assert.equal(L('一个玩家自己取的名字'), '一个玩家自己取的名字', 'what is not in a table is never changed');
+});
+
+test('grantChess toast localizes both its speaker and operator name', { skip: DISPLAY_LANG !== 'en' }, () => {
+  const h = makeMatch({ mode: 'solo', seed: 73, fake: true }).start();
+  h.toPrep(1);
+  const skadi = Object.values(DATA.chess).find((c) => c.name === '斯卡蒂' && !c.isGolden);
+  assert.ok(skadi, 'Skadi exists in the game data');
+  const before = h.sent.filter(([, msg]) => msg.t === 'm.toast').length;
+  const source = { kind: 'choice', card: { name: '歌蕾蒂娅' } };
+  const got = makeCtx(h.m, h.ps('p_0'), source, 'onRoundStart').grantChess(skadi.chessId, { requirePool: false });
+  assert.ok(got);
+  const toast = h.sent.filter(([, msg]) => msg.t === 'm.toast')[before]?.[1];
+  assert.equal(toast?.text, 'Gladiia: You gained Skadi');
+  h.m.dispose();
 });
 
 test('multi-round bounty cards: the text the server derives (choices.js bountyText) has an English entry, raw and plain', () => {

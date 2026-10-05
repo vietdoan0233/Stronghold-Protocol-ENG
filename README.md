@@ -1,10 +1,10 @@
-# Stronghold Protocol: Alliance — English translation of [sganggs/Stronghold-Protocol](https://github.com/sganggs/Stronghold-Protocol), translated with Claude
+# Stronghold Protocol: Alliance — English translation by [sganggs](https://github.com/sganggs) of the [original Chinese repository](https://github.com/sganggs/Stronghold-Protocol)
 
 An **unofficial fan remake** of *Arknights'* seasonal auto-chess tower-defense mode "Stronghold Protocol: Alliance": play instantly in the browser, solo or 1–4 player online co-op.
 
 > **English edition.** Player-facing interface, game data names and descriptions, server messages, and launcher / setup / doctor output are in English. The game data itself (`data/*.json`) stays in the original Chinese; its English is a read-time overlay (see [CHANGES.md](CHANGES.md) and [docs/LOCALE.md](docs/LOCALE.md)).
 
-![source baseline](https://img.shields.io/badge/source%20baseline-0.1.1-2ea44f)
+![source baseline](https://img.shields.io/badge/source%20baseline-0.1.3-2ea44f)
 ![license](https://img.shields.io/badge/code%20license-GPL--3.0--or--later-blue)
 ![node](https://img.shields.io/badge/node-22%20%7C%2024-339933)
 
@@ -37,7 +37,7 @@ An **unofficial fan remake** of *Arknights'* seasonal auto-chess tower-defense m
 
 - **Solo Simulation** (single player) and **Alliance Simulation** (1–4 player **co-op**, no PvP; empty seats can be filled with AI teammates).
 - The server is a single Node.js program, and **combat is simulated in each player's browser** (just like the official game); the server only handles economy and rounds, so a low-power mini-PC is enough to host.
-- Current version 0.1.1: fixes the issues players reported after the first public release (0.1.0); see [CHANGELOG.md](CHANGELOG.md) for details. A few rules are still implemented from inference — if anything differs from the official game, feedback via Issues is welcome.
+- Current source baseline: 0.1.3. See [CHANGELOG.md](CHANGELOG.md) for the original project history and [CHANGES.md](CHANGES.md) for this English edition. A few rules are still implemented from inference — if anything differs from the official game, feedback via Issues is welcome.
 
 ## Features
 
@@ -52,6 +52,7 @@ An **unofficial fan remake** of *Arknights'* seasonal auto-chess tower-defense m
 - **Terrain and enemies**: roadblocks, firing platforms, Originium-current blowers, swamps, exhaust grilles, rising tides and other terrain devices; airborne and low-hovering enemies, and bounty enemies.
 - **Unite Phase**: when someone leaks enemies while someone else had a perfect combat, the teammate with the perfect combat brings their formation in to help intercept the leaked enemies.
 - **Final Assault and Hidden Core**: two players share one battlefield and the whole team chips away at the same leader's health bar; 10 enemy leaders, a giant leader with a roughly 5×3-tile hit area, and the official damage-cap rule.
+- **Spectators and loadouts**: co-op rooms support up to two watch-only spectators; save, import and export operator skill / module presets.
 - **Settlement titles**: 6 titles such as Star of the Garrison, Immortal Alliance and Rock Solid.
 - **Reconnection**: in Alliance Simulation, reopen the page within 10 minutes of a disconnect to return to your seat — your formation keeps fighting on its own while you are away, and you can also "step out" and hand over to an AI; in Solo Simulation you can come back within 24 hours (same browser).
 - **Interaction details**: the top bar's target LP ticks down in real time as enemies leak (finalized at settlement); selecting, drag-and-drop and fitting gear all go by the tile on the ground; buying, upgrading and draft picks all take two clicks to confirm; with only one player, nothing is timed except combat.
@@ -62,7 +63,7 @@ An **unofficial fan remake** of *Arknights'* seasonal auto-chess tower-defense m
 
 ### Run from source
 
-The English edition has no release bundle yet. The source version baseline is 0.1.1; clone this repository to run it.
+The English edition has no release bundle yet. The source version baseline is 0.1.3; clone this repository to run it.
 
 1. **Install Node.js 22 or 24 (LTS)**
    - Windows: run `winget install OpenJS.NodeJS.LTS` in PowerShell, or download an installer from <https://nodejs.org/en/download>.
@@ -74,7 +75,7 @@ The English edition has no release bundle yet. The source version baseline is 0.
 git clone https://github.com/vietdoan0233/Stronghold-Protocol-ENG.git
 cd Stronghold-Protocol-ENG
 npm install        # install dependencies (postinstall copies pixi / preact / three into public/vendor)
-npm run setup      # check the environment and download ~250 MB of art / audio from public mirrors (interruptible; re-running resumes)
+npm run setup      # check the environment and download about 270 MB of art / audio from public mirrors (interruptible; re-running resumes)
 npm start          # start the server: http://localhost:3000
 ```
 
@@ -154,13 +155,13 @@ General notes:
 | Sell / retreat / destroy gear | Click the unit's tile → the bottom buttons "Sell +1" / "Retreat"; you can also drag a board operator back to the Reserve to retreat. Gear and arts in the Reserve can only be "destroyed", and equipped gear is locked to the operator (returned to the Reserve when the operator is sold or merged into an Elite) |
 | Equip | Drag gear onto the operator's tile (2 per operator; when full, a replace dialog pops up and the replaced piece is destroyed); drag arts onto a tile and pick a facing |
 | View details | Right-click or long-press a unit / card (stats are live values — green when above the base value, red when below) |
-| Shortcuts | `R` refresh · `F` freeze · `D` upgrade · `Space` ready · `Esc` cancel / close |
+| Shortcuts | `R` refresh · `F` freeze · `D` upgrade · `Q` retreat selected operator · `X` sell selected operator · `Space` ready · `Esc` cancel / close |
 | Facing wheel, keyboard | Arrow keys to preview · `Enter` to confirm · `Esc` to cancel |
 | Pause (Solo Simulation) | During combat (including the Final Assault / Hidden Core) click "Pause" in the top bar or press `Space`, then click "Resume combat" (or `Space`) to continue; combat in Alliance Simulation cannot be paused |
 | Emotes | "Chat" at the bottom left; swipe left / right (or arrow keys) to change the set, 1-second cooldown |
 | Spectate | After your own combat ends (or during the rest phase), click a teammate's portrait on the left → "Go watch" |
 
-The full rules, numbers and tips are in **[docs/PLAYING.md](docs/PLAYING.md)**. The "How to play" button in the game shows the official tutorial pages instead — pictures with Chinese text, or the English loading-screen tips when the locally extracted client art is absent.
+The full rules, numbers and tips are in **[docs/PLAYING.md](docs/PLAYING.md)**. The "How to play" button in the game shows the official tutorial pages instead — official pages with Chinese text. Setup downloads them from the mirror, and English tips show only if neither a local nor mirror page image can load.
 
 ## Documentation
 

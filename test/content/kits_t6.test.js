@@ -298,6 +298,10 @@ test('余: S3 fire wall adds burn to allied arts damage crossing it and clears c
     enemies: [{ key: 'enemy_dummy', pos: [10, 6] }, { key: 'enemy_shooter', pos: [11, 8] }],
     seed: 11,
   });
+  // the shooter aims at 优等生 behind the wall: a taunt, since 余 (his column further right) now deploys last — the
+  // latest deployed, the shooter's pick at equal taunt (deployment by column since 0.1.3)
+  h.step();
+  h.b.addBuff(h.unit('chess_char_1_15_a'), { key: 'test:taunt', mods: { taunt: 1 }, persist: true });
   const u = h.unit('chess_char_6_03_a');
   assert.ok(h.runUntil(() => u.skill.active, 10));
   h.run(15);
@@ -715,9 +719,11 @@ test('耀骑士临光: S3 summons 耀阳 (90 % true + stun 3 s around it), true 
 });
 
 test('荒芜拉普兰德: S3 drones chase enemies anywhere, fear on catch, 100 % ATK arts per second around them', () => {
+  // (one enemy, far outside her range: every drone picks the enemy nearest to itself — PRTS S3 备注 ② — so a second,
+  // nearer enemy would draw all of them; the full flight is in test/sim/feedback2-whitw2-yu.test.js)
   const h = battle({
     units: [{ chessId: 'chess_char_6_18_a', row: 10, col: 3, carryState: { sp: 68 } }],
-    enemies: [{ key: 'enemy_dummy', pos: [10, 4] }, { key: 'enemy_dummy2', pos: [12, 9] }],
+    enemies: [{ key: 'enemy_dummy2', pos: [12, 9] }],
   });
   const u = h.unit('chess_char_6_18_a');
   const bb = u.def.skill.bb;

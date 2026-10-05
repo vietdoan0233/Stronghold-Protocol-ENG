@@ -64,6 +64,8 @@ export function createDisplay({ lang = defaultLang(), dir = LOCALE_DIR } = {}) {
 }
 
 const display = createDisplay();
+/** The active server display locale; null means original Chinese output (SP_LOCALE=zh/off). */
+export const DISPLAY_LANG = display.lang;
 
 /**
  * A display text of the data in the server's language (see the module header); anything without an entry — and any

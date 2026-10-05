@@ -3,20 +3,25 @@
 // layer-resolved numbers), then the full description and the member list with owned / on-board state — operators that
 // are members through 变形同构体 included (tagged 同构, gameLogic bondMembers; such a row opens the wearer's card with its
 // items: the pair and the granted chip), so the list's count agrees with 在场 (a bond the mode never activates says
-// 本局禁用 — gameLogic modeOffBonds). A core bond whose count holds 调和's +1 (the view entry's `harmony`, sent by the
+// Disabled this match — gameLogic modeOffBonds). A core bond whose count holds 调和's +1 (the view entry's `harmony`, sent by the
 // server — server/match/bondsMeta.js; never re-derived here) says so: 在场 n（含调和 +1）, and a 调和 row heads the member
 // list naming the 调和 operators on that board (gameLogic harmonyMembers: 缪尔赛思 …; a tap opens the first one's card) —
 // the +1 used to read as a miscount (GitHub issue #1, DESIGN §21.26). Opened from the detail panel's bond chips it docks
 // beside that panel (`beside`: the panel's side).
 // Research 06 §11.1: round mint discs, stack count over the disc, name below, sorted by stacks; grey =
-// present but inactive; in 联防 / boss rounds the strip is dimmed ("层数叠加已禁用").
+// present but inactive; in 联防 / boss rounds the strip is dimmed ("层数叠加已禁用"). A bond the mode never activates
+// that the player has members of (the server's `off` entry — server/match/bondsMeta.js offBondCounts: 标准's 投资人 奇迹
+// 突袭 独行 …) comes last as a grey disc with ✕ and Disabled this match under it instead of its count (community reports
+// 「投资人等在休整区就能生效的盟约不生效」 / 「…不会触发斯卡蒂与异德的突袭」: the bond just vanished, 0.1.3). The popup's 成员
+// header counts the hand members too for a bond that counts the hand (投资人 远见 奇迹: gameLogic memberHeadCount), as 在场
+// already did.
 // Watching a teammate (DESIGN §20.15, ui/watchBonds.js) the strip and the popup show THAT player's bonds and layers:
 // the strip carries an amber "👁 name" tag (`owner`, the observing pill's spelling, research 09 §3.1) and amber rings,
 // the popup a "👁 name 的盟约" line; its member list reads the teammate's operators on the field (no hand: never sent).
 
 import { html, BondDisc, Icon, MicroLabel, Tooltip, roman } from './components.js';
 import { RichText, UnitThumb, BondGlyph, GIcon } from './gameComponents.js';
-import { sortBonds, bondMembers, nextThreshold, bondTier, harmonyMembers, HARMONY_BOND } from './gameLogic.js';
+import { sortBonds, bondMembers, nextThreshold, bondTier, harmonyMembers, HARMONY_BOND, memberHeadCount, briefingBondTip } from './gameLogic.js';
 import { formatBondEffect } from './richText.js';
 import { bondIconUrl } from './assetUrls.js';
 import { data } from '../data.js';
@@ -48,6 +53,17 @@ export function BondStrip({ bonds, layersDisabled = false, onOpen, openId = null
     ${shown.map((b) => {
       const rec = data.lookup('bonds', b.bondId);
       const th = Array.isArray(b.thresholds) && b.thresholds.length ? b.thresholds : rec?.thresholds || [];
+      if (b.off) {
+        // a bond the mode never activates, with members: the briefing's grey ✕ disc, no stack count, Disabled this match under it
+        const name = rec?.name || b.bondId;
+        return html`<div key=${b.bondId} role="listitem" data-bond=${b.bondId} data-off="1"
+            class=${cx('bslot', 'is-off', openId === b.bondId && 'is-open')}>
+          <${BondDisc} name=${name} icon=${bondIconUrl(m, b.bondId)} tier=${0} maxTier=${Math.max(1, th.length)} active=${false}
+            disabled=${true} size="sm" showName=${true} layersDisabled=${layersDisabled} onClick=${() => onOpen(b.bondId)}
+            title=${`${briefingBondTip(name, 'off')} · ${b.count ?? 0} members`} />
+          <span class="bslot__count bslot__off">Disabled this match</span>
+        </div>`;
+      }
       const next = nextThreshold(b.count ?? 0, th);
       return html`<div key=${b.bondId} role="listitem" data-bond=${b.bondId} data-harmony=${b.harmony > 0 ? b.harmony : null}
           class=${cx('bslot', b.active && 'is-active', openId === b.bondId && 'is-open')}>
@@ -71,7 +87,7 @@ export function BondStrip({ bonds, layersDisabled = false, onOpen, openId = null
  *   `place`: where it opens (gameLogic bondPopupPlace; `beside: 'left'` = the older spelling of 'beside'); `over`: above the
  *   detail card; `owner`: the watched teammate's name (`entry` / `priv` are then theirs: ui/watchBonds.js); `onMember`
  *   gets a 变形同构体 row's item ids too (its card shows the pair and the granted chip), null for a plain member; `off`: the
- *   mode never activates this bond (gameLogic modeOffBonds — 标准's 10 inactive bonds): 本局禁用 instead of 未激活, with a
+ *   mode never activates this bond (gameLogic modeOffBonds — 标准's 10 inactive bonds): Disabled this match instead of 未激活, with a
  *   note, no 在场 count and no 当前效果 block (its numbers would promise an effect the mode never gives; the bond text stays).
  *   `entry.harmony` (the server's bond views: the +1 调和 added to `count`): 在场 n（含调和 +1） and the 调和 row
  */
@@ -123,7 +139,7 @@ export function BondPopup({ bondId, entry, priv, banned = [], onClose, onMember,
       <${RichText} as="p" text=${b.descRaw || b.desc} class="bpop__desc" />
     </section>
     <section class="bpop__sec">
-      <h4>Members <small>${members.filter((x) => x.onBoard).length}/${members.length}</small></h4>
+      <h4>Members <small>${memberHeadCount(members, countsHand)}/${members.length}</small></h4>
       ${harmony ? (harmonyBy.length
         ? html`<button type="button" class="bpop__harmony" data-harmony=${harmony} title=${harmonyText} onClick=${() => onMember?.(harmonyBy[0].id, null)}>
           <${BondGlyph} bondId=${HARMONY_BOND} /><b>${harmonyName} +${harmony}</b><span>${harmonyText}</span></button>`

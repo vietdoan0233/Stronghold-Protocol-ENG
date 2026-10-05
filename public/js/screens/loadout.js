@@ -7,28 +7,71 @@
 //
 // Left: roster of the 112 visible chess (tier / class / bond filters, search, 仅看已调整) — each card shows the equipped
 // skill (S1–S3) and, when changed, the elite's module badge. Right: the selected chess — skills (icon, name, 默认,
-// SP recovery, 初始 / 消耗 SP, duration, description at 普通 Lv.4 or 精锐 Lv.7) and the elite's modules (不装备 / X / Y …
-// with the stat bonus, the trait upgrade and the talent changes), 恢复默认; 全部恢复默认 in the top bar.
+// SP recovery, 初始 / 消耗 SP, duration, description at 普通 Lv.4 or 精锐 Lv.7), 局内数值 (the stats, 攻击范围, 特性 and
+// 天赋 the chosen variant — 精锐 first, 普通 on the toggle — fights with under the chosen skill and module: the detail
+// card's own block and pure functions, GitHub issue #64) and the elite's modules (不装备 / X / Y … with the stat bonus,
+// the trait upgrade and the talent changes), 恢复默认; 全部恢复默认 in the top bar.
 // The loadout lives in ui/loadoutSync.js (localStorage + room.loadout); the model is ui/loadoutModel.js.
 // Keyboard: Esc closes, ←/→ move through the (filtered) roster when focus is not in the search field.
 
 import { useEffect, useMemo, useRef, useState } from '../../vendor/hooks.module.js';
-import { html, Icon, MicroLabel, Button, TierChip, TextField, Countdown, Spinner, confirmDialog, hasDeadline } from '../ui/components.js';
+import { html, Icon, MicroLabel, Button, TierChip, TextField, Countdown, Spinner, confirmDialog, hasDeadline, Modal, Fragment } from '../ui/components.js';
 import { Img, RichText, UnitThumb } from '../ui/gameComponents.js';
 import { chessAvatarUrl, chessPortraitUrl, subProfIconUrl, bondIconUrl, moduleTypeIconUrl } from '../ui/assetUrls.js';
+import { chessStatsBlock, traitText, chessTalents } from '../ui/detailPanel.js';
+import { chessLoadout } from '../ui/gameLogic.js';
 import { data, useData, localAsset } from '../data.js';
 import { useStore } from '../store.js';
 import { PHASE } from '../../../shared/constants.js';
 import {
   MODULE_NONE, PROF_ORDER, PROF_NAME, rosterOf, filterRoster, recordsOf, chessOptions, effectiveChoice, setChoice, resetChoice,
-  changedCount, skillLabel, moduleBadge, attrRows, skillTags, chessSubtitle,
+  changedCount, skillLabel, moduleBadge, attrRows, skillTags, chessSubtitle, serializeExport, parseImport, LOADOUT_IMPORT_MAX_BYTES,
 } from '../ui/loadoutModel.js';
-import { loadoutStore, openLoadout, closeLoadout, setEntries } from '../ui/loadoutSync.js';
+import { loadoutStore, openLoadout, closeLoadout, setEntries, applyLoadoutEntries } from '../ui/loadoutSync.js';
+import { copyText } from '../ui/clipboard.js';
+import { toast } from '../ui/toasts.js';
 
 export { openLoadout, closeLoadout };
 
 const cx = (...p) => p.flat().filter(Boolean).join(' ');
 const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI'];
+
+// ---- export / import (干员调配 presets) -----------------------------------------------------------------------------
+//
+// The payload is the versioned envelope of ui/loadoutModel.js (exportPayload / parseImport): a downloaded file and a
+// pasted string are the SAME object, so 导出 and 导入 both funnel through applyLoadoutEntries
+// (sanitise → persist → room.loadout). The dialog is a shared Modal rendered next to the overlay, not inside it.
+
+/** Save `text` as a download. Silent no-op when the browser refuses downloads — 复制 stays available. */
+function downloadText(filename, text) {
+  try {
+    const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch { /* ignore */ }
+}
+
+/** Read a picked file as text (`File.text()`, with a FileReader fallback for older Safari). */
+function readFileText(file) {
+  if (typeof file?.text === 'function') return file.text();
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(String(fr.result ?? ''));
+    fr.onerror = () => reject(fr.error || new Error('read failed'));
+    fr.readAsText(file);
+  });
+}
+
+/** `stronghold-loadout-20261003-1245.json` */
+function exportFilename(now = new Date()) {
+  const p = (n) => String(n).padStart(2, '0');
+  return `stronghold-loadout-${now.getFullYear()}${p(now.getMonth() + 1)}${p(now.getDate())}-${p(now.getHours())}${p(now.getMinutes())}.json`;
+}
 
 /** Square profession glyph (manifest prof.large: black glyph on white, drawn as a white glyph by loadout.css). */
 function profGlyphUrl(m, prof) {
@@ -172,8 +215,60 @@ function ModuleInfo({ m, golden, opt }) {
   </div>`;
 }
 
+const getChessRec = (id) => data.lookup('chess', id);
+
+/**
+ * What 局内数值 shows (GitHub issue #64): the chess variant — the 精锐 record when asked for and the chess has one, else
+ * the normal one — as the stored loadout makes it. chessLoadout (ui/gameLogic.js) resolves the skill and module the way
+ * the in-match detail card and the sim do (shared/loadoutRecord.js): the elite's chosen module's stats / 特性 / talents
+ * (不装备: the base ones), the chosen skill's passive range; a normal chess has no module, the skill does not change its
+ * stats. Nothing is recomputed here.
+ * @param {any} base normal chess record @param {any} golden its elite record or null
+ * @param {Record<string, any>} entries the stored loadout @param {'normal'|'elite'} level
+ * @param {(id: string) => any} getChess
+ * @returns {{ elite: boolean, chess: any, lo: any, record: any, trait: string, talents: any[] } | null} null without a record
+ */
+export function statsPreview(base, golden, entries, level, getChess) {
+  const elite = level === 'elite' && !!golden;
+  const chess = elite ? golden : base;
+  if (!chess) return null;
+  const lo = chessLoadout(chess, entries, getChess);
+  const record = lo?.record || chess;
+  // (the card's own rule: the 特性 line exists when the chess has one; its text follows the chosen module)
+  return { elite, chess, lo, record, trait: chess.trait?.desc ? traitText(chess, !!chess.isGolden, lo) || '' : '', talents: chessTalents(record) };
+}
+
+/**
+ * 局内数值: the stats, 攻击范围, 特性 and 天赋 of the selected chess under its chosen skill and module — the detail
+ * card's stats block (ui/detailPanel.js chessStatsBlock) without live numbers, so what a player reads here is what the
+ * shop / board card shows before a battle (not the equipment, bond or skill-cast changes of a running match). The
+ * toggle picks the 普通 or the 精锐 record; 精锐 is the default because the module only exists there.
+ * @param {{ base: any, golden: any, entries: Record<string, any>, level: 'normal'|'elite', onLevel: (l: 'normal'|'elite') => void, getChess?: (id: string) => any }} props
+ */
+export function LoadoutStats({ base, golden, entries, level, onLevel, getChess = getChessRec }) {
+  const pv = statsPreview(base, golden, entries, level, getChess);
+  if (!pv) return null;
+  return html`<section class="lo-sec lo-sec--stats" aria-label="In-Match Stats" data-variant=${pv.elite ? 'elite' : 'normal'}>
+    <header class="lo-sec__head">
+      <h3>In-Match Stats<${MicroLabel}>STATS<//></h3>
+      <div class="lo-seg" role="tablist" aria-label="Stat variant">
+        <button type="button" role="tab" aria-selected=${pv.elite ? 'false' : 'true'} class=${cx(!pv.elite && 'is-on')} data-variant="normal" onClick=${() => onLevel('normal')}>Normal</button>
+        <button type="button" role="tab" aria-selected=${pv.elite ? 'true' : 'false'} class=${cx(pv.elite && 'is-on')} data-variant="elite" disabled=${!golden} onClick=${() => onLevel('elite')}>Elite</button>
+      </div>
+    </header>
+    ${chessStatsBlock({ rec: pv.record, chess: pv.chess })}
+    ${pv.trait || pv.talents.length ? html`<div class="lo-minfo lo-minfo--kit">
+      ${pv.trait ? html`<div class="lo-minfo__row"><span class="lo-minfo__k">Trait</span><${RichText} class="lo-minfo__v" text=${pv.trait} /></div>` : null}
+      ${pv.talents.map((t, i) => html`<div key=${i} class="lo-minfo__row"><span class="lo-minfo__k">Talent</span>
+        <span class="lo-minfo__v"><b class="lo-minfo__tname">${t.name}</b><${RichText} text=${t.descRaw || t.desc || ''} /></span></div>`)}
+    </div>` : null}
+    <p class="lo-stats__cap">${pv.elite ? 'Stats include the selected module;' : golden ? 'Normal operators have no modules; the selected module applies to Elite;' : ''}Excludes skill activations, equipment, Alliances, and other in-match bonuses</p>
+  </section>`;
+}
+
 function Detail({ m, chess, golden, entries, onChange, onReset, locked }) {
   const [level, setLevel] = useState('normal');
+  const [statLevel, setStatLevel] = useState('elite'); // 局内数值: the 精锐 shows the chosen module's effect
   const bodyRef = useRef(null);
   useEffect(() => { if (bodyRef.current) bodyRef.current.scrollTop = 0; }, [chess?.chessId]);
   if (!chess) return html`<aside class="lo-detail lo-detail--empty"><p class="t-dim">No matching operators</p></aside>`;
@@ -214,6 +309,7 @@ function Detail({ m, chess, golden, entries, onChange, onReset, locked }) {
             onPick=${(i) => onChange({ skill: i })} />`)}
         </div>
       </section>
+      <${LoadoutStats} base=${chess} golden=${golden} entries=${entries} level=${statLevel} onLevel=${setStatLevel} />
       ${golden ? html`<section class="lo-sec lo-sec--mod">
         <header class="lo-sec__head">
           <h3>Module<${MicroLabel}>MODULE<//></h3>
@@ -301,7 +397,9 @@ function LoadoutScreen({ st }) {
   const nChanged = changedCount(st.entries, getChess);
   const locked = (inMatch && phase && phase !== PHASE.INFO_CHECK && phase !== PHASE.LOBBY) || st.sync === 'locked';
   const gridRef = useRef(null);
+  const fileRef = useRef(null);                            // hidden <input type=file> of the 导入 dialog
   const [narrowDetail, setNarrowDetail] = useState(false); // phones: the detail slides over the roster
+  const [io, setIo] = useState(null);                      // 导出 / 导入 dialog: { mode, text } | null
 
   const pick = (id) => { loadoutStore.set({ sel: id }); setNarrowDetail(true); };
   const change = (patch) => { if (base) setEntries(setChoice(loadoutStore.get().entries, base, golden, patch)); };
@@ -310,6 +408,38 @@ function LoadoutScreen({ st }) {
     if (!nChanged) return;
     const ok = await confirmDialog({ title: 'Reset All to Default', text: `Reset the skills and modules of ${nChanged} ${nChanged === 1 ? 'operator' : 'operators'} to their defaults?`, okText: 'Reset to Default', danger: true });
     if (ok) setEntries({});
+  };
+
+  // 导出 / 导入 the loadout as the versioned payload (a downloaded file, the clipboard, or the textarea)
+  const ioText = io?.text ?? '';
+  const openExport = () => setIo({ mode: 'export', text: serializeExport(loadoutStore.get().entries) });
+  const openImport = () => setIo({ mode: 'import', text: '' });
+  const ioCopy = async () => {
+    const ok = await copyText(ioText);
+    toast(ok ? 'Copied to clipboard' : 'Copy failed. Select and copy the text manually.', ok ? 'success' : 'warn');
+  };
+  const ioDownload = () => downloadText(exportFilename(), ioText);
+  const ioPick = () => fileRef.current?.click();
+  const ioFile = async (e) => {
+    const f = e.currentTarget.files && e.currentTarget.files[0];
+    e.currentTarget.value = ''; // picking the same file twice must fire again
+    if (!f) return;
+    // refuse a huge pick before reading it into memory (a real payload is a few KB)
+    if (f.size > LOADOUT_IMPORT_MAX_BYTES) { toast('File is too large. Choose a loadout file downloaded with Export.', 'error'); return; }
+    try { setIo({ mode: 'import', text: await readFileText(f) }); } catch { toast('Could not read the file', 'error'); }
+  };
+  const ioApply = () => {
+    // an import before chess.json is loaded would sanitise every entry away — refuse instead of wiping the loadout
+    if (!ready) { toast('Operator data is still loading. Try importing again shortly.', 'warn'); return; }
+    const res = parseImport(ioText);
+    if (!res.ok) { toast(`Import failed: ${res.error}`, 'error'); return; }
+    const { applied, dropped } = applyLoadoutEntries(res.entries, getChess);
+    // nothing survived sanitising (unknown chess, or every choice already the default): keep the current loadout
+    if (!applied) { toast('Import failed: this loadout has no entries available in this version; nothing was changed.', 'error'); return; }
+    setIo(null);
+    toast(dropped
+      ? `Imported ${applied} operators (${dropped} entries skipped)`
+      : `Imported loadouts for ${applied} operators`, dropped ? 'warn' : 'success');
   };
 
   // Esc closes; ←/→ browse the filtered roster (not while typing in the search field)
@@ -346,7 +476,8 @@ function LoadoutScreen({ st }) {
     ? 'The Operator Loadout for this match can be adjusted until the Confirm Match Info phase ends.'
     : 'Before the simulation starts, you can adjust the skill and module each operator carries. Operator levels cannot be adjusted.';
 
-  return html`<div class="lo" role="dialog" aria-modal="true" aria-label="Operator Loadout">
+  return html`<${Fragment}>
+  <div class="lo" role="dialog" aria-modal="true" aria-label="Operator Loadout">
     <div class="lo__bg" aria-hidden="true"></div>
     <header class="lo-top">
       <div class="lo-top__left">
@@ -360,6 +491,8 @@ function LoadoutScreen({ st }) {
         ${inMatch && hasDeadline(infoDeadline) ? html`<${Countdown} deadline=${infoDeadline} size="sm" gauge=${false} label="LOADOUT DEADLINE" class="lo-deadline" />` : null}
         ${syncText ? html`<span class=${cx('lo-sync', syncCls)} role="status">${syncText}</span>` : null}
         <span class="lo-count">Adjusted <b class="num">${nChanged}</b><span class="num t-dim">/${roster.length}</span></span>
+        <${Button} variant="ghost" size="sm" data-testid="loadout-export" disabled=${!nChanged} onClick=${openExport} title="Export this loadout (copy or download)">Export<//>
+        <${Button} variant="ghost" size="sm" data-testid="loadout-import" disabled=${!ready} onClick=${openImport} title="Import a loadout (paste or choose a file)">Import<//>
         <${Button} variant="secondary" size="sm" icon="refresh" disabled=${!nChanged} onClick=${resetAll}>Reset All to Default<//>
       </div>
     </header>
@@ -377,7 +510,25 @@ function LoadoutScreen({ st }) {
         <${Detail} m=${m} chess=${base} golden=${golden} entries=${st.entries} onChange=${change} onReset=${resetOne} locked=${locked} />
       </div>
     </main>`}
-  </div>`;
+  </div>
+  ${io ? html`<${Modal} open=${true} onClose=${() => setIo(null)}
+      title=${io.mode === 'export' ? 'Export Operator Loadout' : 'Import Operator Loadout'} micro="OPERATOR LOADOUT"
+      actions=${io.mode === 'export'
+        ? html`<${Button} variant="ghost" onClick=${() => setIo(null)}>Close<//>
+            <${Button} variant="secondary" icon="copy" data-testid="loadout-io-copy" onClick=${ioCopy}>Copy<//>
+            <${Button} variant="primary" data-testid="loadout-io-download" onClick=${ioDownload}>Download File<//>`
+        : html`<${Button} variant="ghost" onClick=${() => setIo(null)}>Cancel<//>
+            <${Button} variant="secondary" data-testid="loadout-io-pick" onClick=${ioPick}>Choose File<//>
+            <${Button} variant="primary" icon="check" data-testid="loadout-io-apply" disabled=${!ioText.trim() || !ready} onClick=${ioApply}>Import<//>`}>
+      <p class="lo-io__hint">${io.mode === 'export'
+        ? html`Adjusted <b class="num">${nChanged}</b> operators. Copy or download this data to import it on another device or browser.`
+        : html`Paste the exported loadout below or click “Choose File”.${nChanged ? html`Importing will <strong>replace</strong> loadouts for ${nChanged} operators.` : null}`}</p>
+      <textarea class="lo-io__text" data-testid="loadout-io-text" spellcheck=${false} readOnly=${io.mode === 'export'} value=${ioText}
+        placeholder=${io.mode === 'export' ? '' : 'Paste an exported loadout here…'}
+        onInput=${(e) => setIo({ mode: io.mode, text: e.currentTarget.value })}></textarea>
+      <input type="file" accept=".json,application/json,text/plain" class="lo-io__file" ref=${fileRef} onChange=${ioFile} />
+    <//>` : null}
+<//>`;
 }
 
 /**

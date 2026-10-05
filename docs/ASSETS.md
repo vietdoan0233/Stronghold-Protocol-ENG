@@ -48,7 +48,7 @@ How downloads are fetched:
 - A manifest entry with fallbacks (for example an enemy icon that falls back to its base enemy's icon) only moves on to the next alternative after a **definitive 404**. When the primary fails transiently (network error, 5xx or an invalid payload after all retries), no fallback is fetched. The path is listed under `downloadErrors` in the report, and the next run retries the primary.
 - A skeleton that fails to parse is deleted and removed from the ledger, so the next online run downloads it again.
 
-The first run downloads about **242 MiB in about 3,700 files**. It took 134 s on a ~3 MB/s link. A re-run takes about 1 s.
+The first run downloads about **269 MiB in about 4,000 files**, including the 36 battle emotes and 19 How to Play pages (21.3 MiB total; the earlier run took 134 s on a ~3 MB/s link before they were added). A re-run takes about 1 s.
 
 Outputs:
 - `data/assets.json`: the manifest (committed).
@@ -79,6 +79,7 @@ The research JSONs in `docs/research/` (03, 05, 07) define **which** ids are nee
 | Band (strategy) icons | AA2 `…/arts/bandicon/` | `band/{bandId}.png` |
 | Profession, sub-profession and battle-card icons | AA2 `arts/profession_hub`, `arts/ui/subprofessionicon`, `ui_battle_new/battlecard` | `prof/icon_{p}.png`, `prof/large_{p}.png`, `prof/battlecard_{p}.png`, `prof/sub/{subProfessionId}.png` |
 | UI sprites (see below) | AA2 `ui/autochess/**`, `arts/**`, `activity/[uc]act2autochess/**`, `battle/[pack]common/sprites` | `ui/{group}/{key}.png` |
+| The 36 battle emotes and the 19 How to Play (tutorial) pages, which `tools/local-extract` also extracts (GitHub issue #42: without the local client a server showed default emote icons) | AA2 `cn` `ui/emoticon/theme/[uc]{themeId}/icon/{picId}.png` (`shared/constants.js EMOTE_CATALOG`) and `arts/guidebookpages/[pack]autochess/{key}.png` (1024², shown at 16:9 like the local copies) | `ui/emoticon/{dir}/{picId}.png`, `ui/guide/{key}.png` |
 | Operator battle Spine (Front, Back) | fexli/ArknightsResource `spine/{id}/{id}/{Front,Back}/` | `spine/op/{charId}/{front,back}/{stem}.{skel,atlas,png}` |
 | Token Spine | fexli: the default model, or else the first skin variant (`spine/{tokenId}/{variant}/Spine/`) | `spine/token/{tokenId}/{stem}.*` |
 | Enemy Spine (PC build, premultiplied alpha) | isHarryh/Ark-Models `models_enemies/{key}/`, file names from `models_data.json` | `spine/enemy/{enemyId}/{stem}.*` |
@@ -107,7 +108,7 @@ The `stem` of a Spine model is the upstream file name. Two examples: `char_107_l
 - **UI:**
   - every group from `07-assets.json → autochessUi`: rarity, elite and chess-level sprites, the shop panel and cards, HUD, bond board, equip slot, round dialog, band choose, settlement, prepare backdrop;
   - `arts` (rarity stars, elite icons, the camp logos of pool nations, the loading illustrations used by the act2 modes, battle common sprites, act2 entry backdrops and season logo, item rarity frames);
-  - extras: mode choice art, battle-ready backdrops, battle UI (speed, pause, HP slider, attack range, boss avatar frame, skill ready), `empty_skill`, the draft panel and cards, the equip-replace dialog, the bond detail dialog, the prep-ready panel, stage-info titles.
+  - extras: mode choice art, battle-ready backdrops, battle UI (speed, pause, HP slider, attack range, boss avatar frame, skill ready), `empty_skill`, the draft panel and cards, the equip-replace dialog, the bond detail dialog, the prep-ready panel, stage-info titles; 36 battle emotes and 19 tutorial pages are also fetched from the mirror during setup.
 
 ## Post-processing
 
@@ -147,10 +148,16 @@ All paths are URL paths relative to the site root, for example `/assets/char/ava
   bands:   { [bandId]: url },
   skills:  { [iconId]: url },       // iconId = skill_table iconId ?? skillId
   skillsById: { [skillId]: iconId },
-  ui:      { ['group/key']: url },  // e.g. 'hudPanel/icon_hp', 'shopCard/frame_lv1', 'loading/loading_ac_core'
+  ui:      { ['group/key']: url },  // e.g. 'hudPanel/icon_hp', 'shopCard/frame_lv1', 'loading/loading_ac_core';
+                                    // 'emoticon/basic/pic_happy_battle', 'guide/autochess_home_1': the data/local-assets.json
+                                    // group + name of the same picture (the client takes the local one first)
   prof:    { icon: {caster…warrior}, large: {…}, battlecard: {…, token}, sub: {[subProfessionId]: url} },
   audio: {
-    bgm:     { lobby, prep, combat, boss: { intro?, loop } },  // intro then crossfade to loop (1 s)
+    bgm:     { lobby, prep, combat, unite?: { intro?, loop }, boss: { intro?, loop } },
+             // intro then crossfade to loop (1 s); `unite` = 联防's own track — the official
+             // escaped_single / escaped_multi levels declare `bgmEvent = corrosion` (卡西米尔 act13d5d0),
+             // so the rescue phase does not reuse the 作战's track (audio.js bgmKeyFor 'unite', falling
+             // back to `bgm.combat` for a manifest that lacks it)
     bossBgm: { [bossId]: { intro?, loop } },                   // per-boss track of its R14/R15 level
     sfx: {
       ui:     { click, back, confirm, tab, pick, drop, error, buy, sell, income, refresh, freeze, levelup,
@@ -161,9 +168,14 @@ All paths are URL paths relative to the site root, for example `/assets/char/ava
                 disconnect, settlementSucceed, settlementFail, settlementTeam, settlementBossSign,
                 goodEvaluation, load, start, matchSucceed, matchFail, matchCancel, joinRoom },
       battle: { deploy, tokenDeploy, charDie, enemyDie, enemyDieHeavy, enemyHit, heal, win, lose, killCoin },
-      units:  { [charId|tokenId|enemyId]: { attack?, hit?, skill?, skills?: {[skillIndex]: url}, die?, born? } }
+      units:  { [charId|tokenId|enemyId]: { attack?, hit?, skill?, skills?: {[skillIndex]: url}, die?, born?,
+                mix?: { [attack|hit|die|born]: { p?, vol? } } } }
     }
   },
+  // units' mix (tools/assets/audio.mjs bankMix; community report #30): the official bank of a role's sound — `p` = the weight
+  // of its sounds that have a file over all weights (an empty asset is a chance of silence: 猎狗pro / 深池侦察犬 0.2), `vol` =
+  // the played file's volume (妖怪 0.7); only values other than 1. public/js/audio.js plays the role with chance p at its
+  // base gain × min(1, vol)
   // units' attack / hit (tools/assets/audio.mjs pickUnitSfx): operators get normal-mode banks only — the plain
   // `attack` / `combat` ability first, never a bank holding a skill-mode file (`_d` / `_h` / `_s`; the normal attack's end
   // in `_n`) — with their own projectile banks (ON_PROJECTILE_BORN / _HIT.projectile_chr_<name>) as fallbacks
@@ -186,6 +198,10 @@ All paths are URL paths relative to the site root, for example `/assets/char/ava
 }
 ```
 
+The enemies' attack clip lengths are also a data input: `tools/build-data.mjs` copies each enemy model's
+`anims.attack.loop` length and first `hits` time into data/enemies.json `attackAnim` (the sim stands an unblocked
+ranged enemy for that clip, GitHub #58; docs/DATA.md §9) — rebuild the data after a manifest change that touches them.
+
 ### The `Roles` object
 
 ```js
@@ -197,7 +213,8 @@ Roles = {
   attackDown: Clip|null,   // _Down variants (target below the unit)
   skill: SkillClip|null,   // for the chess's default skill (primary index)
   skills?: { [index]: SkillClip },   // when the char is used with several default skills (backups)
-  die: string|null,        // null ⇒ use the Front model's Die (Back lacks it) or fade out 0.5 s
+  die: string|null,        // null ⇒ a Back model gives way to the Front model's Die (DESIGN §22.1); any other
+                           //   skeleton holds its idle's first frame while it fades out
   move: Clip|null,         // enemies: Move_Begin|Move_Start + Move_Loop|Move + Move_End → Run_*
   stun: Clip|null          // null ⇒ freeze the track (timeScale 0)
 }
@@ -217,15 +234,16 @@ A skill clip may also come from directional-only animations when a model has no 
 
 The resolver's full precedence list is in the header of `tools/assets/anim-roles.mjs`.
 
-The manifest roles describe an enemy's first form. Enemies whose skeleton holds another form's clip set get it from
+The manifest roles describe a unit's first form. Units whose skeleton holds another form's clip set get it from
 `public/js/render/units.js FORMS` (keyed by Spine id, switched by the `form` of the sim's 'phase' / 'ember' / 'revive'
-/ 'telegraph' / 'stone' fx — `shared/protocol.js fxForm`; no client stage drops these fx: the runner keeps them through
+/ 'telegraph' / 'stone' / 'substitute' / 'swap' / 'dollEnd' fx — `shared/protocol.js fxForm`; no client stage drops these fx: the runner keeps them through
 catch-up frames and hidden tabs (`keepsState`), the game screen's pre-entry buffer (`keepEarly`) and the render engine's
 event queue (`render/interp.js isCosmeticEvent`) too — or, for a view built mid-battle, UnitInfo `form`, which `render/app.js renderInfo` passes to the view; a
 `change` clip plays once first, an `end` clip is timed from the fx's `dur` to finish as that state ends, keeping the
 current form's death clip until the next form's fx). A blocked or revealed concealed enemy is drawn solid: the sim sends the
 stealth bit only while its concealment is on:
-- Skimming Sea Drifter's crawl (`Change`, then `*_02`);
+- Skimming Sea Drifter''s crawl (`Change`, then `*_02`);
+- the Puppeteer operators Specter the Unchained and Kazemaru’s substitute forms, which keep their own Spine clips through swaps and knockouts before returning to operator form;
 - Decode Basis α's three forms (`A_Die_B` / `_C` / `_D`, 2 s each, then `B_*` Avenger, `C_*` Wraith, `D_*` Special Tactician);
 - the Dublinn Flamechaser embers (`Die`, then `Idle_2` / `Move_2` / `Die_2`; `Revive` ends as it stands up) and OpFor: Rebirth's puppet
   (`A_Die`, then `B_*`; `B_Revive`);
@@ -237,7 +255,7 @@ Not mapped (clip names ambiguous): “Free”, “The Big Ugly Thing”, Hero's 
 is not known) keep their manifest clips.
 
 Other renderer rules from research 07 §5.4–5.5:
-- **Choosing the model:** Front when the unit faces right or down; Front mirrored when facing left; Back when facing up.
+- **Choosing the model:** Front when the unit faces right or down; Front mirrored when facing left; Back when facing up — while it stands: a dead or knocked-out operator falls and lies with the Front model unless its Back skeleton has a Die clip of its own (131 of the 135 have none; DESIGN §22.1, GitHub issue #25).
 - **Attack speed:** set the attack `timeScale` to `duration / attackInterval`.
 - **Model size:** every skeleton is drawn at one `UNIT.modelScale` (render/style.js, 320 skeleton units per tile), which stands for the official standard. The official client also scales each enemy model in its battle prefab: the Graphic / FaceSwitcher / Spine transforms multiply to 0.27 for most enemies and for the operators' battle skins, but not for all of them. For example, Raptor is 0.16, Monster 0.20 and Bronze Mirror 0.6. The skeletons themselves carry no such scale, because every enemy SkeletonDataAsset uses 0.01. So an enemy is drawn × data/enemies.json `modelScale` (its prefab's product ÷ 0.27, see docs/DATA.md; user playtest #6: Raptor used to be drawn 1.35× a Monster instead of 1.08×), and its HP bar sits on that model: at its setup-pose bounds' height × the same factors, or, for a skeleton without bounds, at the chibi headroom × `modelScale` (bosses 2.2 tiles). `tools/local-extract/enemy_scales.py` reads the products from a local client, and `tools/build-data.mjs MODEL_SCALES` keeps them.
 - **Enemy aliases:** `enemies[id].spineAliasOf` means the model belongs to another enemy. Two cases:
@@ -268,8 +286,10 @@ Other renderer rules from research 07 §5.4–5.5:
 
 ### Other fallbacks
 
+- **Emotes and How to Play pages** (`public/js/data.js artUrls / nextArtUrl`, `ui/guide.js guideStage`): the local-client picture (`data/local-assets.json`) first, then the mirror copy (`ui['emoticon/…']`, `ui['guide/…']`), each tried in turn when one fails to load; when none is left — none listed, or every copy failed (for example data/assets.json lists the downloaded pages but the files are not on disk yet: a `git pull` and restart without setup) — the neutral emote glyph, and for a page the official tips text (`config.tips`). The rest of the local-client art (the 3D board, the official HUD sprites, module type icons, the two enemy models above) is not downloaded: the client looks it up in `data/local-assets.json` only (most of the HUD sprites are on the mirror too, DESIGN §22.5); docs/DEPLOY.md §6 lists what falls back without it.
 - **Tokens:**
   - Without an avatar, use `chars[owner].avatar` with a summon badge, or `prof.battlecard.token`.
+- **Snowshine’s frozen protection point** has no official avatar in the data dump, so it is drawn as a procedural snowflake on an icy field.
   - Without a Spine, draw the avatar sprite with a bob tween.
   - `spineVariant` names the skin-variant model that stands in for the missing default model.
 - **Enemies without a spine** (for example `enemy_9016_acstmr`): draw `icon` in a diamond. Enemies with no manifest entry at all (`enemy_5601_entlec` Heart Candle): draw a procedural glyph.

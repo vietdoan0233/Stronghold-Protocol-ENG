@@ -373,12 +373,12 @@ Members (11 chess, 10 in current shop pool; by tier in shop: {'1': 1, '2': 1, '3
 
 - **[3 distinct]** 阿戈尔 members maxHP x(1 + 0.35 + 0.01*L).
 - **[3 distinct (battle start)]** Devour (吞噬): see algorithm.
-- **[5 distinct]** The first 3 阿戈尔 members to be knocked out (first time each) revive immediately (max_free_respawn_cnt 3).
+- **[5 distinct]** The first 3 阿戈尔 members by position — the devour order below (step 1), i.e. the deployment order, fixed at battle start — each revive immediately on their own first knock-out, whatever the order of knock-outs (max_free_respawn_cnt 3; PRTS 阿戈尔 备注 "从最先部署（更靠左和靠上的）的【阿戈尔】干员开始", players' videos; until 0.1.3 the remake gave them to the first 3 members knocked out). A devour knock-out of one of them spends its revive (it stays standing, step 4); any other member the devour knocks out stays down.
 - Algorithm:
   1. Order: 阿戈尔 members sorted leftmost first, then topmost ("更靠左和靠上").
   2. Each 阿戈尔 in order marks the unit on the tile directly in front of it (its facing direction) and also the front-tile unit of every 阿戈尔 it has marked (chain). It never marks itself, a unit it already marked, or a unit that marked it.
   3. The marker immediately gains the base ATK of every unit it marked (added to base ATK at the final stage) and their block counts.
-  4. After all marks are placed, each mark makes its target suffer one 5000-point physical 流失 (HP loss, source = the target itself; if it dies, the kill is credited to the marker), resolved in marking order. A target that dies cancels its remaining pending marks.
+  4. After all marks are placed, each mark makes its target suffer one 5000-point physical 流失 (HP loss, source = the target itself; if it dies, the kill is credited to the marker), resolved in marking order. A target knocked out for the first time has its pending marks cancelled ("目标首次被击倒后解除自身被付与但还未触发的【吞噬】效果") — also when it is back at once (the 5-tier revive, 不屈's 立刻重新部署, 埃芒加德, M3茧甲), so a revived member is not devoured again. DESIGN §22.3.
   5. Each devoured unit adds layers to 阿戈尔 equal to its tier (1-6), once per unit per battle.
   6. (5-member tier) Revive is implemented as: when the unit leaves the field for any reason other than being moved, its next deployment has 0 redeploy time and 0 cost (PRTS). Devour layers: each devoured unit adds its tier once per battle (refreshes next round).
 - Formulas: `hpMultiplier = 1.35 + 0.01*L`; `devourDamage = 5000`; `layersPerDevoured = tier of devoured unit`
@@ -425,7 +425,7 @@ Members (9 chess, 9 in current shop pool; by tier in shop: {'1': 1, '2': 1, '3':
 **Implementable spec**
 
 - **[3 distinct]** After every deployment (incl. redeploy) a 叙拉古 member gains ASPD +(25 + 0.8*L) for (32 + 0.4*L) s.
-- **[6 distinct]** After deployment also 隐匿 (camouflage) for the same duration. While camouflaged and for 10 s after it ends, each normal damage instance it deals may add (5000 + 50*L) true damage (source = the operator) and 恐惧 (fear) 3 s. Nominal 3% chance, implemented as pseudo-random: all 叙拉古 members share one counter; attempt n since last proc succeeds with p = 0.00139*n (guaranteed at n = 720); counter resets on proc.
+- **[6 distinct]** After deployment also 隐匿 (camouflage) for the same duration. While camouflaged and for 10 s after it ends, each normal damage instance (普通伤害 = attack type NORMAL: attacks, skill hits, drone attacks; not 溅射 / 持续 / 附加 — `bonds/core.js siracusaRolls`) it deals may add (5000 + 50*L) true damage (source = the operator) and 恐惧 (fear) 3 s. Nominal 3% chance, implemented as pseudo-random: all 叙拉古 members share one counter; attempt n since last proc succeeds with p = 0.00139*n (guaranteed at n = 720); counter resets on proc.
 - Formulas: `aspd = 25 + 0.8*L`; `durationSec = 32 + 0.4*L`; `procDamage = 5000 + 50*L`; `prdStep = 0.00139`
 - Caps: none
 - How layers are gained: Shop refresh-driven: 拉普兰德 first manual refresh each round +4 (works from bench); 安洁莉娜 休整期结束 +4 per refresh this round (<=12/round); 阿罗玛 +2 叙拉古/奥术 per refresh (<=6); 伺夜 first 3 kills +2 叙拉古 +1 奇迹; 荒芜拉普兰德 each kill +2 (elite: every 叙拉古 gets this, <=100/battle); 忍冬 获得时 +6 own bonds (x2/x3 with 投资人); 机变 "德克萨斯的盟誓" +10. Strategy 贾维: every 6 manual refreshes get a free 叙拉古 (<=2/round).
@@ -798,7 +798,7 @@ Members (13 chess, 8 in current shop pool; by tier in shop: {'1': 2, '2': 1, '3'
 - **[first time L >= 150]** Replaces the above: every operator in the shop permanently -1 (overrides, does not stack; 3/27 update).
 - Formulas: `goldPayouts = 2 * floor(L/10)`
 - How layers are gained: 寒檀 进入/结束休整期 +4 each; 伊内丝 +5 own active bonds; 赫默 +2; 圣约送葬人 +3 per 7 bullets (<=21/battle); 风笛 kills +2; 机变 "风笛的盟誓" +8.
-- [ASSUMED] price never below 1
+- No floor but 0: the text names none, so a price of 1 (至简's 特质, 休露丝's first 谢拉格) becomes 0 (owner's decision 2026-10-04; this note assumed a floor of 1 until 0.1.3)
 - Garrisons that explicitly add layers to this bond: `garrison_50`, `garrison_55`, `garrison_63`, `garrison_64`, `garrison_141`, `garrison_142` (see section 4; plus the generic ones)
 
 Members (9 chess, 8 in current shop pool; by tier in shop: {'2': 1, '3': 2, '4': 2, '5': 2, '6': 1}):
@@ -924,7 +924,7 @@ Members (5 chess, 4 in current shop pool; by tier in shop: {'2': 1, '3': 1, '5':
 - **[L >= 50]** ALL operators ASPD +50.
 - Formulas: `atkHpMultiplier = 1.25 + 0.01*L`; `idleSec = 10`; `aspdAll(L>=50) = 50`
 - How layers are gained: 史尔特尔 部署时 +8 (<=50/battle); 休谟斯 each 2 kills +1; 瑕光 +4/deploy; 斯卡蒂; 伊内丝 +5; 机变 "斯卡蒂的盟誓" +8, "德克萨斯的盟誓" +10.
-- [ASSUMED] target enemy = the ground enemy closest to the player's objective; landing tile = nearest free deployable tile adjacent to it
+- [ASSUMED] target enemy = the ground enemy closest to the player's objective (its own field's; another field's only while its own has none) that the member can reach; landing tile = the nearest free deployable tile within 2 tiles of it from which the member's attack range covers it. No such tile for any of the 8 most advanced → no jump; the poll looks again every 0.25 s (GitHub issue #51 — up to 0.1.1 the idle trigger landed out of reach and hopped every 10 s; DESIGN §22.2)
 - [ASSUMED] the buff lasts until the operator leaves the field
 - Bond item (with 变形同构体 grants this bond): 突袭手雷 `chess_item_3_11_e` (1 gold: 每次部署后的10秒内，攻击时使目标晕眩2秒)
 - Garrisons that explicitly add layers to this bond: `garrison_38`, `garrison_64`, `garrison_74`, `garrison_77`, `garrison_107` (see section 4; plus the generic ones)
@@ -963,8 +963,8 @@ Members (9 chess, 9 in current shop pool; by tier in shop: {'1': 1, '2': 1, '3':
 
 **Implementable spec**
 
-- **[2 distinct]** When a ground operator is knocked out / retreats / swaps 替身<->本体: with p = min(1, 0.18 + 0.004*L) it is redeployed at once (next deployment has 0 redeploy time and 0 cost). Also consumes a "复活" charge if it had one.
-- **[3 distinct]** When a ground operator is knocked out: every operator on the field +5 SP.
+- **[2 distinct]** When a ground operator (地面干员 = melee position, on any tile) is knocked out / retreats / swaps 替身<->本体: with p = min(1, 0.18 + 0.004*L) it is redeployed at once (next deployment has 0 redeploy time and 0 cost). Also consumes a "复活" charge if it had one.
+- **[3 distinct]** When a ground (melee-position) operator is knocked out: every operator on the field +5 SP.
 - Formulas: `p = min(1, 0.18 + 0.004*L)`; `reaches100%AtL = 205`
 - How layers are gained: 雷蛇 休整期结束 +1; 砾 被击倒 +2; 归溟幽灵鲨 +5; 风笛 kills +2; 机变 "风笛的盟誓" +8.
 - Bond item (with 变形同构体 grants this bond): 不屈弹射器 `chess_item_2_01_e` (1 gold: 再部署时间-30%，生命值-30%)

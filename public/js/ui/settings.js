@@ -73,7 +73,7 @@ export function SettingsModal({ open, onClose }) {
       </div>
       ${touchUi
         ? html`<p class="set-hint">Touch: tap a unit to select it (Retreat / Sell) · long-press a unit or card for details · drag to deploy, then swipe to choose a facing</p>`
-        : html`<p class="set-hint">Shortcuts: <kbd>R</kbd> refresh · <kbd>F</kbd> freeze · <kbd>D</kbd> upgrade · <kbd>Space</kbd> ready · <kbd>Esc</kbd> close popups · right-click for details</p>`}
+        : html`<p class="set-hint">Shortcuts: <kbd>R</kbd> refresh · <kbd>F</kbd> freeze · <kbd>D</kbd> upgrade · <kbd>Q</kbd> retreat selected operator · <kbd>X</kbd> sell selected operator · <kbd>Space</kbd> ready · <kbd>Esc</kbd> close popups · right-click for details</p>`}
     </div>
   <//>`;
 }
