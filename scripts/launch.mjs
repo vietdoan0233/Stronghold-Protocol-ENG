@@ -21,7 +21,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const IS_WIN = process.platform === 'win32';
 
 if (Number(process.versions.node.split('.')[0]) < 22) {
-  console.error(`Node.js ${process.versions.node} 太旧，需要 22 或更高（22 / 24 LTS）：https://nodejs.org/zh-cn/download`);
+  console.error(`Node.js ${process.versions.node} is too old. Version 22 or later is required (22 / 24 LTS): https://nodejs.org/en/download`);
   process.exit(1);
 }
 
@@ -67,15 +67,15 @@ function printShare(port) {
   const addrs = classifyAddresses().filter((a) => a.kind === 'lan' || a.kind === 'vpn' || a.kind === 'public');
   const line = c.dim('─'.repeat(56));
   console.log(`\n${line}`);
-  console.log(`${mark.ok} ${c.bold('服务器已启动')}   本机打开：${c.cyan(`http://localhost:${port}`)}`);
+  console.log(`${mark.ok} ${c.bold('Server is running')}   Open locally: ${c.cyan(`http://localhost:${port}`)}`);
   if (addrs.length) {
-    console.log('  发给朋友（需要能访问这台电脑的网络）：');
+    console.log('  Share with friends (they need network access to this computer):');
     for (const a of addrs.slice(0, 4)) console.log(`    ${c.cyan(`http://${a.address}:${port}`)}  ${c.dim(KIND_LABEL[a.kind])}`);
   } else {
-    console.log(c.warn('  没有检测到局域网地址：朋友暂时无法连接（检查网线/Wi-Fi）。'));
+    console.log(c.warn('  No LAN address found. Friends cannot connect yet (check your network connection).'));
   }
-  console.log(c.dim('  建房后把 4 位「同盟密钥」或「复制链接」（…/?room=密钥）发给朋友。'));
-  console.log(c.dim('  朋友打不开？运行 node tools/doctor.mjs 检查防火墙。按 Ctrl+C 停止服务器。'));
+  console.log(c.dim('  Create a room, then share its 4-character room code or the copied link (…/?room=code).'));
+  console.log(c.dim('  If friends cannot connect, run node tools/doctor.mjs to check the firewall. Press Ctrl+C to stop the server.'));
   console.log(`${line}\n`);
 }
 
@@ -100,20 +100,20 @@ async function main() {
 
   const before = await probePort(o.port, o.host);
   if (before.state === 'ours') {
-    console.log(`${mark.ok} 服务器已经在运行（端口 ${o.port}），直接打开浏览器。`);
+    console.log(`${mark.ok} Server is already running on port ${o.port}; opening it in your browser.`);
     printShare(o.port);
     if (o.open) openBrowser(localUrl);
     return 0;
   }
   if (before.state !== 'free') {
-    console.error(`${mark.err} 端口 ${o.port} 被其他程序占用或无权限（${before.code || before.state}）。`);
-    console.error(`  换一个端口：${IS_WIN ? 'scripts\\start-windows.bat --port 3001' : 'scripts/start.sh --port 3001'}`);
+    console.error(`${mark.err} Port ${o.port} is in use or unavailable (${before.code || before.state}).`);
+    console.error(`  Choose another port: ${IS_WIN ? 'scripts\\start-windows.bat --port 3001' : 'scripts/start.sh --port 3001'}`);
     return 1;
   }
 
   if (o.setup) {
     const r = spawnSync(process.execPath, [path.join(ROOT, 'tools', 'setup.mjs'), '--quiet', ...o.setupArgs], { cwd: ROOT, stdio: 'inherit' });
-    if (r.status !== 0) { console.error(`${mark.err} 准备步骤失败（见上方）。`); return r.status || 1; }
+    if (r.status !== 0) { console.error(`${mark.err} Setup failed (see the messages above).`); return r.status || 1; }
   }
 
   const env = { ...process.env, PORT: String(o.port), HOST: o.host };
@@ -127,7 +127,7 @@ async function main() {
   const exited = new Promise((resolve) => child.on('exit', (code, signal) => resolve(code ?? (signal ? 0 : 1))));
   if (await waitHealthy(o.port, child)) {
     printShare(o.port);
-    if (o.open && !openBrowser(localUrl)) console.log(c.dim(`（未能自动打开浏览器，请手动访问 ${localUrl}）`));
+    if (o.open && !openBrowser(localUrl)) console.log(c.dim(`Could not open a browser automatically. Visit ${localUrl} manually.`));
   }
   return exited;
 }

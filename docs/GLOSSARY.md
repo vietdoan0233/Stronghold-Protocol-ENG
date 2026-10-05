@@ -23,7 +23,7 @@ runtime messages. When a term is missing, add it here **in the same commit** tha
 - Keep the structural punctuation of the source (`·` separators, `/`, `※`, `→`, `×N`); turn full-width Chinese
   punctuation into ASCII (`，` → `, `, `：` → `: `, `（…）` → ` (…)`, `…` stays `…`).
 - `【X】` → `[X]`. `「X」` and `“X”` around a name → straight or curly double quotes, but one style per file.
-- Units: 秒 → `s` (`8 s`), 格 → tile(s), 回合 → round(s), 层 → layer(s), 点 → point(s), 级 → `Lv.`, 阶 → *Tier* with
+- Units: 秒 → `s` (`8 s`), 格 → tile(s), 回合 → round(s), 层 / 层数 → stack(s); 积雪层 → layer(s) of snow, 点 → point(s), 级 → `Lv.`, 阶 → *Tier* with
   Roman numerals I–VI (`Tier IV`), 名 (count of people) → no word (`3 operators`).
 - Word order follows English: a template such as `已选择「${name}」` becomes `Selected “${name}”`, not a fragment-wise
   translation. Plurals: use `(s)` only where the count is unknown at run time, otherwise branch.
@@ -111,7 +111,8 @@ runtime messages. When a term is missing, add it here **in the same commit** tha
 | 战术决策 | Tactical Decision |
 | 策略 / 分队长 | Strategy (squad leader) |
 | 特训敌人 | Special Training enemies |
-| 层 / 层数 | layer(s) |
+| 盟约层数 / 效果层数 | stack(s) |
+| 积雪层 | layer(s) of snow |
 | 休整期结束 | end of the Rest Phase |
 | 变形同构体 | Polymorphic Isomorph |
 | 突变细胞 | Mutant Cells |
@@ -129,6 +130,8 @@ Add-on: 精准 **Precision** · 迅捷 **Swift** · 灵巧 **Dexterity** · 奥�
 
 Titles: 卫戍之星 **Star of the Garrison** · 不朽盟约 **Immortal Alliance** · 坚若磐石 **Rock Solid** · 精英云集
 **Elite Gathering** · 万事俱备 **Fully Equipped** · 挥金如土 **Spendthrift**.
+
+Use **stacks** for Alliance counters and other countable effects. Reserve **layers** for physical layers such as snow. For an Operator's own Alliances, write “each active alliance this Operator belongs to gains +N stacks”; when activation is not required, write “each alliance this Operator belongs to gains +N stacks (even if inactive).” Name the receiver for fixed or selected Alliances, such as “the active [X] alliance gains +N stacks” or “the currently active alliance with the most stacks gains +N stacks.”
 
 ## Operators in the card and the detail panel
 
@@ -191,7 +194,7 @@ Gear and strategy texts, enemy abilities and the last operator skills (the offic
 | 击落 | shot down | a flying unit brought to the ground |
 | 蓄力攻击 | charged attack | |
 | 二连击 / 三连击 / 十连击 | two-hit / three-hit / ten-hit combo | |
-| 可充能N次 | Can store N charge(s) | official wording of the skill table |
+| 可充能N次 | Can store 1 charge / Can store N charges | Inflect to match the fixed number; do not write “charge(s).” |
 | 屏障 / 护盾 | Barrier / Shield | the official *Barrier* (absorbs a set amount) and *Shield* (blocks N hits) |
 | 抵抗 | Status Resistance | `<$ba.buffres>`; the official term name |
 | 战栗 / 沉睡 / 诱导 / 法术脆弱 | Frighten / Sleep / Lure / Arts Fragility | official status terms |
@@ -205,7 +208,7 @@ Gear and strategy texts, enemy abilities and the last operator skills (the offic
 | “斩胄之剑” / “破胄之锤” / 刺胄之弹 | 'Armor Cleaver' / 'Armor Crusher' / Armor Piercer | OpFor: Armor and its summons |
 | “碎铳之簧” / 【盲信之誓】 / 【末日布道】 | 'Gunshatter Spring' / [Vow of Blind Faith] / [Doomsday Sermon] | OpFor: Gun |
 | “余音” / 【金黄的悲号】 / 【暗色的喟叹】 | 'Lingering Tone' / [Golden Lament] / [Dusky Sigh] | OpFor: String and OpFor: Pipe (“断弦之音” 'Broken String Tone', “裂管之音” 'Cracked Pipe Tone') |
-| 【灭顶之灾】 / 【旧日的剑与锤】 / 【最终之罚】 | [Cataclysm] / [Sword and Hammer of Old] / [Final Punishment] | OpFor: Armor |
+| 【灭顶之灾】 / 【旧日的剑与锤】 / 【最终之罚】 | [Woe of Extinction] / [Sword and Hammer of Olden Days] / [Final Punishment] | OpFor: Armor |
 | 【未尽的告解】 / 【未竟的祷祝】 | [Incomplete Confession] / [Unfinished Prayer] | |
 | 【莫非王土】 / 【王权号令】 / 【斥退】 | [Sovereign Domain] / [Royal Command] / [Rebuke] | Alistair |
 | 矿工游击队 / 指挥官 / 指令 | Miner Guerrillas / Commander / Order | the Army enemies |
@@ -213,16 +216,21 @@ Gear and strategy texts, enemy abilities and the last operator skills (the offic
 | 频次护盾 | Hit-Count Shield | the Shield that breaks after N hits |
 | 教鞭 | Teacher's Pointer | |
 
-## Open questions — judgement calls with no official source
+## Review decisions and remaining questions
 
-Check these against the game (or the official Global text, when it appears) and fix the table entry if the guess was wrong.
+Checked during the English-edition audit:
 
-- **失衡 → "Shift / shifted"** — the forced-movement status; the official Global text says "loses HP proportional to distance moved when shifted".
-- **Akkord, 震爆调谐** (`chess`): "triggers a sonic boom at every *other operator* within attack range" is literal; the target may really be the enemies around those operators.
-- **【斥退】 / 【物种爆发】**: "drains all targets' Life Points" mirrors the official wording of the same line.
-- **待部署区 → "the Reserve"** (the official text says "undeployed" for the same area); **部署费用 → "DP cost"**.
-- **Names invented for the Hidden Core bosses** (no official English yet): see the table above; also 角力对决 *Test of Strength*,
-  入戏 *in character*, 频次护盾 *Hit-Count Shield*, 奏 *Recital*.
-- **"Can store N charge(s)"** is the official wording of the skill table, kept for consistency although it reads oddly.
-- Alliance names inside `【X】盟约干员` read "[X] operator" (`node tools/locale.mjs check --terms` warns about the missing word *alliance*; intentional).
-- The harvested official texts say "Operator(s)" / "Units"; the hand-written ones say "operator(s)" — one casing could be chosen in a polish pass.
+- **失衡 → "Shift / shifted"** is retained from the harvested official Global enemy text.
+- **Akkord, 震爆调谐:** the simulator centers each sonic boom on another allied Operator in range and damages enemies in its radius. The description now says so explicitly.
+- **Warfarin, Intensive Care:** the simulator adds stacks to all Alliances of one random Operator per distinct tier; the description now states this in natural English.
+- **【斥退】 / 【物种爆发】:** the simulator confirms these each deduct 100 from the shared team Life Point pool; Rebuke also deals Arts splash damage to allied units, while Species Outbreak only deducts team Life Points after a delay. The descriptions now distinguish that from Operator HP damage.
+- **待部署区 → "the Reserve"** and **部署费用 → "DP cost"** remain the game's consistent UI terms; the usual Global word "undeployed" is less clear for this named area.
+- Hand-written descriptions now capitalize **Operator(s)** consistently with official Global text.
+
+Still provisional because the mode has no official English names or descriptions for these:
+
+- **Names invented for the Hidden Core bosses**: see the table above; also 角力对决 *Test of Strength*, 入戏 *in character*,
+  频次护盾 *Hit-Count Shield*, 奏 *Recital*.
+- **可充能N次:** charge-storage text now uses the singular for 1 and plural for larger counts (for example, “Can store 1 charge” / “Can store 2 charges”).
+
+The `check --terms` alliance warnings for `【X】盟约干员` are intentional: the displayed text is `[X] Operator`, without repeating *Alliance*.

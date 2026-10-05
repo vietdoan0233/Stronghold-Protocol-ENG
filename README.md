@@ -1,10 +1,10 @@
-# Stronghold Protocol: Alliance
+# Stronghold Protocol: Alliance — English translation of [sganggs/Stronghold-Protocol](https://github.com/sganggs/Stronghold-Protocol), translated with Claude
 
 An **unofficial fan remake** of *Arknights'* seasonal auto-chess tower-defense mode "Stronghold Protocol: Alliance": play instantly in the browser, solo or 1–4 player online co-op.
 
-> **English edition.** Everything a player reads — the interface, the game data (names and descriptions) and the server's messages — is in English. The game data itself (`data/*.json`) is the original Chinese, untouched; its English is a read-time overlay (see [CHANGES.md](CHANGES.md) and [docs/LOCALE.md](docs/LOCALE.md)). The launcher / setup / doctor terminal output is still Chinese.
+> **English edition.** Player-facing interface, game data names and descriptions, server messages, and launcher / setup / doctor output are in English. The game data itself (`data/*.json`) stays in the original Chinese; its English is a read-time overlay (see [CHANGES.md](CHANGES.md) and [docs/LOCALE.md](docs/LOCALE.md)).
 
-![version](https://img.shields.io/badge/version-0.1.1-2ea44f)
+![source baseline](https://img.shields.io/badge/source%20baseline-0.1.1-2ea44f)
 ![license](https://img.shields.io/badge/code%20license-GPL--3.0--or--later-blue)
 ![node](https://img.shields.io/badge/node-22%20%7C%2024-339933)
 
@@ -14,7 +14,7 @@ An **unofficial fan remake** of *Arknights'* seasonal auto-chess tower-defense m
 > - This project is a player-made **unofficial fan work**. It has **no affiliation** with Shanghai Hypergryph Network Technology Co., Ltd. (Hypergryph), Yostar or their affiliates, and is not authorized or endorsed by them.
 > - The names, characters, art, music, sound effects, text, data and other materials related to *Arknights* and "Stronghold Protocol" are copyright of their respective owners. These materials are **not** covered by this project's GPL-3.0 license; the GPL covers only the code written by this project itself.
 > - For study, exchange and personal non-commercial use only. **Profiting from it in any form is strictly forbidden**, including but not limited to: selling this project or bundles of it, paid downloads or paid distribution, paid servers or paid hosting-for-hire, monetization via ads / donations / memberships, and any other commercial use.
-> - The repository source does not include the game's art or audio assets (only data generated from the official data tables and a few screenshots, which are likewise not covered by the GPL); the bundles in [Releases](../../releases/latest) include assets for players' convenience, and downloading them is taken as acceptance of this disclaimer. Please do not use the assets for anything other than this project, or redistribute them separately. Full terms are in [NOTICE.md](NOTICE.md).
+> - The repository source does not include the game's art or audio assets (only data generated from the official data tables and a few screenshots, which are likewise not covered by the GPL). The setup tool can download assets from public mirrors for local play; downloading them is taken as acceptance of this disclaimer. Please do not use the assets for anything other than this project, or redistribute them separately. Full terms are in [NOTICE.md](NOTICE.md).
 > - If a rights holder believes this project infringes their rights, please get in touch via an Issue and we will **remove** the relevant content immediately.
 > - This project is provided "as is", **without any warranty**; use it at your own risk.
 
@@ -27,8 +27,8 @@ An **unofficial fan remake** of *Arknights'* seasonal auto-chess tower-defense m
 ## Contents
 
 - [Disclaimer](#disclaimer) · [Overview](#overview) · [Features](#features)
-- [Quick start](#quick-start): [Bundle](#option-1-all-in-one-bundle-recommended) · [Run from source](#option-2-run-from-source) · [System requirements](#system-requirements) · [Ports and configuration](#ports-and-configuration) · [Play on a LAN](#play-with-friends-lan)
-- [Connecting over the internet](#connecting-over-the-internet) · [Controls](#controls) · [Documentation](#documentation) · [Development and testing](#development-and-testing) · [Project structure](#project-structure)
+- [Quick start](#quick-start): [Run from source](#run-from-source) · [System requirements](#system-requirements) · [Ports and configuration](#ports-and-configuration) · [Play on a LAN](#play-with-friends-lan)
+- [Connecting over the internet](#connecting-over-the-internet) · [Controls](#controls) · [Documentation](#documentation) · [Development and testing](#development-and-testing) · [Upstream updates](#upstream-updates) · [Project structure](#project-structure)
 - [License](#license) · [Credits and data sources](#credits-and-data-sources) · [Contributing](#contributing)
 
 ## Overview
@@ -46,8 +46,8 @@ An **unofficial fan remake** of *Arknights'* seasonal auto-chess tower-defense m
 - **Rest phase**: recruit, refresh, freeze, upgrade the Dispatch Center; Reserve and Temporary Reserve; drag from the Reserve onto the board to deploy, choosing facing with the **facing wheel**. In Alliance Simulation the operator pool is shared.
 - **Elite promotion**: 3 operators of the same name automatically merge into an Elite and grant one free recruit of the next tier up.
 - **Operators and loadouts**: 112 recruitable operators (+ their Elites) with their skills, talents and traits; before a match you can choose the skill each operator carries (all 283 skills implemented by hand) and the Elite's module.
-- **Alliances and layers**: 23 alliances (8 faction core alliances + add-on alliances), with layers kept for the whole match, up to 999 layers per alliance.
-- **Gear and the draft**: equipment and arts, same-name gear merging, and specific combinations that grant alliance effects; equipped gear is locked to the operator. Some rounds begin with a draft pick (gear, funds, operators, layers, bounties, and so on).
+- **Alliances and stacks**: 23 alliances (8 faction core alliances + add-on alliances), with stacks kept for the whole match, up to 999 stacks per alliance.
+- **Gear and the draft**: equipment and arts, same-name gear merging, and specific combinations that grant alliance effects; equipped gear is locked to the operator. Some rounds begin with a draft pick (gear, funds, operators, Alliance stacks, bounties, and so on).
 - **Automatic combat**: skills fire automatically following the official "skill strategy"; blocking is by contact radius, and when a blocker falls an operator in contact takes over; elemental damage and elemental bursts; summons are placed by hand; knockback / pull are computed from force and weight; a knocked-down operator stays in place showing its redeploy countdown.
 - **Terrain and enemies**: roadblocks, firing platforms, Originium-current blowers, swamps, exhaust grilles, rising tides and other terrain devices; airborne and low-hovering enemies, and bounty enemies.
 - **Unite Phase**: when someone leaks enemies while someone else had a perfect combat, the teammate with the perfect combat brings their formation in to help intercept the leaked enemies.
@@ -60,21 +60,15 @@ An **unofficial fan remake** of *Arknights'* seasonal auto-chess tower-defense m
 
 ## Quick start
 
-### Option 1: All-in-one bundle (recommended)
+### Run from source
 
-The bundle already contains the code, runtime dependencies and all the art / audio (including the official 3D board textures) — unzip and play, with nothing else to download.
+The English edition has no release bundle yet. The source version baseline is 0.1.1; clone this repository to run it.
 
 1. **Install Node.js 22 or 24 (LTS)**
    - Windows: run `winget install OpenJS.NodeJS.LTS` in PowerShell, or download an installer from <https://nodejs.org/en/download>.
    - macOS: `brew install node@22`, or download an installer from the official site.
    - Linux: your distro's package manager, nvm or fnm.
-2. **Download**: on the [Releases](../../releases/latest) page download the latest version's (v0.1.1) bundle (zip) and unzip it to a folder with a short path (on Windows, avoid putting it in a OneDrive-synced directory).
-3. **Launch**
-   - Windows: double-click **`scripts\start-windows.bat`**. If a "security warning" pops up, click "Run"; if the Windows Firewall prompts, tick "Private networks" and allow it.
-   - macOS / Linux: in the unzipped folder, run `./scripts/start.sh` (or `bash scripts/start.sh`).
-4. A browser will open `http://localhost:3000` automatically. The LAN addresses listed in the window can be sent directly to friends on the same network. Closing the window (or pressing `Ctrl+C`) stops the server.
-
-### Option 2: Run from source
+2. **Clone and start the English edition**
 
 ```bash
 git clone https://github.com/vietdoan0233/Stronghold-Protocol-ENG.git
@@ -175,7 +169,7 @@ The full rules, numbers and tips are in **[docs/PLAYING.md](docs/PLAYING.md)**. 
 | [CHANGES.md](CHANGES.md) | English-localization notes: terminology, the code-vs-display name split, what is localized and what is intentionally (or not yet) still Chinese (this is an English fork of a Chinese project) |
 | [docs/LOCALE.md](docs/LOCALE.md) | How the English gets on screen: the read-time overlay tables, the server's display layer, the markup rules and the maintenance commands |
 | [docs/GLOSSARY.md](docs/GLOSSARY.md) | The Chinese → English glossary: modes, phases, economy, alliances, status terms, the names settled in review and the open questions |
-| [CHANGELOG.md](CHANGELOG.md) | Change log: what each version fixed, and which pieces of feedback turned out not to be bugs |
+| [CHANGELOG.md](CHANGELOG.md) | Original Chinese source changelog; retained for upstream history |
 | [docs/PLAYING.md](docs/PLAYING.md) | Gameplay guide: flow, economy, recruiting and promotion, formation, the Unite Phase, alliances, the Final Assault, settlement titles |
 | [docs/DEPLOY.md](docs/DEPLOY.md) | Deployment guide: hosting and start-on-boot on Windows, firewall, mesh networking / tunneling, reverse proxy and HTTPS, Docker, systemd, troubleshooting |
 | [docs/DESIGN.md](docs/DESIGN.md) | Architecture and contracts: tech stack, directory responsibilities, network protocol, rendering and UI, and the rule revisions after each playtest |
@@ -198,6 +192,12 @@ RENDER_E2E=1 node --test 'test/render/*.browser.test.js'   # render tests, some 
 
 - The game data is generated by `npm run build-data` (`tools/build-data.mjs`) from the official data tables — do not edit `data/*.json` by hand. Its English is in the overlay tables `public/locales/en/*.json`: after a data rebuild, `node tools/locale.mjs coverage --list` shows what has no English yet and `node tools/locale.mjs check` validates the tables (`test/locale.test.js` runs both). Batch translation / review tooling: [tools/locale-work/README.md](tools/locale-work/README.md).
 - GitHub Actions ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs `npm ci`, `node --test` and a server smoke test on Ubuntu and Windows, Node 22 / 24.
+
+## Upstream updates
+
+This English edition follows the original Chinese repository. Browser and launcher text is localized in place, while game
+data stays Chinese and is translated at display time. That keeps simulation rules and upstream data generation intact.
+For the remote setup, merge steps, and checks to rerun after an upstream update, see [docs/UPSTREAM.md](docs/UPSTREAM.md).
 
 ## Project structure
 

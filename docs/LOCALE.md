@@ -8,7 +8,7 @@ translation is built so that it can never change how the game plays.
 | UI chrome — buttons, labels, toasts, tickers, dialogs (`public/js/**`, `public/css/**`) | in place: the string literals are English |
 | Game data — operator / enemy / item / alliance / strategy names and descriptions (`data/*.json`) | a **read-time overlay**: one table per data file in `public/locales/en/`, applied by the browser when the file is loaded; `data/*.json` itself is never edited |
 | Server messages — errors, toasts, tickers (`server/**`, `shared/constants.js`) | in place: fixed messages are English; text the server composes from the data goes through `L()` (see *Server texts*) |
-| Terminal output of the launcher and setup tools (`scripts/`, `tools/setup.mjs`, `tools/doctor.mjs`) | in place — **not translated yet**, still Chinese (see [../CHANGES.md](../CHANGES.md) section 5) |
+| Terminal output of the launcher and setup tools (`scripts/`, `tools/setup.mjs`, `tools/doctor.mjs`) | in place: English |
 
 Terms are fixed in [GLOSSARY.md](GLOSSARY.md); what was changed and why is in [../CHANGES.md](../CHANGES.md).
 
@@ -77,6 +77,11 @@ server *composes* from that data would reach the English client in Chinese. Two 
 
 `test/display.test.js` also runs bot matches and asserts that no message the server sends to a client carries Chinese
 display text.
+
+This is a source-text overlay, not character-by-character mapping and not a backend data rewrite. The server and browser
+keep the Chinese values used by rule parsing; display values are looked up by their complete Chinese source string at the
+browser loader or server wire boundary. See [UPSTREAM.md](UPSTREAM.md) for how to merge upstream changes and refresh the
+overlay when source text changes.
 
 ## Maintenance
 

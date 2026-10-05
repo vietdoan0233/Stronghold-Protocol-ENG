@@ -1,5 +1,10 @@
 # 更新记录
 
+> **English edition (unreleased; source version 0.1.1):** This repository is an English translation of the original
+> [sganggs/Stronghold-Protocol](https://github.com/sganggs/Stronghold-Protocol). Player-facing UI and launcher text are
+> localized; game data remains Chinese and is translated through display overlays. No English release or tag has been
+> created, so the package and app version remain aligned with the 0.1.1 source baseline.
+
 ## 0.1.1 — 2026-10-03
 
 修复 0.1.0 发布后玩家反馈的问题（共 32 条，其中 4 条核实后不是问题）。同时处理了 GitHub 上的 issue #1、#4、#5、#8，合并了 PR #10、#12，采纳了 PR #2、#7、#14 指出的问题。规则对照官方数据和 PRTS 核对；少数查不到出处的细节按推断实现，详见 [docs/DESIGN.md](docs/DESIGN.md) §21。
