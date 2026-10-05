@@ -41,8 +41,8 @@ An **unofficial fan remake** of *Arknights'* seasonal auto-chess tower-defense m
 
 ## Features
 
-- **A complete match**: confirm match info → strategy draft (40 strategies) → 14 rounds → settlement title; on Hazard and above, a 15th round "Hidden Core" appears when the conditions are met.
-- **4 difficulties**: Standard / Hazard / Peril / Ultimate, each with its own parameters for solo and alliance play, all taken from the official data.
+- **A complete match**: confirm match info → strategy draft (40 strategies) → 14 rounds → settlement title; on Perilous and above, a 15th round "Hidden Core" appears when the conditions are met.
+- **4 difficulties**: Standard / Perilous / Dire / Ultimate, each with its own parameters for solo and alliance play, all taken from the official data.
 - **Rest phase**: recruit, refresh, freeze, upgrade the Dispatch Center; Reserve and Temporary Reserve; drag from the Reserve onto the board to deploy, choosing facing with the **facing wheel**. In Alliance Simulation the operator pool is shared.
 - **Elite promotion**: 3 operators of the same name automatically merge into an Elite and grant one free recruit of the next tier up.
 - **Operators and loadouts**: 112 recruitable operators (+ their Elites) with their skills, talents and traits; before a match you can choose the skill each operator carries (all 283 skills implemented by hand) and the Elite's module.

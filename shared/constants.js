@@ -17,7 +17,7 @@ export const ROOM_CODE_LEN = 4;
 export const NAME_MAX_LEN = 12;
 
 export const DIFFICULTIES = ['FUNNY', 'NORMAL', 'HARD', 'ABYSS'];
-export const DIFFICULTY_NAMES = { FUNNY: 'Standard Simulation', NORMAL: 'Hazard Simulation', HARD: 'Peril Simulation', ABYSS: 'Ultimate Simulation' };
+export const DIFFICULTY_NAMES = { FUNNY: 'Standard Simulation', NORMAL: 'Perilous Simulation', HARD: 'Dire Simulation', ABYSS: 'Ultimate Simulation' };
 export const DIFFICULTY_COLORS = { FUNNY: '#f6a329', NORMAL: '#e85a1a', HARD: '#e73118', ABYSS: '#ff0024' };
 
 // modeId in data/config.json = `mode_${type}_${difficulty.toLowerCase()}` with type single|multi

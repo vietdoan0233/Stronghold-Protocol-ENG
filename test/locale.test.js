@@ -13,11 +13,48 @@ import { createDataStore, RETRY_DELAYS_MS } from '../public/js/data.js';
 import { richTextPlain } from '../public/js/ui/richText.js';
 import { checkEntry, checkTables, coverage, planSync, readTable, serializeTable, sourcesOf } from '../tools/locale.mjs';
 import { chessSubtitle } from '../public/js/ui/loadoutModel.js';
+import { DIFFICULTIES, DIFFICULTY_NAMES } from '../shared/constants.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const readJson = (p) => JSON.parse(readFileSync(path.join(ROOT, p), 'utf8'));
 const table = (strings) => parseLocaleTable({ locale: 'en', strings });
 const clone = (o) => JSON.parse(JSON.stringify(o));
+
+describe('difficulty display names', () => {
+  test('keeps protocol ids stable while presenting the requested English labels', () => {
+    assert.deepEqual(DIFFICULTIES, ['FUNNY', 'NORMAL', 'HARD', 'ABYSS']);
+    assert.deepEqual(DIFFICULTY_NAMES, {
+      FUNNY: 'Standard Simulation',
+      NORMAL: 'Perilous Simulation',
+      HARD: 'Dire Simulation',
+      ABYSS: 'Ultimate Simulation',
+    });
+    const config = readJson('public/locales/en/config.json').strings;
+    assert.equal(config['险境模拟'], 'Perilous Simulation');
+    assert.equal(config['绝境模拟'], 'Dire Simulation');
+    assert.equal(config['通关【险境模拟】后解锁'], 'Unlocked after clearing [Perilous Simulation]');
+    assert.equal(config['通关2次【绝境模拟】后解锁'], 'Unlocked after clearing [Dire Simulation] 2 times');
+    const bands = readJson('public/locales/en/bands.json').strings;
+    assert.ok(Object.entries(bands).filter(([key]) => key.includes('险境模拟')).every(([, value]) => value.includes('[Perilous Simulation]')));
+  });
+});
+
+describe('fixed alliance-effect wording', () => {
+  test('uses stacks in the visible result and bond panels', () => {
+    const result = readFileSync(path.join(ROOT, 'public/js/screens/result.js'), 'utf8');
+    const detail = readFileSync(path.join(ROOT, 'public/js/ui/detailPanel.js'), 'utf8');
+    const bonds = readFileSync(path.join(ROOT, 'public/js/ui/bondStrip.js'), 'utf8');
+    const matchChrome = readFileSync(path.join(ROOT, 'public/js/ui/matchChrome.js'), 'utf8');
+    assert.match(result, /activatedLayers', 'Alliance Stacks'/);
+    assert.doesNotMatch(result, /Alliance Layers/);
+    assert.match(detail, /alliance stacks/i);
+    assert.doesNotMatch(detail, /alliance layers/i);
+    assert.match(bonds, /Stacks <b/);
+    assert.match(bonds, /'stack' : 'stacks'/);
+    assert.match(matchChrome, /title="Leave Spectating"/);
+    assert.doesNotMatch(matchChrome, /离开观战/);
+  });
+});
 
 describe('parseLocaleTable', () => {
   test('accepts a table of its language and nothing else', () => {

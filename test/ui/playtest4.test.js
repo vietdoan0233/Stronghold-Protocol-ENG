@@ -197,8 +197,8 @@ describe('7: the detail card shows live stats against the base', () => {
     const cells = [...walk(stats, new Set(['Stat', 'LiveTag']))].filter((n) => hasClass(n, 'dstat'));
     const cell = (k) => cells.find((n) => textOf(n).startsWith(k));
     assert.ok(hasClass(cell('Max HP'), 'is-up'));
-    assert.ok(hasClass(cell('ATK'), 'is-down') && !hasClass(cell('Atk Interval'), 'is-down'));
-    assert.ok(hasClass(cell('Atk Interval'), 'is-up'), 'a shorter interval is a buff');
+    assert.ok(hasClass(cell('ATK'), 'is-down') && !hasClass(cell('Attack Interval'), 'is-down'));
+    assert.ok(hasClass(cell('Attack Interval'), 'is-up'), 'a shorter interval is a buff');
     assert.ok(!hasClass(cell('DEF'), 'is-up') && !hasClass(cell('DEF'), 'is-down'), 'unchanged');
     assert.ok(textOf(stats).includes('Live'));
     const head = blocks.find((b) => b.key === 'head');

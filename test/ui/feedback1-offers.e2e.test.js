@@ -22,7 +22,7 @@ async function soloToPrep(c, bandName) {
   await c.open();
   await c.enter('煌');
   await c.click('.mode-card', 'Solo Simulation');
-  await c.click('.diff-card', 'Hazard');
+  await c.click('.diff-card', 'Perilous Simulation');
   await c.click('.create-box button', 'Start Solo Simulation');
   await c.waitFor((s) => !!s.room, 'solo room');
   if (!(await c.st()).phase) await c.click('.room-bar__right button', 'Start Simulation', { timeout: 20000 });

@@ -11,7 +11,7 @@ kinds / counts and routes must follow the official game; research 08 §6–§7, 
   6 SPECIAL, shuffled), one weighted special entry per round, each placeholder ACTION replaced by
   `clamp(roundHalfEven(n·P(t)/P(new)), 1, 5)` units over the same window, the other movement class not spawned — no
   `k` copies, no kept fly placeholders; verified against all 429 official entry × round compositions and the official
-  count distribution (Alliance Hazard R3 ≤ 10 enemies, R13 ≈ 37 — the old generator averaged 28 / 81);
+  count distribution (Alliance Perilous R3 ≤ 10 enemies, R13 ≈ 37 — the old generator averaged 28 / 81);
 * stats = the PRTS per-round `enemyScale` table only (`data/config.json`, Ultimate ×1.15 speed from R3);
 * leader pool = `bloodPoint[difficulty]` in co-op — one pool for every boss field, whatever the number of alive players
   (config `bossHpScale.aliveScaling` would make it × alive / 4; off — the user chose the fixed pool, DESIGN §20.10); solo keeps ×0.25,
@@ -44,12 +44,12 @@ average capped leaks per board and round R1–R13 (solo Standard R1–R8) of the
 | mode | old generator, research numbers | old generator, tuned (shipped before) | **official (now)** | LP/rd after Unite |
 |---|---|---|---|---|
 | Solo Standard | 1.3 | 0.6 | **0.17** | (= leaks) |
-| Solo Hazard | 1.4 | 0.9 | **0.19** | (= leaks) |
-| Solo Peril | 1.8 | 1.8 | **0.22** | (= leaks) |
+| Solo Perilous | 1.4 | 0.9 | **0.19** | (= leaks) |
+| Solo Dire | 1.8 | 1.8 | **0.22** | (= leaks) |
 | Solo Ultimate | 4.1 | 3.1 | **0.65** | (= leaks) |
 | Alliance Standard | 1.4 | 0.5 | **0.31** | 0.13 |
-| Alliance Hazard | 2.3 | 1.3 | **0.49** | 0.01 |
-| Alliance Peril | 5.0 | 2.7 | **0.80** | 0.10 |
+| Alliance Perilous | 2.3 | 1.3 | **0.49** | 0.01 |
+| Alliance Dire | 5.0 | 2.7 | **0.80** | 0.10 |
 | Alliance Ultimate | 6.3 | 4.3 | **1.96** | 0.93 |
 
 The old generator spawned 2–4× the official enemy count (every template enemy × k, plus the other class's
@@ -102,7 +102,7 @@ layers ×0.6 / ×1.4.
 
 ### 1.2 Reference levels (informative — nothing is tuned against them any more)
 
-The previous pass tuned the waves toward: Standard ≤ 1 capped leak per board and round, Hazard ≤ 2, Peril ≈ 2–3.5, Ultimate ≈ 3–5.
+The previous pass tuned the waves toward: Standard ≤ 1 capped leak per board and round, Perilous ≤ 2, Dire ≈ 2–3.5, Ultimate ≈ 3–5.
 They are kept only to read the measurement. What the model does NOT capture (so real matches are harder than the
 table): imperfect economy and placement, bans hitting the planned bonds, draft / bounty choices (bounties add enemies),
 the preview being read by a human in 90 s, and losing LP early (fewer rounds to build layers).
@@ -120,7 +120,7 @@ the preview being read by a human in 90 s, and losing LP early (fewer rounds to 
 | Faction mixing | was: every round a ground entry + a FLY entry | **official: one entry per round from a 15-slot type schedule** |
 | `MOVE_SCALE` 0.5 | every level's `moveMultiplier` 0.5 (05 §2.2) | kept |
 | **Combat time limit unit** | `maxPlayTime` read as game seconds [ASSUMED] | **wrong — real seconds; fixed** (§2.1) |
-| Boss pool | bloodPoint DATA = the current game data (activity_table act2autochess bossInfoDict; the local cache equals upstream ArknightsGameData master, checked 2026-10-01). PRTS Alliance Records's leader table is the older Nov 18 revision: it matches regular and most of Hazard, but differs for Gun Hazard (450 000 vs 400 000) and Armor / Gun / Sami Peril (1 600 000 / 870 000 / 1 800 000 vs 1 800 000 / 800 000 / 2 000 000), and has no Ultimate column or Lucian row; one pool for every field ("everyone deals damage to the enemy leader together"); "the enemy leader's total LP is unchanged" = the mirrored copies of a pair field share it (notice 5114) | **co-op = bloodPoint whatever the alive count**; × alive / 4 is a config switch (`aliveScaling`, off: Bahamut 12294 "when online teammates … decrease, the final boss's health bar also decreases" is one community note without a proportion, awaiting the user's recall); solo ×0.25 kept [ASSUMED]; the solo Standard ×0.6 removed |
+| Boss pool | bloodPoint DATA = the current game data (activity_table act2autochess bossInfoDict; the local cache equals upstream ArknightsGameData master, checked 2026-10-01). PRTS Alliance Records's leader table is the older Nov 18 revision: it matches regular and most of Perilous, but differs for Gun Perilous (450 000 vs 400 000) and Armor / Gun / Sami Dire (1 600 000 / 870 000 / 1 800 000 vs 1 800 000 / 800 000 / 2 000 000), and has no Ultimate column or Lucian row; one pool for every field ("everyone deals damage to the enemy leader together"); "the enemy leader's total LP is unchanged" = the mirrored copies of a pair field share it (notice 5114) | **co-op = bloodPoint whatever the alive count**; × alive / 4 is a config switch (`aliveScaling`, off: Bahamut 12294 "when online teammates … decrease, the final boss's health bar also decreases" is one community note without a proportion, awaiting the user's recall); solo ×0.25 kept [ASSUMED]; the solo Standard ×0.6 removed |
 | Leader parts / Armor drones / same-named debuffs / Steadfast thorns | PRTS Gunshatter, “Armor Cleaver”, “Armor Crusher” "when hit, makes … take an equal amount of sourceless HP loss"; PRTS OpFor: Armor "when that Monster dies it makes OpFor: Armor take true damage equal to 2% of max HP" (which max HP: [ASSUMED]); PRTS combat mechanics: same-name buffs show only one by default, Bahamut 12316 "shared buffs compete with the opposing side"; Steadfast "the damage source takes (850+10×L) arts damage" | **parts 1:1 (was ½, blade/hammer only grounded); drone 2 % of the pool (unchanged; the unit-HP reading was tried and reverted); Arcane / Gnosis permafrost / Leonhardt & Texas the Omertosa RES cut: one instance per target (was one per player / copy); thorns credited to the member (was to nobody)** — 2026-10-01, DESIGN §20.10 |
 | Bonus stacking | was: each bond / strategy / item / draft / trait "+X%" its own ×(1 + x) (research 02 §2.1) | **official direct multiplication: summed with each other and with skill "+X%"** (PRTS Alliance Records "…stat bonuses are all direct multiplication", game data basics D_t = Σtᵢ); 2026-10-01, DESIGN §20.10 |
 | Solo bounties ×0.7 | first half 11/18 note = the global solo base | **removed** (already in enemyScale) |
@@ -170,31 +170,31 @@ multipliers, their parts all of them): normal rounds unchanged, leader rounds an
 | mode | R1 | R2 | R3 | R4 | R5 | R6 | R7 | R8 | R9 | R10 | R11 | R12 | R13 | avg | LP/rd |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | Solo Standard | 0.13 | 0.06 | 0.00 | 0.13 | 0.63 | 0.00 | 0.25 | 0.19 | – | – | – | – | – | 0.17 | 0.17 |
-| Solo Hazard | 0.00 | 0.00 | 0.00 | 0.31 | 0.00 | 0.00 | 0.63 | 0.19 | 0.06 | 0.00 | 0.00 | 0.63 | 0.63 | 0.19 | 0.19 |
-| Solo Peril | 0.00 | 0.00 | 0.00 | 0.00 | 0.38 | 0.00 | 0.00 | 0.25 | 0.63 | 0.50 | 0.44 | 0.63 | 0.00 | 0.22 | 0.22 |
+| Solo Perilous | 0.00 | 0.00 | 0.00 | 0.31 | 0.00 | 0.00 | 0.63 | 0.19 | 0.06 | 0.00 | 0.00 | 0.63 | 0.63 | 0.19 | 0.19 |
+| Solo Dire | 0.00 | 0.00 | 0.00 | 0.00 | 0.38 | 0.00 | 0.00 | 0.25 | 0.63 | 0.50 | 0.44 | 0.63 | 0.00 | 0.22 | 0.22 |
 | Solo Ultimate | 0.13 | 0.00 | 0.19 | 0.25 | 1.00 | 0.88 | 0.44 | 0.81 | 1.50 | 0.94 | 1.13 | 0.06 | 1.19 | 0.65 | 0.65 |
 | Alliance Standard | 0.00 | 0.54 | 0.00 | 0.00 | 1.13 | 0.00 | 1.25 | 0.13 | 0.88 | 0.04 | 0.00 | 0.04 | 0.00 | 0.31 | 0.13 |
-| Alliance Hazard | 0.00 | 0.00 | 0.83 | 0.17 | 0.00 | 0.00 | 0.17 | 0.25 | 1.58 | 0.04 | 0.46 | 2.21 | 0.71 | 0.49 | 0.01 |
-| Alliance Peril | 0.00 | 0.00 | 0.38 | 1.00 | 0.71 | 1.17 | 0.50 | 0.92 | 1.88 | 2.50 | 0.63 | 0.71 | 0.00 | 0.80 | 0.10 |
+| Alliance Perilous | 0.00 | 0.00 | 0.83 | 0.17 | 0.00 | 0.00 | 0.17 | 0.25 | 1.58 | 0.04 | 0.46 | 2.21 | 0.71 | 0.49 | 0.01 |
+| Alliance Dire | 0.00 | 0.00 | 0.38 | 1.00 | 0.71 | 1.17 | 0.50 | 0.92 | 1.88 | 2.50 | 0.63 | 0.71 | 0.00 | 0.80 | 0.10 |
 | Alliance Ultimate | 0.00 | 0.04 | 0.21 | 0.92 | 0.83 | 2.79 | 4.00 | 6.00 | 3.83 | 1.29 | 3.71 | 0.83 | 0.96 | 1.96 | 0.93 |
 
 | mode | Final Assault (R14; solo Standard R9) | Hidden Core (R15) |
 |---|---|---|
 | Solo Standard | pool 64k · win 50 % · 80 % by 150 s · 89.8 s | – |
-| Solo Hazard | pool 169k · win 88 % · 97 % · 19.5 s | pool 237k · win 100 % · 100 % · 22.2 s |
-| Solo Peril | pool 456k · win 63 % · 86 % · 57.0 s | pool 869k · win 50 % · 70 % · 71.1 s |
+| Solo Perilous | pool 169k · win 88 % · 97 % · 19.5 s | pool 237k · win 100 % · 100 % · 22.2 s |
+| Solo Dire | pool 456k · win 63 % · 86 % · 57.0 s | pool 869k · win 50 % · 70 % · 71.1 s |
 | Solo Ultimate | pool 899k · win 38 % · 79 % · 42.0 s | pool 1.63M · win 25 % · 48 % · 44.9 s |
 | Alliance Standard | pool 224k · win 100 % · 100 % · 18.0 s | – |
-| Alliance Hazard | pool 550k · win 100 % · 100 % · 22.0 s | pool 919k · win 100 % · 100 % · 37.8 s |
-| Alliance Peril | pool 1.68M · win 88 % · 99 % · 32.6 s | pool 3.42M · win 88 % · 94 % · 100.9 s |
+| Alliance Perilous | pool 550k · win 100 % · 100 % · 22.0 s | pool 919k · win 100 % · 100 % · 37.8 s |
+| Alliance Dire | pool 1.68M · win 88 % · 99 % · 32.6 s | pool 3.42M · win 88 % · 94 % · 100.9 s |
 | Alliance Ultimate | pool 3.70M · win 88 % · 95 % · 41.9 s | pool 6.08M · win 75 % · 87 % · 92.6 s |
 
 **2026-10-01 — OpFor: Armor audit** (content/bosses.js `kitHelm` / `kitBlade`, PRTS): one Armor Piercer below 20 % as well
 (ability modifier), shells only at operators in range (boss_1 too), any drone death costs 2 %, blade / hammer sorties per PRTS (【Paralyzed】
 10 s instead of 20 s, 100 % of their damage passed to Armor also during the dive instead of 50 % while grounded, a fresh copy
 after every sortie, so throw comes back after its initial 25 / 55 s instead of the 80 s cooldown; hammer hits 150 % ATK).
-Same-seed `--boss-only` before → after: boss_1 unchanged (≤ 0.5 s); boss_8 Solo Peril 44.7 → 45.2 s, Solo Ultimate win
-2/3 → 3/3, Alliance Peril 23.3 → 23.7 s, Alliance Ultimate 72.0 → 64.2 s (n = 3–5 per cell). The leader columns above are from an
+Same-seed `--boss-only` before → after: boss_1 unchanged (≤ 0.5 s); boss_8 Solo Dire 44.7 → 45.2 s, Solo Ultimate win
+2/3 → 3/3, Alliance Dire 23.3 → 23.7 s, Alliance Ultimate 72.0 → 64.2 s (n = 3–5 per cell). The leader columns above are from an
 earlier commit (a current run differs for every leader) and were not refreshed here.
 
 Reading: the early game is easy everywhere (official R1–R3 bring 3–10 enemies); leaks concentrate on the second-half
@@ -207,15 +207,15 @@ Reproduce: `node tools/balance.mjs --mode all --difficulty ALL --tuning off [--b
 **2026-10-01 — direct multiplication stacking and the leader pool (DESIGN §20.10).** The tables above were measured while every bond /
 strategy / item "+X%" compounded. With the official summing, leader rounds of the same model (`--boss-only --boss-samples 8
 --rehearsal 0`, mean kill time in **game** seconds; 2× = real): Alliance Ultimate 35.6 → 59.7 (Hidden Core 104.9 → 143.9, win 100 → 88 %),
-Alliance Peril 25.1 → 37.0 (38.5 → 80.8), Alliance Hazard 14.0 → 17.8, Solo Ultimate 91.1 → 128.5, Solo Peril 42.0 → 73.7. Replaying the
+Alliance Dire 25.1 → 37.0 (38.5 → 80.8), Alliance Perilous 14.0 → 17.8, Solo Ultimate 91.1 → 128.5, Solo Dire 42.0 → 73.7. Replaying the
 same R14 lineups of 4-AI Ultimate matches (seeds 1–3, every leader; the fights dumped with the old code and replayed with
 both): median kill 175 → 247 real s at the bots' own layers (Σ 36–361 per player), 65 → 109 s at +100 layers per active
-bond, 37 → 61 s at +200, 25 → 40 s at +400; Peril 97 → 106, 25 → 43, 16 → 28, 10.5 → 19.7 s. Bot matches (`matchrun`, 8
-seeds) pass fewer rounds: Alliance Hazard 14.0 → 13.6, Peril 12.0 → 11.4, Ultimate 10.1 → 9.9; Solo Hazard 13.5 → 12.6 (wins 6 → 3 of 8),
-Peril 12.9 → 12.6, Ultimate 9.5 → 9.1.
+bond, 37 → 61 s at +200, 25 → 40 s at +400; Dire 97 → 106, 25 → 43, 16 → 28, 10.5 → 19.7 s. Bot matches (`matchrun`, 8
+seeds) pass fewer rounds: Alliance Perilous 14.0 → 13.6, Dire 12.0 → 11.4, Ultimate 10.1 → 9.9; Solo Perilous 13.5 → 12.6 (wins 6 → 3 of 8),
+Dire 12.9 → 12.6, Ultimate 9.5 → 9.1.
 
 **2026-10-01 (review rounds) — Arcane and the other same-named debuffs one instance, leader parts 1:1, fixed pool, Steadfast
-thorns credited.** Replays of the R14 boards of 4-AI co-op matches (seeds 7–9 × boss_1…7 × Ultimate / Peril = 21 fights per
+thorns credited.** Replays of the R14 boards of 4-AI co-op matches (seeds 7–9 × boss_1…7 × Ultimate / Dire = 21 fights per
 row, both pair fields on one pool, +L layers on every active bond; real seconds, ∞ = not killed in 200 s), v2.5 →
 direct multiplication → now — measured on the boss-HP workstream's boards, **before** the elite-to-board merge (DESIGN §20.11) changed
 what the bots build; the integrated build's numbers are in the 2026-10-02 table below:
@@ -226,19 +226,19 @@ what the bots build; the integrated build's numbers are in the 2026-10-02 table 
 | Ultimate | 100 | 892 (793–1204) | 61.4 → 85.8 → 102.6 | 20.0 → 22.5 → 54.7 | 0 | 0 |
 | Ultimate | 200 | 1532 (1343–2004) | 30.9 → 43.4 → 56.0 | 9.2 → 9.7 → 20.1 | 1 → 1 → 0 | 9 → 4 → 0 |
 | Ultimate | 400 | 2813 (2443–3604) | 16.4 → 23.9 → 23.9 | 2.6 → 2.7 → 9.0 | 7 → 4 → 1 | 13 → 10 → 8 |
-| Peril | 0 | 257 (224–423) | 66.5 → 81.3 → 81.3 | 21.7 → 41.0 → 41.0 | 0 | 0 |
-| Peril | 100 | 900 (824–1277) | 16.0 → 23.5 → 23.5 | 10.8 → 11.7 → 11.7 | 0 | 13 → 8 → 8 |
-| Peril | 200 | 1543 (1424–2177) | 11.7 → 14.2 → 14.2 | 7.4 → 7.8 → 8.8 | 5 → 5 → 5 | 19 → 16 → 16 |
-| Peril | 400 | 2829 (2624–3977) | 8.4 → 9.2 → 9.2 | 2.1 → 2.0 → 2.7 | 16 → 12 → 12 | 21 |
+| Dire | 0 | 257 (224–423) | 66.5 → 81.3 → 81.3 | 21.7 → 41.0 → 41.0 | 0 | 0 |
+| Dire | 100 | 900 (824–1277) | 16.0 → 23.5 → 23.5 | 10.8 → 11.7 → 11.7 | 0 | 13 → 8 → 8 |
+| Dire | 200 | 1543 (1424–2177) | 11.7 → 14.2 → 14.2 | 7.4 → 7.8 → 8.8 | 5 → 5 → 5 | 19 → 16 → 16 |
+| Dire | 400 | 2829 (2624–3977) | 8.4 → 9.2 → 9.2 | 2.1 → 2.0 → 2.7 | 16 → 12 → 12 | 21 |
 
 The Arcane fix moves the fields where both players run Arcane (Ultimate seed 7: leader arts damage taken ×40 → ×7.6 at +400, kills
 2.7 → 9.0 s; 9.7 → 20.1 s at +200). Armor's drones stay at 2 % of the pool (v2.5; 12–44 % of the pool damage at the bots'
 layers, 2–16 % at +200): the second review round's unit-HP reading (12 000 per drone) is reverted — it made a drone 19 %
 of a solo Standard bar (solo Armor replays, seeds 13 / 21 / 31: drones 10 → 78 % of the pool, kill 144 → 78 s); with the pool
 reading the solo fights are back at v2.5 (drones 4–30 %) and only direct multiplication slows them (Standard none / +100 / +200: kill
-times = v2.5 or up to +4 s; Ultimate / Peril +100: 16 → 25 s, 69 → 101 s, 90 → 135 s). Steadfast thorns now count for the member's
+times = v2.5 or up to +4 s; Ultimate / Dire +100: 16 → 25 s, 69 → 101 s, 90 → 135 s). Steadfast thorns now count for the member's
 player: on the second reviewer's 28 co-op boards the unattributed share of the leader damage drops from up to 27 % (58 %
-with each player's main bond at 999) to 0, a solo Standard Armor fight's from 88 % to 0; kill times are unchanged. What still kills a Peril leader in
+with each player's main bond at 999) to 0, a solo Standard Armor fight's from 88 % to 0; kill times are unchanged. What still kills a Dire leader in
 3 s at Σ ≈ 3000 layers per player is official per-layer scaling without caps (Yan +0.9 %/layer ATK, Victoria ×(1.25 +
 0.008 L), Precision +1.2 %/layer, Steadfast thorns 850 + 10 L every 0.2 s) — the community reports the same in the official game
 (Bahamut 12522: 999 Kjerag + 301 Dexterity + 122 Yan at R14 "boss dies in one second"). Since 2026-10-01 a bond stops at 999 layers
@@ -246,8 +246,8 @@ with each player's main bond at 999) to 0, a solo Standard Armor fight's from 88
 constant, and the community never names a count above 999: Bahamut 12534 "every one can reach 999 layers", "in the case of an Alliance without 999 layers"; v2.5 kept
 growing). On the 42 boards of the table above it changes nothing up to
 +400 (no bond passes 568); with each player's top bond at 1500 it holds that bond at 999: Ultimate median 82.1 → 101 s
-(16–17 of 21 killed), fastest 19.9 → 31.4 s; Peril median 12.2 → 19.6 s, fastest 6.7 → 8.6 s (uncapped at 2500: Ultimate
-median 54.9 s, fastest 12.0 s; Peril 8.2 s / 3.4 s). "damage cap" (Bahamut 12316 "with 999 Kjerag, never light Arcane … big-skill Pramanix gets damage-capped and deals nothing") is the official boss-hit limit, not an overflow: the client cancels a single leader hit of ≥ 300000 in boss
+(16–17 of 21 killed), fastest 19.9 → 31.4 s; Dire median 12.2 → 19.6 s, fastest 6.7 → 8.6 s (uncapped at 2500: Ultimate
+median 54.9 s, fastest 12.0 s; Dire 8.2 s / 3.4 s). "damage cap" (Bahamut 12316 "with 999 Kjerag, never light Arcane … big-skill Pramanix gets damage-capped and deals nothing") is the official boss-hit limit, not an overflow: the client cancels a single leader hit of ≥ 300000 in boss
 battles (`MAX_BATTLE_DAMAGE`, research 11 §2, `BOSS_HIT_LIMIT` — §7). An earlier reading of this note (an engine
 fixed-point overflow at 2³¹, not modelled) is superseded by that binary evidence. The largest damage instance on a
 leader in all the measurements here is 144 000 (a hidden Armor drone at Ultimate; from an operator 141 323 at +400 layers;
@@ -271,34 +271,34 @@ are in game seconds: ÷ 2); "cancelled" = hits stopped by damage cap on the inte
 | Ultimate Final Assault | +400 | 11.3 → 16.8 | 3.7 → 9.2 | 2 → 0 | 0 | 402k → 114k |
 | Ultimate Final Assault | top-2 | 28.5 → 47.8 | 4.2 → 7.5 | 2 → 0 | 6 | 828k → 274k |
 | Ultimate Final Assault | all | 5.0 → 8.3 | 1.2 → 3.4 | 14 → 9 | 18 | 2.38M → 300k |
-| Peril Final Assault | own | 79 → 99 | 19 → 32 | 0 → 0 | 0 | 44k → 36k |
-| Peril Final Assault | +200 | 11.6 → 14.8 | 1.9 → 7.3 | 3 → 0 | 0 | 148k → 51k |
-| Peril Final Assault | +400 | 6.1 → 8.6 | 0.8 → 3.6 | 7 → 1 | 0 | 347k → 108k |
-| Peril Final Assault | top-2 | 9.7 → 10.0 | 1.1 → 2.6 | 9 → 7 | 7 | 398k → 267k |
-| Peril Final Assault | all | 2.4 → 3.7 | 0.2 → 1.7 | 26 → 20 | 10 | 1.76M → 266k |
+| Dire Final Assault | own | 79 → 99 | 19 → 32 | 0 → 0 | 0 | 44k → 36k |
+| Dire Final Assault | +200 | 11.6 → 14.8 | 1.9 → 7.3 | 3 → 0 | 0 | 148k → 51k |
+| Dire Final Assault | +400 | 6.1 → 8.6 | 0.8 → 3.6 | 7 → 1 | 0 | 347k → 108k |
+| Dire Final Assault | top-2 | 9.7 → 10.0 | 1.1 → 2.6 | 9 → 7 | 7 | 398k → 267k |
+| Dire Final Assault | all | 2.4 → 3.7 | 0.2 → 1.7 | 26 → 20 | 10 | 1.76M → 266k |
 | Ultimate Hidden Core | own | 345 → 352 | 138 → 167 | – | 0 | 144k drone |
 | Ultimate Hidden Core | +200 | 49 → 80 | 25 → 42 | – | 0 | 144k drone |
 | Ultimate Hidden Core | +400 | 18.6 → 27.3 | 10 → 20 | – | 0 | 144k drone |
 | Ultimate Hidden Core | all | 7.2 → 14.7 | 3.7 → 8.0 | – | 77 | – |
-| Peril Hidden Core | +200 | 20 → 34 | – | – | 0 | – |
-| Peril Hidden Core | +400 | 10 → 15 | – | – | 0 | – |
-| Peril Hidden Core | all | 4.3 → 7.8 | 0.3 → 2.1 | – | 14 | – |
+| Dire Hidden Core | +200 | 20 → 34 | – | – | 0 | – |
+| Dire Hidden Core | +400 | 10 → 15 | – | – | 0 | – |
+| Dire Hidden Core | all | 4.3 → 7.8 | 0.3 → 2.1 | – | 14 | – |
 
-Each player's top bond requested at 1500 (held at 999 now): Ultimate median 53 → 95 s, Peril 17.5 → 33 s. Same boards: now is
+Each player's top bond requested at 1500 (held at 999 now): Ultimate median 53 → 95 s, Dire 17.5 → 33 s. Same boards: now is
 1.2–2.1× slower in every row. On each version's own bot boards the medians moved only ×1.0–1.2 (Ultimate own 256 → 258 s,
-+200 47 → 54 s; Peril own 81 → 99 s, +200 13 → 15 s; defeats at Ultimate own 4 → 3 of 28, all boss_4 Quintus), because the
-elite-to-board rule gives the bots slightly stronger R14 boards (Ultimate 2.12 → 2.26 elites per player, Peril 2.14 → 2.51;
-Peril 6.0 → 6.9 active bonds). Pool composition now: Final Assault drone link 3.7 % at own / 0.8 % at +400, the rest
++200 47 → 54 s; Dire own 81 → 99 s, +200 13 → 15 s; defeats at Ultimate own 4 → 3 of 28, all boss_4 Quintus), because the
+elite-to-board rule gives the bots slightly stronger R14 boards (Ultimate 2.12 → 2.26 elites per player, Dire 2.14 → 2.51;
+Dire 6.0 → 6.9 active bonds). Pool composition now: Final Assault drone link 3.7 % at own / 0.8 % at +400, the rest
 direct, 0 % unattributed; Hidden Core drones 20.7 % / 1.8 %, blade / hammer and spring transfers 16.3 % / 21.1 %. What still
 kills in seconds at ≈ 2000+ layers per player is official uncapped per-layer scaling (Kjerag vs cold ×11.34, Arcane ×15.7,
 Precision +1208.8 % ATK at 999), which damage cap bounds per hit only. Matchrun (co-op 4 AI, rounds passed v2.5 → now): Standard 14.00 →
-14.00, Hazard 13.81 → 13.88, Peril 12.41 → 12.06 (Final Assault wins 8 → 5 of 32), Ultimate 9.47 → 9.47.
+14.00, Perilous 13.81 → 13.88, Dire 12.41 → 12.06 (Final Assault wins 8 → 5 of 32), Ultimate 9.47 → 9.47.
 
 ---
 
 ## 4. The tuning — removed
 
-The previous pass layered per-round enemy HP × s / ATK × √s (all 8 modes, e.g. Alliance Hazard R13 HP × 0.55) and the solo
+The previous pass layered per-round enemy HP × s / ATK × √s (all 8 modes, e.g. Alliance Perilous R13 HP × 0.55) and the solo
 Standard leader pool × 0.6 on top of the research numbers, to compensate for the old generator's 2–4× enemy counts. Research
 08 decoded the official generator, so the compensation is gone together with its cause: `data/tuning.json` keeps only
 `titles.comment_3` (Rock Solid = least LP lost), `gamedata.js` has no multiplier layer (`enemyScale(r)` = the config table,
@@ -320,21 +320,21 @@ counts as 10 tough enemies with a 30 s dwell on its first tiles, so stationary l
 | mode | as found (before the fixes*) | research + time fix | **tuned** | **official waves (now, seeds 1–5)** |
 |---|---|---|---|---|
 | Solo Standard (1 AI) | 6.7 rounds · 3/10 wins · [5 5 9 9 5 7 6 8 4 9] | 8.1 rounds · 5/10 wins · [7 7 9 9 6 8 9 9 8 9] | **8.9 rounds · 9/10 wins · [9 9 9 9 8 9 9 9 9 9]** | **8.8 · 4/5 · [9 9 9 9 8]** |
-| Solo Hazard (1 AI) | 6.5 rounds · 1/10 wins · [5 4 11 4 5 9 3 7 3 14] | 8.4 rounds · 1/10 wins · [7 6 13 6 8 11 6 8 5 14] | **10.1 rounds · 3/10 wins · [9 14 14 7 9 11 9 9 5 14]** | **13.2 · 3/5 · [14 14 13 14 11]** |
-| Solo Peril (1 AI) | 6.9 rounds · 1/10 wins · [5 5 11 5 5 7 3 14 3 11] | 8.6 rounds · 1/10 wins · [7 5 12 8 13 8 6 9 4 14] | **8.6 rounds · 1/10 wins · [7 5 12 8 13 8 6 9 4 14]** | **13.2 · 1/5 · [13 14 13 13 13]** |
+| Solo Perilous (1 AI) | 6.5 rounds · 1/10 wins · [5 4 11 4 5 9 3 7 3 14] | 8.4 rounds · 1/10 wins · [7 6 13 6 8 11 6 8 5 14] | **10.1 rounds · 3/10 wins · [9 14 14 7 9 11 9 9 5 14]** | **13.2 · 3/5 · [14 14 13 14 11]** |
+| Solo Dire (1 AI) | 6.9 rounds · 1/10 wins · [5 5 11 5 5 7 3 14 3 11] | 8.6 rounds · 1/10 wins · [7 5 12 8 13 8 6 9 4 14] | **8.6 rounds · 1/10 wins · [7 5 12 8 13 8 6 9 4 14]** | **13.2 · 1/5 · [13 14 13 13 13]** |
 | Solo Ultimate (1 AI) | 5.0 rounds · 0/10 wins · [4 4 7 3 3 7 3 7 3 9] | 5.9 rounds · 0/10 wins · [5 4 8 5 5 7 4 7 4 10] | **6.1 rounds · 0/10 wins · [5 4 10 5 4 7 4 7 4 11]** | **11.4 · 0/5 · [13 8 13 11 12]** |
 | Alliance Standard (4 AI) | 9.1 rounds · 2/10 wins · [9 4 14 11 9 11 6 8 5 14] | 11.6 rounds · 3/10 wins · [11 8 14 12 13 14 8 11 11 14] | **14.0 rounds · 10/10 wins · [14 14 14 14 14 14 14 14 14 14]** | **14.0 · 5/5 · [14 14 14 14 14]** |
-| Alliance Hazard (4 AI) | 6.6 rounds · 0/10 wins · [9 4 8 7 8 6 5 6 4 9] | 9.3 rounds · 0/10 wins · [10 6 12 11 10 7 7 9 9 12] | **11.1 rounds · 2/10 wins · [11 8 14 11 12 7 13 10 11 14]** | **14.0 · 5/5 · [14 14 14 14 14]** |
-| Alliance Peril (4 AI) | 4.9 rounds · 0/10 wins · [6 4 6 4 6 6 5 4 3 5] | 7.0 rounds · 0/10 wins · [7 5 8 7 7 7 6 8 5 10] | **8.9 rounds · 0/10 wins · [9 6 10 9 9 8 8 11 7 12]** | **11.2 · 0/5 · [12 9 13 10 12]** |
+| Alliance Perilous (4 AI) | 6.6 rounds · 0/10 wins · [9 4 8 7 8 6 5 6 4 9] | 9.3 rounds · 0/10 wins · [10 6 12 11 10 7 7 9 9 12] | **11.1 rounds · 2/10 wins · [11 8 14 11 12 7 13 10 11 14]** | **14.0 · 5/5 · [14 14 14 14 14]** |
+| Alliance Dire (4 AI) | 4.9 rounds · 0/10 wins · [6 4 6 4 6 6 5 4 3 5] | 7.0 rounds · 0/10 wins · [7 5 8 7 7 7 6 8 5 10] | **8.9 rounds · 0/10 wins · [9 6 10 9 9 8 8 11 7 12]** | **11.2 · 0/5 · [12 9 13 10 12]** |
 | Alliance Ultimate (4 AI) | 5.2 rounds · 0/10 wins · [6 4 6 5 5 6 5 5 4 6] | 6.3 rounds · 0/10 wins · [6 5 7 6 6 7 6 6 5 9] | **7.2 rounds · 0/10 wins · [6 5 9 6 8 7 7 8 6 10]** | **9.8 · 0/5 · [10 7 13 8 11]** |
 
 Official-waves column: `node tools/balance.mjs --mode all --difficulty ALL --bots 5` (rounds passed avg · wins · per
 seed), measured before the review's leader-multiplier / Unite-timing fixes (§2; not re-run); the other columns are the
-previous pass (old generator), kept for history. \* the bot code of this pass (§5) with the old time reading and no tuning; the originally reported bots (old bot code) survived ≈ 6.5 rounds on Hazard and won 1/20 on Standard.
+previous pass (old generator), kept for history. \* the bot code of this pass (§5) with the old time reading and no tuning; the originally reported bots (old bot code) survived ≈ 6.5 rounds on Perilous and won 1/20 on Standard.
 
 **Player feedback after 0.1.0 (#10 "the bots are a bit too dumb").** Measured first (`tools/botbench.mjs`): the 0.1.0 bots refreshed
 0–2 times a prep and bought side-grade singles they sold again at a loss (every sale returns 1), so they merged ≈ 2
-times a match and fielded ≈ 2 elites at R13; in co-op Peril ≈ 1 in 2 of their bounty picks leaked (solo 10 of 80; the
+times a match and fielded ≈ 2 elites at R13; in co-op Dire ≈ 1 in 2 of their bounty picks leaked (solo 10 of 80; the
 old score ignored the enemy); Beacon went on the best operator (it destroys its carrier) and a level-up could spend the
 funds a third copy in the shop needed. Changes (server/match/bot.js header, META §1.5): refresh-vs-buy by the shop odds
 of completing held pairs, the freeze for an unaffordable third copy, merges before level-ups, a committed focus /
@@ -345,40 +345,40 @@ Same seeds (1–40) old → new, the match's default rehearsal (3):
 | config | wins | rounds passed | LP left | leaks / match | bounty enemies leaked | merges / bot | elites at R13 |
 |---|---|---|---|---|---|---|---|
 | Solo Standard (1 AI) | 35 → 35 / 40 | 8.80 → 8.80 | 29.9 → 28.6 | 2.5 → 3.3 | 1 → 1 | 1.40 → 2.25 | – (R7: 0.7 → 1.0) |
-| Solo Peril (1 AI) | 19 → 26 / 40 | 13.05 → 13.35 | 14.3 → 16.6 | 26.5 → 19.7 | 10 → 8 of 80 picks | 2.33 → 4.10 | 1.8 → 2.2 |
+| Solo Dire (1 AI) | 19 → 26 / 40 | 13.05 → 13.35 | 14.3 → 16.6 | 26.5 → 19.7 | 10 → 8 of 80 picks | 2.33 → 4.10 | 1.8 → 2.2 |
 | Alliance Standard (4 AI) | 40 → 40 / 40 | 14.00 → 14.00 | 110.0 → 112.2 | 39.4 → 33.1 | 6 → 6 | 2.59 → 4.10 | 1.9 → 2.3 |
-| Alliance Peril (4 AI) | 5 → 12 / 40 | 11.85 → 12.32 | 5.1 → 12.7 | 224.6 → 212.6 | 155 → 148 of ≈ 310 picks | 2.00 → 2.97 | 2.3 → 2.8 |
+| Alliance Dire (4 AI) | 5 → 12 / 40 | 11.85 → 12.32 | 5.1 → 12.7 | 224.6 → 212.6 | 155 → 148 of ≈ 310 picks | 2.00 → 2.97 | 2.3 → 2.8 |
 
-Peril leaks per alive bot in R12 / R13: solo 8.0 / 9.2 → 5.7 / 4.8, co-op 20.5 / 20.7 → 18.5 / 15.8. Co-op bounty leaks
-are bound by the drafts, not the pick: in 223 of the 312 co-op Peril bounty picks no card still on offer had a kill
+Dire leaks per alive bot in R12 / R13: solo 8.0 / 9.2 → 5.7 / 4.8, co-op 20.5 / 20.7 → 18.5 / 15.8. Co-op bounty leaks
+are bound by the drafts, not the pick: in 223 of the 312 co-op Dire bounty picks no card still on offer had a kill
 chance ≥ 0.5 (solo 22 of 80), and only 5 picks (solo 0) took a card below 0.5 while one ≥ 0.5 was on offer — re-measure
-after the bounty-half fix (player report #2). Strategies played alone (solo Peril, seeds 201–220, forced with `--band`):
+after the bounty-half fix (player report #2). Strategies played alone (solo Dire, seeds 201–220, forced with `--band`):
 Cannot 9 → 14 wins of 20, Quintus 9 → 11, Dobermann 8 → 9 (keeping an unused Teacher's Pointer vs dropping it: 11 vs 11 wins over 24 Dobermann
 matches — kept, as it costs nothing but a hand slot). Decision time per bot prep is unchanged (one thread, back to back
-on a quiet host, seeds 1–6, solo Peril / co-op Peril; the rehearsal included): wall clock p50 / p95 94 / 191 → 89 / 205 ms
+on a quiet host, seeds 1–6, solo Dire / co-op Dire; the rehearsal included): wall clock p50 / p95 94 / 191 → 89 / 205 ms
 and 86 / 175 → 83 / 162 ms, CPU 131 / 314 → 124 / 329 ms and 97 / 209 → 91 / 188 ms; the heuristics alone (CPU) 31 / 74
 → 28 / 70 ms and 17 / 39 → 17 / 38 ms (the lineup search tries identical pieces once and reuses the lineup across
 refreshes); a draft pick 0.07 → 0.15 ms (p50). Over the 40-seed A/B the summed prep CPU per match moved −6 % … +2 %. The
 tuning sweeps used seeds 101–148 with the rehearsal off; the tables above are separate seed ranges.
 
 **0.1.1 integration (DESIGN §21.6).** With all 18 workstreams merged (the official bounty draft structures, the AoE,
-displacement and enemy fixes) the same bot on the same seeds wins 27 / 40 solo Peril and 9 / 40 co-op Peril (co-op bounty
+displacement and enemy fixes) the same bot on the same seeds wins 27 / 40 solo Dire and 9 / 40 co-op Dire (co-op bounty
 enemies leaked 120 of 380 picks: 232 drafts offered no card at a kill chance ≥ 0.5 — the R9 boss groups). The bot was
 then reconciled with the merged rules: it plans each unit with the range it is deployed with (`rangeRec`:
 `attackRangeGrid`, the server's `summonRange` grid — no outcome changed on these seeds) and values an attack on every
 enemy in range ×2 (Phalanx Caster / Blast Caster, now `rangeAoe`), a splash ×1.3 and a chain ×1.4 [ASSUMED] (`CROWD`). Seeds 1–40,
-rehearsal 3, before → after: solo Peril 27 → 27 wins, LP left 17.9 → 18.4, bounty enemies leaked 8 → 5 of 104; co-op Peril
+rehearsal 3, before → after: solo Dire 27 → 27 wins, LP left 17.9 → 18.4, bounty enemies leaked 8 → 5 of 104; co-op Dire
 9 → 11 wins, LP left 14.8 → 14.1, leaks per match 215 → 220 — within the noise of 40 seeds (the ×2-only variant: 25 /
 11 wins). Decision time stays at the WF numbers (one thread, back to back, seeds 1–6): heuristics CPU p50 / p95 25 / 59
 → 24 / 57 ms solo and 16 / 36 → 16 / 36 ms co-op; the whole prep with its rehearsal wall clock 80 / 148 → 78 / 153 ms and
 74 / 152 → 73 / 151 ms.
 
-**0.1.1 after the QA (DESIGN §21.6, §21.19).** Seeds 1–40, rehearsal 3 (wins solo Peril / co-op Peril, 4 AI): the merged
+**0.1.1 after the QA (DESIGN §21.6, §21.19).** Seeds 1–40, rehearsal 3 (wins solo Dire / co-op Dire, 4 AI): the merged
 build `dbd45c8` 27 / 11; with WB's 22-match bounty lists (a rule change: R11 is a bountydecision in 14 of 22 and every R11 bounty
 list holds a Special III giant) the same bot 22 / 9 (LP left 16.3 / 10.9); the residual sim fixes change no outcome (22 / 9);
 the bench-shed fix (the buy loop's shed never sells a piece that came this prep) 24 / 10 (LP left 17.4 / 13.1, co-op
 leaks per match 217 → 210). 0.1.0 on the same seeds: 19 / 5; 0.1.0's bot on the final 0.1.1 rules: 23 / 7 (LP left
-14.6 / 5.2, merges per bot 2.2 / 2.0 — the solo gain over 0.1.0 is mostly the rules, the co-op one the bot). The 29 same-prep buy → sell of co-op Peril (2 AI AI takeover + 2
+14.6 / 5.2, merges per bot 2.2 / 2.0 — the solo gain over 0.1.0 is mostly the rules, the co-op one the bot). The 29 same-prep buy → sell of co-op Dire (2 AI AI takeover + 2
 bots, seeds 21–26) drop to 3 (a reward pick's room, `arrange`, `sellJunk`). Decision time unchanged (one thread, seeds
 1–3, both builds side by side): the whole prep p50 / p95 81 / 187 → 81 / 184 ms solo and 71 / 153 → 71 / 129 ms co-op,
 heuristics CPU 36 / 88 → 35 / 86 ms and 16 / 40 → 16 / 40 ms.

@@ -449,7 +449,7 @@ describe('real server + real browsers', { skip: !ENABLED && 'set SP_REAL_E2E=1 (
       await host.open();
       await host.enter('凯尔希');
       await host.click('.mode-card', 'Alliance Simulation');
-      await host.click('.diff-card', 'Hazard Simulation');
+      await host.click('.diff-card', 'Perilous Simulation');
       await host.click('.create-box button', 'Create Alliance');
       const room = (await host.waitFor((s) => !!s.room?.code, 'room created')).room;
       await host.click('button', 'Add AI Teammate');

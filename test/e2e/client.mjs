@@ -172,15 +172,15 @@ export class Client {
     throw new Error(`${this.label}: nothing clickable for ${sel}${text ? ` "${text}"` : ''}`);
   }
 
-  /** If the 剩余资金 confirm is up, press 准备就绪. No dialog is a no-op. */
+  /** If the Unspent Funds confirmation is open, press Ready. No dialog is a no-op. */
   async confirmFundsLeft() {
     await sleep(250);
     const open = await this.page.evaluate(() => {
       const t = document.querySelector('.modal__title');
-      return !!(t && t.textContent.includes('剩余资金'));
+      return !!(t && t.textContent.includes('Unspent Funds'));
     });
     if (!open) return false;
-    return this.click('.modal__actions button', '准备就绪', { timeout: 4000 });
+    return this.click('.modal__actions button', 'Ready', { timeout: 4000 });
   }
 
   /** Centre of the nth visible, enabled (unless `any`), uncovered match (or null). */

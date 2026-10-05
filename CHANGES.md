@@ -44,7 +44,7 @@ own glossary renders 核心协同 / 附加协同 as *Core Alliance* / *Add-on Al
 | 休整期 / 作战 / 结算 | Rest phase / Combat / Settlement | |
 | 悬赏 / 机密商店 / 战术决策 | Bounty / Secret Shop / Tactical Decision | |
 | 同盟模拟 / 独立模拟 | Alliance Simulation / Solo Simulation | the co-op vs single-player mode (同盟, a different word) |
-| 标准 / 险境 / 绝境 / 终极 | Standard / Hazard / Peril / Ultimate | difficulties |
+| 标准 / 险境 / 绝境 / 终极 | Standard / Perilous / Dire / Ultimate | difficulties |
 
 Nations use the official Terra spellings: 炎 **Yan**, 萨尔贡 Sargon, 维多利亚 Victoria, 谢拉格 Kjerag,
 拉特兰 Laterano, 阿戈尔 **Ægir**, 叙拉古 Siracusa, 卡西米尔 Kazimierz. (An earlier draft wrongly used

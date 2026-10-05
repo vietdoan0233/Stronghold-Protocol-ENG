@@ -31,7 +31,7 @@ const specState = (c) => c.page.evaluate(() => {
 });
 
 describe('spectator seats (community report #26, real server)', { skip: !ENABLED && 'set SP_E2E=1 (Chrome + public/assets)' }, () => {
-  test('观战 from the lobby → 观战席 in the room → the match: watching only, no private view, resume, 离开观战', { timeout: 6 * 60 * 1000 }, async () => {
+  test('spectate from the lobby → spectator seat in the room → watch-only match, resume, and leave', { timeout: 6 * 60 * 1000 }, async () => {
     const srv = await startRealServer({ fast: { timerScale: 1, combatSpeed: 4, startRound: 1, kit: 3, autoPlace: true } });
     const P = (await import('puppeteer-core')).default;
     const host = new Client(P, srv.base, 'host', { prefix: 'spectator' });
@@ -40,11 +40,11 @@ describe('spectator seats (community report #26, real server)', { skip: !ENABLED
     try {
       await host.open();
       await host.enter('凯尔希');
-      await host.click('.mode-card', '同盟模拟');
-      await host.click('.diff-card', '标准模拟');
-      await host.click('.create-box button', '创建同盟');
+      await host.click('.mode-card', 'Alliance Simulation');
+      await host.click('.diff-card', 'Standard Simulation');
+      await host.click('.create-box button', 'Create Alliance');
       const room = (await host.waitFor((s) => !!s.room?.code, 'room created')).room;
-      await host.click('.seat--empty button', '添加 AI 队友');
+      await host.click('.seat--empty button', 'Add AI Teammate');
 
       // the lobby's 观战 entry
       await spec.open();
@@ -52,7 +52,7 @@ describe('spectator seats (community report #26, real server)', { skip: !ENABLED
       await spec.enter('阿米娅');
       await spec.click('.join-row input');
       await spec.page.keyboard.type(room.code);
-      await spec.click('.join-row button', '观战');
+      await spec.click('.join-row button', 'Spectate');
       await spec.page.waitForSelector('.room-screen .specbar__who.is-me', { timeout: 10000 });
       const roomView = await spec.page.evaluate(() => ({
         bar: document.querySelector('.room-bar__right .btn--xl')?.textContent || '',
@@ -60,9 +60,9 @@ describe('spectator seats (community report #26, real server)', { skip: !ENABLED
         status: document.querySelector('.room-bar__status')?.textContent || '',
         seats: [...document.querySelectorAll('.seat__name')].map((e) => e.textContent),
       }));
-      assert.match(roomView.bar, /观战中/);
+      assert.match(roomView.bar, /Spectating/);
       assert.equal(roomView.barDisabled, true);
-      assert.match(roomView.status, /观战中/);
+      assert.match(roomView.status, /Spectating/);
       assert.ok(!roomView.seats.includes('阿米娅'), 'never in a player seat');
       await spec.shot('room-spectator');
 
@@ -77,10 +77,10 @@ describe('spectator seats (community report #26, real server)', { skip: !ENABLED
       await host.page.waitForFunction(() => document.querySelectorAll('.specbar__who').length === 1, { timeout: 8000 });
 
       // the match: a spectator is no player to wait for
-      await host.click('.room-bar__right button', '开始模拟', { timeout: 20000 });
+      await host.click('.room-bar__right button', 'Start Simulation', { timeout: 20000 });
       for (const c of [host, spec]) await c.waitFor((s) => s.phase === 'INFO_CHECK', 'briefing', 30000);
-      assert.match(await spec.page.evaluate(() => document.querySelector('.brief__foot .btn--primary')?.textContent || ''), /观战中/);
-      await host.click('.brief__foot .btn--primary', '准备就绪');
+      assert.match(await spec.page.evaluate(() => document.querySelector('.brief__foot .btn--primary')?.textContent || ''), /Spectating/);
+      await host.click('.brief__foot .btn--primary', 'Ready');
       const t0 = Date.now();
       for (;;) {
         const s = await host.st();
@@ -89,7 +89,7 @@ describe('spectator seats (community report #26, real server)', { skip: !ENABLED
         if (s.phase === 'BAND_DRAFT' && s.draft?.turn === s.me) {
           await host.click('.dband:not(.is-taken)', null, { nth: 2, optional: true, timeout: 2000 });
           await sleep(200);
-          await host.click('.draft-detail__btns .btn--primary', '确认选择', { optional: true, timeout: 2000 });
+          await host.click('.draft-detail__btns .btn--primary', 'Confirm Selection', { optional: true, timeout: 2000 });
         }
         await sleep(300);
       }
@@ -107,8 +107,8 @@ describe('spectator seats (community report #26, real server)', { skip: !ENABLED
       }));
       assert.match(prep.watching, /凯尔希/, 'the host\'s board is shown');
       assert.equal(prep.back, 0, 'no 返回自己 — a spectator has no board');
-      assert.match(prep.pill, /观战中/);
-      assert.doesNotMatch(prep.pill, /淘汰/);
+      assert.match(prep.pill, /Spectating/);
+      assert.doesNotMatch(prep.pill, /Eliminated/);
       assert.deepEqual([prep.shop, prep.ready, prep.emote], [false, false, false]);
       const sp1 = await specState(spec);
       assert.deepEqual([sp1.spectating, sp1.priv], [true, false]);
@@ -130,7 +130,7 @@ describe('spectator seats (community report #26, real server)', { skip: !ENABLED
         emote: !!document.querySelector('.ewheel'),
       }));
       assert.match(hud.text, /凯尔希/);
-      assert.doesNotMatch(hud.text, /淘汰/);
+      assert.doesNotMatch(hud.text, /Eliminated/);
       assert.deepEqual([hud.back, hud.emote], [false, false]);
       await sleep(1500);
       await spec.shot('battle');
@@ -143,7 +143,7 @@ describe('spectator seats (community report #26, real server)', { skip: !ENABLED
 
       // 离开观战: back to the lobby, the match goes on
       await spec.click('.gtop__exit', null, { timeout: 15000 });
-      await spec.click('.modal button', '离开观战');
+      await spec.click('.modal__actions button', 'Leave Spectating');
       await spec.page.waitForSelector('.lobby-screen', { timeout: 10000 });
       await host.page.waitForFunction(() => (globalThis.__SP__.store.get().room?.spectators || []).length === 0, { timeout: 8000 });
       const sent = await spec.requests();

@@ -1019,7 +1019,7 @@ describe('browser E2E against the real server', { skip: !ENABLED && 'needs Chrom
       await host.shot('lobby');
       await openGuide(host, '.lobby-guide', 'guide-lobby');
       await host.click('.mode-card', 'Alliance Simulation');
-      await host.click('.diff-card', 'Hazard Simulation');
+      await host.click('.diff-card', 'Perilous Simulation');
       await host.click('.create-box button', 'Create Alliance');
       const room = (await host.waitFor((s) => !!s.room?.code, 'room created')).room;
       await host.click('button', 'Add AI Teammate');
@@ -1243,7 +1243,7 @@ describe('browser E2E against the real server', { skip: !ENABLED && 'needs Chrom
       await solo.open();
       await solo.enter('杜宾');
       await solo.click('.mode-card', 'Solo Simulation');
-      await solo.click('.diff-card', 'Peril Simulation');
+      await solo.click('.diff-card', 'Dire Simulation');
       await solo.click('.create-box button', 'Start Solo Simulation');
       await solo.waitFor((s) => !!s.room, 'solo room');
       if (!(await solo.st()).phase) await solo.click('.room-bar__right button', 'Start Simulation', { timeout: 20000 });

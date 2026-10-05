@@ -24,7 +24,7 @@ const cx = (...p) => p.flat().filter(Boolean).join(' ');
 // The first seven present are shown (+ remaining LP = a 4×2 grid); the title (评语) stats come first.
 // `gold` is the funds a player SPENT (server/match/PlayerState.js spend(); the 挥金如土 title stat).
 const STAT_ROWS = [
-  ['dmgDealt', 'Damage Dealt'], ['kills', 'Enemies Defeated'], ['bossDamage', 'Leader Damage'], ['activatedLayers', 'Alliance Layers'],
+  ['dmgDealt', 'Damage Dealt'], ['kills', 'Enemies Defeated'], ['bossDamage', 'Leader Damage'], ['activatedLayers', 'Alliance Stacks'],
   ['merges', 'Promotions'], ['itemsEquipped', 'Gear Issued'], ['gold', 'Funds Spent'], ['perfectRounds', 'Perfect Combat'],
   ['refreshes', 'Refreshes'], ['leaks', 'Enemies Leaked'], ['lpLost', 'LP Lost'],
 ];

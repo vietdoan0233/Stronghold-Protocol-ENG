@@ -329,7 +329,7 @@ describe('user playtest #2 item 10 — boss-round prep on the boss field (real s
     const srv = await startRealServer({ fast: { timerScale: 0.5, combatSpeed: 8, startRound: 'hidden' } });
     const c = new Client(await pptr(), srv.base, 'hidden', { prefix: 'fix', w: 1366, h: 768 });
     try {
-      const s = await soloToPrep(c, 'Hazard Simulation');
+      const s = await soloToPrep(c, 'Perilous Simulation');
       assert.equal(s.round, 15, 'the Hidden Core round');
       await checkBossPrep(c, 'L', 'hidden');
       const placed = await placeOne(c, 'UP');
@@ -353,7 +353,7 @@ describe('user playtest #2 item 10 — boss-round prep on the boss field (real s
       await host.open();
       await host.enter('凯尔希');
       await host.click('.mode-card', 'Alliance Simulation');
-      await host.click('.diff-card', 'Hazard Simulation');
+      await host.click('.diff-card', 'Perilous Simulation');
       await host.click('.create-box button', 'Create Alliance');
       const room = (await host.waitFor((s) => !!s.room?.code, 'room created')).room;
       await guest.open(`?room=${room.code}`);

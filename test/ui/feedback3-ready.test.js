@@ -18,10 +18,10 @@ const priv = (o = {}) => ({ alive: true, ready: false, funds: 5, bandId: 'band_b
 test('readying with funds left asks first; the text names the funds and the wipe', () => {
   const ask = readyFundsPrompt(priv(), { keptBands: KEPT });
   assert.ok(ask);
-  assert.match(ask.text, /5 资金/);
-  assert.match(ask.text, /剩余资金将清零/);
-  assert.equal(ask.okText, '准备就绪');
-  assert.equal(ask.cancelText, '继续整备');
+  assert.match(ask.text, /5 unspent Funds/);
+  assert.match(ask.text, /Funds left when the Rest Phase ends will be lost/);
+  assert.equal(ask.okText, 'Ready');
+  assert.equal(ask.cancelText, 'Keep Preparing');
   assert.ok(readyFundsPrompt(priv({ funds: 1 }), { keptBands: KEPT }), '1 fund is enough to ask');
 });
 

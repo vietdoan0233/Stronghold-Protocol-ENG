@@ -67,7 +67,7 @@ export function BondStrip({ bonds, layersDisabled = false, onOpen, openId = null
       const next = nextThreshold(b.count ?? 0, th);
       return html`<div key=${b.bondId} role="listitem" data-bond=${b.bondId} data-harmony=${b.harmony > 0 ? b.harmony : null}
           class=${cx('bslot', b.active && 'is-active', openId === b.bondId && 'is-open')}>
-        <${BondDisc} name=${rec?.name || b.bondId} icon=${bondIconUrl(m, b.bondId)} layers=${b.layers ?? 0}
+        <${BondDisc} name=${rec?.name || b.bondId} icon=${bondIconUrl(m, b.bondId)} layers=${rec?.noStack ? undefined : b.layers ?? 0}
           tier=${b.tier ?? 0} maxTier=${Math.max(1, th.length)} active=${!!b.active} size="sm" showName=${true}
           layersDisabled=${layersDisabled} onClick=${() => onOpen(b.bondId)}
           title=${`${rec?.name || b.bondId} ${b.count ?? 0}/${next ?? th[th.length - 1] ?? '-'}${b.harmony > 0 ? ` (incl. Harmony +${b.harmony})` : ''}`} />
@@ -76,7 +76,7 @@ export function BondStrip({ bonds, layersDisabled = false, onOpen, openId = null
     })}
     ${sorted.length > shown.length ? html`<span class="bstrip__more num">+${sorted.length - shown.length}</span>` : null}
   </div>`;
-  return layersDisabled ? html`<${Tooltip} text="Layer stacking disabled" placement="bottom">${strip}<//>` : strip;
+  return layersDisabled ? html`<${Tooltip} text="Alliance stacking is disabled" placement="bottom">${strip}<//>` : strip;
 }
 
 /**
@@ -121,7 +121,7 @@ export function BondPopup({ bondId, entry, priv, banned = [], onClose, onMember,
         <h3 class="bpop__name">${b.name}</h3>
         <div class="bpop__facts">
           ${off ? null : html`<span>On Field <b class="num">${count}</b>${next != null ? html`<small class="num">/${next}</small>` : null}${countsHand ? html`<small> (incl. Reserve)</small>` : null}${harmony ? html`<small class="bpop__hnote" data-harmony=${harmony}> (incl. ${harmonyName} +${harmony})</small>` : null}</span>`}
-          <span>Layers <b class="num t-mint">${layers}</b></span>
+          ${b.noStack ? html`<span>Stack count not shown</span>` : html`<span>Stacks <b class="num t-mint">${layers}</b></span>`}
           <span class=${active ? 't-mint' : 't-lo'}>${active ? `Active${th.length > 1 ? ` · Tier ${roman(tier) || tier}` : ''}` : off ? 'Disabled' : 'Inactive'}</span>
         </div>
       </div>
@@ -131,7 +131,7 @@ export function BondPopup({ bondId, entry, priv, banned = [], onClose, onMember,
       ${th.map((n, i) => html`<span key=${i} class=${cx('bpop__tier', i < tier && 'is-on')}><b class="num">${n}</b>${b.maxCount != null ? html`<small>or fewer</small>` : null}</span>`)}
     </div>
     ${hasNow ? html`<section class="bpop__sec bpop__sec--now">
-      <h4>Current Effect <small class="num">(${layers} ${layers === 1 ? 'layer' : 'layers'})</small></h4>
+      <h4>Current Effect ${b.noStack ? null : html`<small class="num">(${layers} ${layers === 1 ? 'stack' : 'stacks'})</small>`}</h4>
       <${RichText} as="p" text=${formatBondEffect(b, layers)} class="bpop__desc" />
     </section>` : null}
     <section class="bpop__sec">

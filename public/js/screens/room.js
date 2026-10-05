@@ -153,10 +153,12 @@ function SpectatorBar({ facts, myId, busy, onRemove, onSit }) {
   </section>`;
 }
 
-function InviteBox({ code }) {
+function InviteBox({ code, name, difficulty }) {
   const copy = async (what) => {
-    const ok = await copyText(what === 'code' ? code : inviteLink(code));
-    if (ok) toast(what === 'code' ? `Alliance key ${code} copied` : 'Invite link copied', 'success');
+    const difficultyName = DIFFICULTY_NAMES[difficulty] || difficulty;
+    const invite = `${inviteLink(code)} ${name || 'A player'} invites you to join Stronghold Protocol: Alliance — ${difficultyName}.`;
+    const ok = await copyText(what === 'code' ? code : invite);
+    if (ok) toast(what === 'code' ? `Alliance key ${code} copied` : 'Invite link and message copied', 'success');
     else toast('Copy failed. Please copy it manually.', 'warn');
   };
   return html`<div class="invite brackets">
@@ -280,7 +282,7 @@ export function RoomScreen() {
         <h1 class="topbar__title">${coop ? 'Alliance Simulation' : 'Solo Simulation'}<span class="topbar__sep"></span><${DifficultyTag} difficulty=${room.difficulty} size="lg" /></h1>
       </div>
       <div class="topbar__right">
-        ${coop ? html`<${InviteBox} code=${room.code} />` : html`<div class="solo-note"><${MicroLabel}>SINGLE OPERATOR<//><span>Limited to 1 Doctor</span></div>`}
+        ${coop ? html`<${InviteBox} code=${room.code} name=${me.name} difficulty=${room.difficulty} />` : html`<div class="solo-note"><${MicroLabel}>SINGLE OPERATOR<//><span>Limited to 1 Doctor</span></div>`}
       </div>
     </header>
 

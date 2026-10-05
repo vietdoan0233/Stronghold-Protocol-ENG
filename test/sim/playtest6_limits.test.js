@@ -456,7 +456,7 @@ test('docs: research 11 is indexed; SIM / META / DATA / PLAYING / BALANCE state 
   assert.match(META, /BOSS_HIT_LIMIT/);
   assert.match(doc('docs/DATA.md'), /IsBossEnemy/);
   const PLAYING = doc('docs/PLAYING.md');
-  assert.match(PLAYING, /999 layers/);
+  assert.match(PLAYING, /999 stacks/);
   assert.match(PLAYING, /300000/);
   assert.match(doc('docs/BALANCE.md'), /damage cap 300000/);
 });

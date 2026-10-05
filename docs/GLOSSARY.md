@@ -41,7 +41,7 @@ runtime messages. When a term is missing, add it here **in the same commit** tha
 | 同盟模拟 / 联合模拟 | Alliance Simulation | the 1–4 player co-op mode |
 | 独立模拟 | Solo Simulation | |
 | 入门协议 | Entry Protocol | official (act1v) |
-| 标准模拟 / 险境模拟 / 绝境模拟 / 终极模拟 | Standard / Hazard / Peril / Ultimate Simulation | difficulties; short form Standard / Hazard / Peril / Ultimate |
+| 标准模拟 / 险境模拟 / 绝境模拟 / 终极模拟 | Standard / Perilous / Dire / Ultimate Simulation | difficulties; short form Standard / Perilous / Dire / Ultimate |
 | 同盟 (the team of doctors / room) | Alliance | `alliance key` = 同盟密钥, `Create / Join / Leave Alliance`; code says `room` |
 | 盟约 (the synergy system) | Alliance | code says `bond`; lower-case *alliance* in running text |
 | 核心协同 / 附加协同 | Core Alliance / Add-on Alliance | |
@@ -131,7 +131,7 @@ Add-on: 精准 **Precision** · 迅捷 **Swift** · 灵巧 **Dexterity** · 奥�
 Titles: 卫戍之星 **Star of the Garrison** · 不朽盟约 **Immortal Alliance** · 坚若磐石 **Rock Solid** · 精英云集
 **Elite Gathering** · 万事俱备 **Fully Equipped** · 挥金如土 **Spendthrift**.
 
-Use **stacks** for Alliance counters and other countable effects. Reserve **layers** for physical layers such as snow. For an Operator's own Alliances, write “each active alliance this Operator belongs to gains +N stacks”; when activation is not required, write “each alliance this Operator belongs to gains +N stacks (even if inactive).” Name the receiver for fixed or selected Alliances, such as “the active [X] alliance gains +N stacks” or “the currently active alliance with the most stacks gains +N stacks.”
+Always use **stacks** for Alliance counts and counters, never *layers*. Use **layers** for physical layers and status effects that are explicitly described as layers, such as snow. For an Operator's own Alliances, write “each active alliance this Operator belongs to gains +N stacks”; when activation is not required, write “each alliance this Operator belongs to gains +N stacks (even if inactive).” Name the receiver for fixed or selected Alliances, such as “the active [X] alliance gains +N stacks” or “the currently active alliance with the most stacks gains +N stacks.”
 
 ## Operators in the card and the detail panel
 

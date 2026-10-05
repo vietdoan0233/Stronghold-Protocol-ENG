@@ -71,7 +71,7 @@ test('parseImport: accepts the envelope, the stored form, a bare map and text; r
   }
   const newer = parseImport({ v: LOADOUT_VERSION + 1, entries });
   assert.equal(newer.ok, false, 'a NEWER payload is refused, never mis-read');
-  assert.match(newer.error, /请先更新游戏/, 'the player is told to update the game');
+  assert.match(newer.error, /Update the game before importing/, 'the player is told to update the game');
   assert.equal(parseImport({ kind: 'some.other.tool', entries }).ok, false, "another tool's payload");
   assert.equal(parseImport({ v: LOADOUT_VERSION, entries: {} }).ok, false, 'nothing to import');
   assert.equal(parseImport({ v: LOADOUT_VERSION, entries: { 'bad id': { skill: 0 } } }).ok, false, 'no structurally valid entry');
