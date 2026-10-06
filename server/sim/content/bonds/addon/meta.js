@@ -50,10 +50,10 @@ function settleCoins(ctx, bondId, counterKey, label) {
   const gain = (due - paid) * count;
   if (prepEnded(ctx)) {
     ctx.addPendingFunds(gain);
-    ctx.toast(`[${label}] Layers reached: ${gain} Funds will arrive at the start of next round`, 'info');
+    ctx.toast(`[${label}] Stacks reached: ${gain} Funds will arrive at the start of next round`, 'info');
   } else {
     ctx.addFunds(gain, `bond:${bondId}`);
-    ctx.toast(`[${label}] Layers reached: +${gain} Funds`, 'info');
+    ctx.toast(`[${label}] Stacks reached: +${gain} Funds`, 'info');
   }
   return gain;
 }

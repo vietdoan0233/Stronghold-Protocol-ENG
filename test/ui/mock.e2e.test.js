@@ -125,10 +125,10 @@ describe('in-match UI (mock harness, headless Chrome)', { skip: !ENABLED && 'set
     assert.equal((await mockState(page)).shop.level, lv + 1, 'D levels up');
     await page.keyboard.press('Space');
     await sleep(300);
-    // funds are left, so 准备 asks first (剩余资金). Confirm, then the seat is ready.
+    // funds are left, so ready asks first (Unspent Funds). Confirm, then the seat is ready.
     if (await page.$('.modal__title')) {
       const title = await page.$eval('.modal__title', (el) => el.textContent || '');
-      if (title.includes('剩余资金')) await page.click('.modal__actions .btn--primary');
+      if (title.includes('Unspent Funds')) await page.click('.modal__actions .btn--primary');
       await sleep(300);
     }
     assert.equal((await mockState(page)).ready, true, 'Space readies');
@@ -517,6 +517,12 @@ describe('in-match UI (mock harness, headless Chrome)', { skip: !ENABLED && 'set
       await sleep(250);
       if (await page.$('.team__ob')) await page.click('.team__ob');
       await page.waitForSelector('.gm__watching', { timeout: 4000 });
+      // Watching is requested asynchronously; wait until the teammate's prep field has entered the view and selected
+      // its prep camera before opening the enemy preview (otherwise its entry effect can replace the pen camera).
+      await page.waitForFunction(() => {
+        const field = globalThis.__MOCK__.store.get().match.field;
+        return !!field?.prep && document.querySelector('.gm')?.dataset.camera === 'prep';
+      }, { timeout: 5000 });
       await page.click('.enemybtn');
       await page.waitForFunction(() => document.querySelector('.gm')?.dataset.camera === 'pen', { timeout: 3000 });
       await sleep(300);
@@ -526,7 +532,7 @@ describe('in-match UI (mock harness, headless Chrome)', { skip: !ENABLED && 'set
       assert.deepEqual([...new Set(shown.map((x) => x[0]))].sort(), [...new Set(theirs.map((e) => e.enemyKey))].sort());
       if (render === 'engine') assert.ok(shown.every((x) => x[1] >= 17), 'their upper-gate enemies stand in rows 17–18');
       await page.click('.gtop__iconbtn');
-      await page.waitForFunction(() => document.querySelector('.gm')?.dataset.camera === 'normal', { timeout: 3000 });
+      await page.waitForFunction(() => document.querySelector('.gm')?.dataset.camera === 'prep', { timeout: 3000 });
       assert.ok(await page.$('.gm__watching'), 'still scouting the teammate');
       await page.click('.gm__watching button');
       await page.waitForFunction(() => document.querySelector('.gm')?.dataset.camera === 'prep', { timeout: 3000 });

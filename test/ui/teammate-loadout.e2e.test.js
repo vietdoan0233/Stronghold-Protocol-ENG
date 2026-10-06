@@ -1,7 +1,7 @@
 // Real-server browser E2E (DESIGN §16): scouting a teammate's board in prep (前往查看) shows THAT player's operator
 // loadout in the detail card — not the viewer's, not the defaults. The guest picks S1 骑枪刺击 + 不装备 for 野鬃 in the
 // room's 干员调配 and places the elite; the host (no loadout: default S2 + the default module) opens the guest's board
-// and right-clicks the unit: the card must read S1 (已调配) and 未装备模组, with the no-module ATK.
+// and right-clicks the unit: the card must show the Loadout tag and No module equipped, with base ATK.
 // Unit/integration counterpart: test/match/teammate-loadout.test.js.
 //
 //   SP_E2E=1 node --test test/ui/teammate-loadout.e2e.test.js
@@ -29,11 +29,14 @@ const readCard = (c, timeout = 2500) => c.page.waitForSelector('.dpanel .dskill_
 }))).catch(() => null);
 
 describe('DESIGN §16 — a teammate\'s unit shows its owner\'s loadout (real server)', { skip: !ENABLED && 'set SP_E2E=1 (Chrome + public/assets)' }, () => {
-  test('前往查看 in prep: the guest\'s 野鬃 (S1 + 不装备) reads S1 已调配 / 未装备模组 on the host\'s card', { timeout: 6 * 60 * 1000 }, async () => {
+  test('Go Watch in prep: the guest\'s Wild Mane (S1 + No Module) shows that loadout on the host\'s card', { timeout: 6 * 60 * 1000 }, async () => {
     const chess = JSON.parse(readFileSync(path.join(ROOT, 'data/chess.json'), 'utf8'));
+    const en = JSON.parse(readFileSync(path.join(ROOT, 'public/locales/en/chess.json'), 'utf8')).strings;
     const rec = (Array.isArray(chess) ? chess : Object.values(chess.chess || chess)).find((x) => x && x.chessId === ELITE);
     const s1 = rec.skills.find((s) => s.index === 0);
     const sDef = rec.skills.find((s) => s.isDefault);
+    const s1Name = en[s1.name] || s1.name;
+    const sDefName = en[sDef.name] || sDef.name;
     assert.notEqual(sDef.index, 0, 'S1 is not the default skill');
     assert.notEqual(rec.stats.atk, rec.statsBase.atk, 'the default module changes ATK');
 
@@ -60,7 +63,12 @@ describe('DESIGN §16 — a teammate\'s unit shows its owner\'s loadout (real se
       await guest.page.waitForFunction(() => document.querySelectorAll('.lo-card').length === 1, { timeout: 5000 });
       await guest.click('.lo-card');
       await guest.click('.lo-detail .lo-skill[data-skill="0"]');
-      await guest.click('.lo-detail .lo-mod[data-module="none"]');
+      // The module options live inside the detail panel's own scrollport. Client.click only clicks options whose
+      // center is in the viewport, so scroll the English "No Module" radio into view first.
+      const noModule = '.lo-detail .lo-mod--none[data-module="none"]';
+      await guest.page.waitForSelector(noModule, { visible: true, timeout: 5000 });
+      await guest.page.$eval(noModule, (el) => el.scrollIntoView({ block: 'center', inline: 'nearest' }));
+      await guest.click(noModule, 'No Module');
       await guest.page.waitForFunction(() => /Synced/.test(document.querySelector('.lo-sync')?.textContent || ''), { timeout: 8000 });
       await guest.page.keyboard.press('Escape');
       await guest.page.waitForFunction(() => !document.querySelector('.lo'), { timeout: 3000 });
@@ -141,10 +149,10 @@ describe('DESIGN §16 — a teammate\'s unit shows its owner\'s loadout (real se
       }
       assert.ok(card, 'the detail card opens for the teammate\'s elite');
       await host.shot('scout-card');
-      assert.ok(card.skill.includes(s1.name) && card.tag, `teammate card: ${s1.name} 已调配 (${JSON.stringify(card)})`);
-      assert.ok(!card.skill.includes(sDef.name), 'not the default skill');
-      assert.ok(card.none && card.module.includes('未装备模组'), `teammate card: 未装备模组 (${JSON.stringify(card)})`);
-      assert.equal(card.stats['攻击'], String(rec.statsBase.atk), `teammate card ATK without the module (${JSON.stringify(card.stats)})`);
+      assert.ok(card.skill.includes(s1Name) && card.tag, `teammate card: ${s1Name} has a Loadout tag (${JSON.stringify(card)})`);
+      assert.ok(!card.skill.includes(sDefName), 'not the default skill');
+      assert.ok(card.none && card.module.includes('No module equipped'), `teammate card: No module equipped (${JSON.stringify(card)})`);
+      assert.equal(card.stats.ATK, String(rec.statsBase.atk), `teammate card ATK without the module (${JSON.stringify(card.stats)})`);
       assert.deepEqual(problemsOf([host, guest]), []);
     } finally {
       for (const c of [host, guest]) if (c.problems.length) console.log(c.label, c.problems.slice(0, 20).join('\n'));

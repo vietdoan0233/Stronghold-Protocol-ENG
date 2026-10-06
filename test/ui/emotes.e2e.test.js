@@ -322,16 +322,26 @@ describe('official emotes in the browser', { skip: !ENABLED && 'set SP_E2E=1 (an
   test('in-match mock: bubbles beside the senders\' avatars, wheel above 交流', { skip: !HAS_ART && 'no official emote art (neither the local extraction nor the fetched copies)' }, async () => {
     const { page, problems } = await open('/dev/game-mock.html?shot=1&render=fallback&phase=PREP&variant=emote', { w: 1920, h: 1080 });
     await page.waitForFunction(() => !!document.querySelector('.screen:not(.gload)'), { timeout: 15000 });
-    await page.waitForSelector('.team__bubble');
     await page.waitForSelector('.ewheel__panel');
-    await sleep(700);
+    // The variant seeds its preview bubbles during boot, so a slow cold start can consume their 3 s lifetime before
+    // this test reaches them. Emit a fresh teammate emote from the mock harness after the page is ready.
+    const emitted = await page.evaluate(() => {
+      const button = [...document.querySelectorAll('#mockbar button')].find((b) => b.textContent.trim() === 'teammate emote');
+      if (!button) return false;
+      button.click();
+      return true;
+    });
+    assert.equal(emitted, true, 'the mock harness can emit a teammate emote');
+    await page.waitForSelector('.team__bubble');
+    await page.waitForFunction(() => [...document.querySelectorAll('.team__bubble img')].some((img) => img.complete && img.naturalWidth > 0));
+    await sleep(700); // let the 240 ms pop animation settle before checking the final placement
     const s = await wheelState(page);
     assert.equal(s.items, 6);
     assert.equal(s.imgs, 6);
     assert.equal(s.panelText, '');
     const geo = await page.$$eval('.team__row', (rows) => rows.filter((r) => r.querySelector('.team__bubble')).map((r) => {
       const row = r.getBoundingClientRect();
-      const a = r.querySelector('.pavatar, .team__btn').getBoundingClientRect();
+      const a = r.querySelector('.pavatar').getBoundingClientRect();
       const b = r.querySelector('.team__bubble').getBoundingClientRect();
       const bubble = r.querySelector('.team__bubble');
       return {

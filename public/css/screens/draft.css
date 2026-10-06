@@ -106,7 +106,7 @@
 .minfo-dlg .modal__head { padding: .16rem .3rem .02rem; }
 .minfo-dlg .modal__head .micro { font-size: max(.11rem, 8px); }
 .minfo-dlg .modal__title { font-size: max(.26rem, 15px); }
-.minfo-dlg .modal__body { display: flex; flex-direction: column; gap: max(.16rem, 6px); padding: .1rem .3rem .2rem; }
+.minfo-dlg .modal__body { display: flex; flex-direction: column; gap: max(.16rem, 6px); padding: .1rem .3rem .1rem; }
 .minfo-dlg .modal__actions { align-items: center; padding: .12rem .3rem; }
 .minfo-dlg .modal__actions .btn { height: max(.5rem, 30px); font-size: max(.18rem, 12px); }
 .minfo-dlg__status { margin-right: auto; min-width: 0; }

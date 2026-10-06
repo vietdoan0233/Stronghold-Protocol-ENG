@@ -23,6 +23,11 @@
   border-left: 3px solid var(--mint-500);
 }
 .shopbar__remain b { color: var(--mint-400); font-size: .2rem; margin-left: .04rem; }
+/* On 16:10 desktop layouts the board's last bench pad sits just left of these controls; use the shop's empty right
+   margin to keep the tools clear of that pad without shrinking their labels or hit targets. */
+@media (min-width: 1000px) {
+  .shopbar__tools { margin-right: max(-.14rem, -12px); }
+}
 .toolbtn {
   --tb: var(--ice);
   display: flex; align-items: center; gap: .08rem; height: .48rem; padding: 0 .14rem 0 .08rem;

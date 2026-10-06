@@ -135,7 +135,7 @@ describe('6: 机变 cards (道具补给 / 机密商店 / 悬赏 / 战术) show t
     assert.ok(armed.some((n) => hasClass(n, 'spcard__confirm')));
   });
 
-  test('CSS: left-aligned official card; the description is clamped by lines, larger on desktop, ≥ .18rem on short phones', () => {
+  test('CSS: left-aligned official card; descriptions grow in full at desktop and on short phones', () => {
     const css = read('public/css/screens/game-panels.css');
     const rule = (sel, src = css) => {
       const m = src.match(new RegExp(`(?:^|\\n)\\s*${sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} \\{([^}]*)\\}`));
@@ -144,15 +144,18 @@ describe('6: 机变 cards (道具补给 / 机密商店 / 悬赏 / 战术) show t
     assert.match(rule('.spcard'), /text-align: left/);
     assert.match(rule('.spcard__head'), /display: flex/);
     const desc = rule('.spcard__desc');
-    assert.match(desc, /-webkit-line-clamp: \d/);
+    assert.doesNotMatch(desc, /line-clamp|overflow: hidden/);
     const size = (r) => Number(r.match(/font-size: (\.\d+)rem/)[1]);
     assert.ok(size(desc) >= 0.19, `desktop description ${size(desc)}rem`);
+    assert.match(rule('.spov__inner') || '', /overflow: auto/);
+    assert.match(rule('.spov__grid') || '', /grid-template-rows: repeat\(2, max-content\)/);
+    assert.match(rule('.spcard') || '', /min-height: max-content/);
     // short landscape phones (height < 10.8rem because the root size is clamped at 40 px)
     const phone = css.match(/@media \(max-height: 431\.98px\) \{([\s\S]*?)\n\}/);
     assert.ok(phone, 'a short-screen block');
     const pdesc = rule('.spcard__desc', phone[1]);
     assert.ok(pdesc && size(pdesc) >= 0.18, 'phones keep a readable description');
-    assert.doesNotMatch(pdesc, /line-clamp/, 'phones show as many lines as 16:9 (信标 takes 7 below ≈ 740 px wide)');
+    assert.doesNotMatch(pdesc, /line-clamp/, 'phones show the full description');
     assert.ok(rule('.spcard__icon', phone[1]), 'phones use a smaller icon');
     assert.match(rule('.spov__inner', phone[1]) || '', /top: \.\d+rem/, 'phones: a tighter header gives the grid more height');
     // a taken card's head keeps clear of the taker's badge (top-right corner), on phones too

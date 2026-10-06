@@ -596,11 +596,26 @@ async function openGuide(c, openSel, shotName) {
   return true;
 }
 
+async function confirmReadyPrompt(c) {
+  // Ready can open the Funds warning after the click/key handler returns. Wait for that dialog
+  // or for readiness/phase to advance so an immediate DOM check cannot race the render.
+  await c.page.waitForFunction(() => {
+    if (document.querySelector('.modal__box[role="dialog"]')) return true;
+    const s = globalThis.__SP__?.store.get();
+    const phase = s?.match?.public?.phase;
+    return !!s?.match?.private?.ready || (!!phase && phase !== 'PREP');
+  }, { timeout: 5000 }).catch(() => {});
+  if (await c.exists('.modal__box[role="dialog"]')) {
+    await c.click('.modal__actions .btn--primary', 'Ready');
+  }
+}
+
 async function ready(c, { key = false } = {}) {
   if (!(await c.isEditable())) return;
   const s = await c.st();
   if (!s.canReady) { c.note(`temp not empty (${s.temp}) — ready blocked`); return; }
   if (key) { await c.page.mouse.click(c.w / 2, c.h * 0.3); await c.page.keyboard.press('Space'); } else await c.click('.readybtn');
+  await confirmReadyPrompt(c);
   await c.waitFor((x) => x.ready || x.phase !== 'PREP', 'ready', 8000);
 }
 

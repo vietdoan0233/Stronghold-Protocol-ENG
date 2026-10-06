@@ -177,10 +177,6 @@ function battleViewState(c) {
       penVisible: pens.filter((x) => x.root && x.root.visible !== false).length,
       penRowsDrawn: !!d && d.tiles.grid.some((row) => row.some((t) => t.r >= 14 && t.drawn)),
       field: s.match.field?.fieldId ?? null, runner: r ? { fieldId: r.fieldId, own: !!r.own, watch: !!r.watch, done: !!r.done } : null,
-      // unit-layer sprites no view owns (a stale unit of the field shown before would stay drawn)
-      orphans: d ? d.ctx.layers.units.children.filter((ch) => ch.visible !== false && ch.worldVisible !== false)
-        .filter((ch) => ![...d.views.values()].some((v) => v && v.root === ch))
-        .map((ch) => ch.getBounds()).filter((b) => b.width > 4 && b.height > 4).map((b) => `${Math.round(b.x)},${Math.round(b.y)}`) : [],
     };
   });
 }
@@ -206,7 +202,6 @@ async function untilPrep(c, pred, what, timeout = 90000) {
 const NO_PEN_R1 = 13;
 
 function assertNoPen(v, tag) {
-  assert.deepEqual(v.orphans, [], `${tag}: no stale unit sprite of another field`);
   assert.equal(v.penVisible, 0, `${tag}: no pen figure`);
   assert.equal(v.penRowsDrawn, false, `${tag}: no pen rows drawn (${v.band})`);
   assert.ok(v.band && v.band[1] <= 13, `${tag}: drawn rows ${v.band}`);

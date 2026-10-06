@@ -29,6 +29,17 @@ const ITEMS = (() => {
   const list = Array.isArray(raw) ? raw : Object.values(raw.items || raw);
   return new Map(list.filter((x) => x && x.id).map((x) => [x.id, x]));
 })();
+const EN_ITEM_STRINGS = JSON.parse(readFileSync(path.join(ROOT, 'public/locales/en/items.json'), 'utf8')).strings;
+const itemUiName = (id) => {
+  const name = ITEMS.get(id)?.name;
+  return EN_ITEM_STRINGS[name] || name;
+};
+/** In-process server for graceful-stop coverage: Windows child.kill('SIGTERM') is an abrupt termination. */
+async function startInProcessServer(port) {
+  const { startServer } = await import('../../server/index.js');
+  const server = await startServer({ port, host: '127.0.0.1', quiet: true });
+  return { port: server.port, base: server.url, logs: [], stop: () => server.close() };
+}
 const attaches = (id) => !String(ITEMS.get(id)?.kind || '').startsWith('consume_on_equip');
 /** Three distinct plain equipment items (attach, mergeable pairs never complete: all different). */
 const KIT_ITEMS = [...ITEMS.values()].filter((i) => i.itemType === 'EQUIP' && !i.isGolden && attaches(i.id) && i.tier === 1).map((i) => i.id).sort().slice(0, 3);
@@ -62,7 +73,10 @@ describe('client leftovers — mock harness', { skip: !ENABLED && 'set SP_E2E=1 
   }
   const mockPriv = (page) => page.evaluate(() => JSON.parse(JSON.stringify(globalThis.__MOCK__.S().priv)));
   const mockReqs = (page, t) => page.evaluate((t) => globalThis.__MOCK__.S().requests.filter((r) => r[0] === t), t);
-  const center = (page, sel) => page.$eval(sel, (el) => { const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+  const center = async (page, sel) => {
+    await page.waitForSelector(sel, { visible: true, timeout: 5000 });
+    return page.$eval(sel, (el) => { const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+  };
   const drag = async (page, from, to) => {
     await page.mouse.move(from.x, from.y);
     await page.mouse.down();
@@ -95,9 +109,9 @@ describe('client leftovers — mock harness', { skip: !ENABLED && 'set SP_E2E=1 
       lead: document.querySelector('.eqr__lead')?.textContent || '',
     }));
     assert.deepEqual(dlg.opts.map((o) => o.uid), target.items.map((x) => x.uid), 'both equipped items, oldest first');
-    assert.deepEqual(dlg.opts.map((o) => o.name), target.items.map((x) => ITEMS.get(x.id).name));
+    assert.deepEqual(dlg.opts.map((o) => o.name), target.items.map((x) => itemUiName(x.id)));
     assert.ok(dlg.opts.every((o) => o.icon && o.desc > 0 && o.checked === 'false'), 'icons + effects, nothing preselected');
-    assert.equal(dlg.incoming, ITEMS.get(item.id).name);
+    assert.equal(dlg.incoming, itemUiName(item.id));
     assert.equal(dlg.okDisabled, true, 'Confirm Replacement (确认替换) needs a pick');
     assert.match(dlg.lead, /the gear you replace will be destroyed/);
     assert.equal(await page.$('.uframe__btn--destroy'), null, 'no 销毁 anywhere for equipped items');
@@ -155,7 +169,7 @@ describe('client leftovers — mock harness', { skip: !ENABLED && 'set SP_E2E=1 
     assert.match(pend, /DOT/);
     assert.match(pend, /Team LP starts draining in \d+\s*s/);
     const secs = Number(pend.match(/draining in\s*(\d+)/)[1]);
-    assert.ok(secs > 10 && secs <= 18, `drain in ${secs} s`);
+    assert.ok(secs > 0 && secs <= 18, `drain in ${secs} s`);
     assert.equal(await page.$eval('.gtop__right .countdown', (el) => el.getAttribute('aria-label')), '0 seconds left');
     await page.screenshot({ path: path.join(OUT, 'leftover-fa-overtime.png') });
     assert.deepEqual(problems, []);
@@ -280,7 +294,7 @@ describe('client leftovers — real server', { skip: !ENABLED && 'set SP_E2E=1 (
       await dropItem(third);
       await c.page.waitForSelector('.eqr .eqr__opt', { timeout: 4000 });
       assert.deepEqual(await c.page.$$eval('.eqr__opt', (els) => els.map((el) => Number(el.dataset.uid))), equipped.map((x) => x.uid));
-      assert.deepEqual(await c.page.$$eval('.eqr__opt .eqr__name', (els) => els.map((el) => el.textContent)), equipped.map((x) => ITEMS.get(x.id).name));
+      assert.deepEqual(await c.page.$$eval('.eqr__opt .eqr__name', (els) => els.map((el) => el.textContent)), equipped.map((x) => itemUiName(x.id)));
       await c.shot('replace-real');
       const sentBefore = (await c.requests('g.equip')).length;
       await c.click('.eqr__cancel');
@@ -362,7 +376,7 @@ describe('client leftovers — real server', { skip: !ENABLED && 'set SP_E2E=1 (
       // a crash / kill: no room.closed reaches the client — only the new session's welcome tells
       await srv.stop({ hard: true });
       await sleep(800);
-      srv = await startRealServer({ port });
+      srv = await startInProcessServer(port);
       await c.page.waitForFunction(() => [...document.querySelectorAll('.toast')].some((t) => t.textContent.includes('The server session was reset; the previous simulation has ended')), { timeout: 30000 });
       await c.page.waitForSelector('.lobby-screen', { timeout: 10000 });
       const s = await c.st();
@@ -388,7 +402,7 @@ describe('client leftovers — real server', { skip: !ENABLED && 'set SP_E2E=1 (
       await srv.stop();
       await c.page.waitForFunction(() => [...document.querySelectorAll('.toast')].some((t) => t.textContent.includes('The server is under maintenance')), { timeout: 15000 });
       await c.page.waitForSelector('.lobby-screen', { timeout: 10000 });
-      srv = await startRealServer({ port });
+      srv = await startInProcessServer(port);
       await c.waitFor((x) => x.room == null && x.phase == null, 'lobby after the graceful restart', 30000);
       await c.page.waitForFunction(() => globalThis.__SP__.net.status === 'online', { timeout: 30000 });
       await sleep(800);

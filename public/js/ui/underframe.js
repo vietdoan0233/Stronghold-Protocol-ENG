@@ -59,7 +59,9 @@ export function PlateIcon({ sprite, glyph, tone }) {
 /**
  * Client-px rect the underframe of a tile covers: the diamond plus its buttons (plates, labels, the +N price) — the
  * geometry of the css below (.uframe__btn--retreat / --sell: .56rem plates at 25 % / 75 % across, 25 % down, shifted
- * −80 % / −20 % horizontally and −90 % vertically). Used for the detail panel placement.
+ * −80 % / −20 % horizontally and −90 % vertically). The button's width is set by its label, not just its plate: keep
+ * the longest current label ("Retreat [Q]") in the collision rect so the left-docked detail card clears the button.
+ * Used for the detail panel placement.
  * @param {{ x: number, y: number, s: number }|null} g view.tileScreen(row, col)
  * @param {number} [rem] root font size (px)
  * @returns {{ left: number, right: number, top: number, bottom: number }|null}
@@ -69,11 +71,12 @@ export function underframeRect(g, rem = 100) {
   const s = g.s > 0 ? g.s : 64;
   const half = s * 1.05;
   const P = rem * 0.56;                 // plate
+  const buttonW = Math.max(P, rem * 1.25); // longest current label plus its letter spacing and padding
   const H = P + rem * 0.26;             // plate + label
   const q = half / 2;                   // 25 % / 75 % of the diamond box, from its centre
   const btnTop = g.y - q - 0.9 * H;
-  const left = Math.min(g.x - half, g.x - q - 0.8 * P);
-  const right = Math.max(g.x + half, g.x + q - 0.2 * P + P + rem * 0.14);
+  const left = Math.min(g.x - half, g.x - q - 0.8 * buttonW);
+  const right = Math.max(g.x + half, g.x + q + 0.8 * buttonW + rem * 0.14);
   return { left, right, top: Math.min(g.y - half, btnTop - rem * 0.08), bottom: g.y + half };
 }
 

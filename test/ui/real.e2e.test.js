@@ -12,7 +12,7 @@
 // onto a unit, ready (mouse / keyboard) → 机变 picks → combat rendered by the Pixi engine with real Spine units (client-
 // side combat: no view switcher); once a human's own battle is over, a teammate row → 前往查看 shows that teammate's
 // running battle and 返回战场 goes back (research 09 §3.1) → … until combat of round SP_REAL_ROUNDS (default 4).
-// Solo: 独立模拟 (标准), free band pick, two rounds with shopping and deployment, then 放弃模拟 back to the lobby.
+// Solo: 独立模拟 (标准), free band pick, two rounds with shopping and deployment, then abandon the simulation back to the lobby.
 // Every page must finish with zero console errors, page errors, failed requests or HTTP errors.
 // Screenshots: test/e2e/out/real-*.png.
 
@@ -205,6 +205,21 @@ class Client {
   async isEditable() {
     const s = await this.st();
     return s.phase === 'PREP' && !s.ready && s.alive;
+  }
+
+  async confirmReadyPrompt() {
+    // Wait until Ready either takes effect or the Funds confirmation appears. The dialog is mounted
+    // asynchronously, so checking immediately after a mouse/key event can race its render.
+    await this.page.waitForFunction(() => {
+      if (document.querySelector('.modal__box[role="dialog"]')) return true;
+      const s = globalThis.__SP__?.store.get();
+      const phase = s?.match?.public?.phase;
+      return !!s?.match?.private?.ready || (!!phase && phase !== 'PREP');
+    }, { timeout: 5000 }).catch(() => {});
+    if (await this.exists('.modal__box[role="dialog"]')) {
+      // Ready asks for confirmation when Funds remain, since the Rest Phase will clear them.
+      await this.click('.modal__actions .btn--primary', 'Ready');
+    }
   }
 
   // ---- prep actions ---------------------------------------------------------------------------------------------------
@@ -413,6 +428,7 @@ class Client {
   async ready() {
     if (!(await this.isEditable())) return;
     await this.click('.readybtn');
+    await this.confirmReadyPrompt();
     await this.waitFor((s) => s.ready || s.phase !== 'PREP', 'ready', 8000);
   }
 }
@@ -535,7 +551,11 @@ describe('real server + real browsers', { skip: !ENABLED && 'set SP_REAL_E2E=1 (
             await c.deployFromHand(2);
             const s2 = await c.st();
             if (s2.temp > 0) c.note(`temp not empty (${s2.temp}) — ready blocked`);
-            if (c === guest) { await c.page.keyboard.press('Space'); await c.waitFor((x) => x.ready || x.phase !== 'PREP', 'ready (Space)', 8000); } else await c.ready();
+            if (c === guest) {
+              await c.page.keyboard.press('Space');
+              await c.confirmReadyPrompt();
+              await c.waitFor((x) => x.ready || x.phase !== 'PREP', 'ready (Space)', 8000);
+            } else await c.ready();
           }
         } else if (hs.phase === 'SP_DRAFT') {
           for (const c of both) {
@@ -625,7 +645,7 @@ describe('real server + real browsers', { skip: !ENABLED && 'set SP_REAL_E2E=1 (
     }
   });
 
-  test('solo: 独立模拟 through two rounds, then 放弃模拟 back to the lobby', { timeout: 10 * 60 * 1000 }, async () => {
+  test('solo: Solo Simulation through two rounds, then abandon back to the lobby', { timeout: 10 * 60 * 1000 }, async () => {
     const solo = new Client(puppeteer, base, 'solo');
     try {
       await solo.open();
@@ -658,9 +678,9 @@ describe('real server + real browsers', { skip: !ENABLED && 'set SP_REAL_E2E=1 (
         await sleep(1500);
         await solo.shot(`solo-combat-r${round}`);
       }
-      // leave for good: exit → 放弃模拟 → lobby
+      // leave for good: exit → Abandon Simulation → lobby
       await solo.click('.gtop__exit');
-      await solo.click('.modal__actions .btn', '放弃模拟');
+      await solo.click('.modal__actions .btn', 'Abandon Simulation');
       await solo.waitFor((s) => !s.room && !s.phase, 'back in the lobby', 20000);
       await solo.page.waitForSelector('.lobby-screen', { timeout: 10000 });
       await assertClean([solo]);

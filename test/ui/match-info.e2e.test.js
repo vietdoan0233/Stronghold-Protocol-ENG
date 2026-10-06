@@ -200,13 +200,13 @@ describe('GitHub issue #8 item 1: 本局信息 in the strategy draft (real serve
     const arcane = await centre(page, '.minfo-dlg .brief-bond[data-bond="arcaneShip"] .bond__disc');
     await page.mouse.move(arcane.x, arcane.y);
     await page.waitForSelector('.tooltip.is-shown', { visible: true, timeout: 3000 });
-    assert.equal(await page.$eval('.tooltip.is-shown', (el) => el.textContent), '奥术: disabled this match (this alliance will not activate)');
+    assert.equal(await page.$eval('.tooltip.is-shown', (el) => el.textContent), 'Arcane: disabled this match (this alliance will not activate)');
     const status = await page.$eval('[data-testid="match-info-status"]', (el) => el.textContent.trim());
     assert.equal(status, 'Your turn to decide', 'solo: untimed — no seconds');
     const box = await page.$eval('.minfo-dlg', (el) => { const r = el.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, left: r.left, right: r.right }; });
     assert.ok(box.top >= 0 && box.bottom <= 1080 && box.left >= 0 && box.right <= 1920, `inside the screen ${JSON.stringify(box)}`);
-    const fits = await page.$eval('.minfo-dlg .modal__body', (el) => el.scrollHeight <= el.clientHeight + 1);
-    assert.ok(fits, 'desktop: everything visible without scrolling');
+    const fit = await page.$eval('.minfo-dlg .modal__body', (el) => ({ scroll: el.scrollHeight, client: el.clientHeight, overflow: getComputedStyle(el).overflow }));
+    assert.ok(fit.scroll <= fit.client + 1, `desktop: everything visible without scrolling (${JSON.stringify(fit)})`);
     await shot(page, 'solo-dialog');
 
     // Esc

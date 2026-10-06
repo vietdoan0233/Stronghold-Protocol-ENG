@@ -72,7 +72,7 @@
 
 /* ---- body layout -------------------------------------------------------------------------------------------------- */
 .lo-body {
-  flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 7rem);
+  flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 7rem); grid-template-rows: minmax(0, 1fr);
   gap: .22rem; padding: .18rem .3rem .22rem;
 }
 .lo-roster { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: .12rem; }
@@ -316,7 +316,7 @@
 .lo-sec--stats .dstats-wrap { flex-wrap: wrap; gap: .1rem; }
 .lo-sec--stats .dstats-wrap > .dstats { flex: 1 1 max(3.2rem, 190px); }
 .lo-sec--stats .dstat { padding: .05rem .08rem; }
-.lo-sec--stats .dstat__k { font-size: max(.13rem, 9px); }
+.lo-sec--stats .dstat__k { font-size: max(.13rem, 9px); white-space: normal; overflow: visible; overflow-wrap: anywhere; text-overflow: clip; }
 .lo-sec--stats .dstat__v { font-size: max(.2rem, 12px); }
 .lo-sec--stats .drange { min-width: max(1.1rem, 56px); }
 .lo-sec--stats .rgrid { --rg: max(.14rem, 7px); } /* (a grid wider than the box keeps its inline, shrunk --rg) */
@@ -346,6 +346,15 @@
 @media (max-width: 1100px) {
   .lo-body { grid-template-columns: minmax(0, 1fr) minmax(0, 6.4rem); gap: .16rem; padding: .12rem .2rem .16rem; }
   .lo-chip__lbl { display: none; }
+}
+/* Keep the title and actions in separate, shrinkable grid tracks before the desktop three-column header gets tight.
+   The centered desktop title used to overlap the action buttons at tablet and phone widths. */
+@media (max-width: 900px) {
+  .lo-top { grid-template-columns: auto minmax(0, 1fr) auto; gap: .1rem; }
+  .lo-top__center { min-width: 0; align-items: flex-start; }
+  .lo-top__center .micro { display: none; }
+  .lo-top__title { gap: .06rem; font-size: max(.28rem, 14px); letter-spacing: .05em; white-space: nowrap; }
+  .lo-top__icon { width: max(.26rem, 14px); height: max(.26rem, 14px); }
 }
 /* phones (the root scale is clamped at 40 px: less than ~14 rem of width): the detail slides over the roster */
 @media (max-width: 760px) {

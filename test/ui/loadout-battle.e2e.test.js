@@ -5,8 +5,8 @@
 //
 //   SP_E2E=1 node --test test/ui/loadout-battle.e2e.test.js
 //
-// The chess: elite 野鬃 (chess_char_1_19_b). Default = S2 夹枪冲锋 (25/40 SP) + module 长枪替补套装 (ATK +40, ASPD +3).
-// Chosen here: S1 骑枪刺击 (ON_DEPLOY: "部署后攻击速度+100" for 25 s) + 不装备 — so right after the unit deploys the
+// The operator: elite Wild Mane (chess_char_1_19_b). Default = S2 + its default module (ATK +40, ASPD +3).
+// Chosen here: S1 (ON_DEPLOY: ASPD +100 for 25 s) + No Module — so right after the unit deploys the
 // local battle must show S1 active with a draining duration bar, ASPD +100 and the no-module stats (ATK 524, ASPD 100).
 // The server is test/e2e/fastServer.mjs with its starter-kit hook (SP_START_CHESS: the elite in the hand at round 1);
 // everything else is the real match engine and the real UI driven by real mouse input.
@@ -31,10 +31,12 @@ const untimed = (c) => c.page.evaluate(() => ({
 }));
 
 describe('user playtest #2 item 1 — loadout chosen in the UI fights in the local battle (real server)', { skip: !ENABLED && 'set SP_E2E=1 (Chrome + public/assets)' }, () => {
-  test('干员调配 S1 + 不装备 for 野鬃 → m.private.loadout → b.start spec → the local sim runs S1 with the no-module stats', { timeout: 6 * 60 * 1000 }, async () => {
+  test('Wild Mane S1 + No Module reaches m.private.loadout and the battle spec, then runs with base stats', { timeout: 6 * 60 * 1000 }, async () => {
     const chess = JSON.parse(readFileSync(path.join(ROOT, 'data/chess.json'), 'utf8'));
+    const en = JSON.parse(readFileSync(path.join(ROOT, 'public/locales/en/chess.json'), 'utf8')).strings;
     const rec = (Array.isArray(chess) ? chess : Object.values(chess.chess || chess)).find((x) => x && x.chessId === ELITE);
     const s1 = rec.skills.find((s) => s.index === 0);
+    const s1Name = en[s1.name] || s1.name;
     assert.equal(s1.skillId, 'skchr_wildmn_1');
     assert.equal(s1.spType, 'ON_DEPLOY');
     assert.notEqual(rec.skills.find((s) => s.isDefault).index, 0, 'S1 is not the default skill');
@@ -54,7 +56,11 @@ describe('user playtest #2 item 1 — loadout chosen in the UI fights in the loc
       await c.page.waitForFunction(() => document.querySelectorAll('.lo-card').length === 1, { timeout: 5000 });
       await c.click('.lo-card');
       await c.click('.lo-detail .lo-skill[data-skill="0"]');
-      await c.click('.lo-detail .lo-mod[data-module="none"]');
+      // Scroll the No Module radio into the detail panel's scrollport; Client.click only handles on-screen centers.
+      const noModule = '.lo-detail .lo-mod--none[data-module="none"]';
+      await c.page.waitForSelector(noModule, { visible: true, timeout: 5000 });
+      await c.page.$eval(noModule, (el) => el.scrollIntoView({ block: 'center', inline: 'nearest' }));
+      await c.click(noModule, 'No Module');
       await c.page.waitForFunction(() => document.querySelector('.lo-skill.is-on[data-skill="0"]') && document.querySelector('.lo-mod.is-on[data-module="none"]'), { timeout: 3000 });
       await c.page.waitForFunction(() => /Synced/.test(document.querySelector('.lo-sync')?.textContent || ''), { timeout: 8000 });
       await c.shot('overlay');
@@ -94,7 +100,7 @@ describe('user playtest #2 item 1 — loadout chosen in the UI fights in the loc
       await c.waitFor((s) => s.board > 0, 'placed', 8000);
       await sleep(600);
 
-      // the detail card of the placed elite shows the chosen skill (已调配) and 未装备模组
+      // The placed Elite's detail card shows the selected skill's Loadout tag and No module equipped.
       let detail = null;
       for (const at of [0.72, 0.4, 0.88]) {
         const p = await c.piecePoint(piece.uid, at);
@@ -114,11 +120,11 @@ describe('user playtest #2 item 1 — loadout chosen in the UI fights in the loc
         if (detail) break;
       }
       assert.ok(detail, 'the detail card opens for the placed elite');
-      assert.ok(detail.skill.includes(s1.name) && detail.tag, `detail card: ${s1.name} Loadout tag (${JSON.stringify(detail)})`);
+      assert.ok(detail.skill.includes(s1Name) && detail.tag, `detail card: ${s1Name} Loadout tag (${JSON.stringify(detail)})`);
       assert.ok(detail.none && detail.module.includes('No module equipped'), `detail card: No module equipped (${JSON.stringify(detail)})`);
       // …and the stats / trait the unit fights with: no module (ATK 524, interval 1.00 s, "Obtain 1 DP") — not the default module's
       assert.equal(detail.stats.ATK, String(rec.statsBase.atk), `detail card ATK without the module (${JSON.stringify(detail.stats)})`);
-      assert.equal(detail.stats['Atk Interval'], '1.00s', 'detail card interval: ASPD 100');
+      assert.equal(detail.stats['Attack Interval'], '1.00s', 'detail card interval: ASPD 100');
       assert.match(detail.trait, /Obtain 1 DP/, `detail card trait without the module (${detail.trait})`);
       await c.shot('detail');
       await c.page.keyboard.press('Escape');

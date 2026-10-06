@@ -397,8 +397,14 @@ describe('multi-device (Chrome device emulation)', { skip: !ENABLED && 'set SP_E
     const nogl = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--no-sandbox', '--disable-webgl', '--disable-webgl2', '--disable-3d-apis'] });
     try {
       const { page, problems } = await open('ipad', 'phase=PREP', { b: nogl });
+      // Start observing before the view becomes available: the fallback notice is a transient 5-second toast, so
+      // waiting for __SP_VIEW__ first can miss it if the browser is under load when it reports the view to Node.
+      const fallbackNotice = page.waitForFunction(
+        () => [...document.querySelectorAll('.toast__text')].some((el) => el.textContent.includes('simplified view')),
+        { timeout: 30000 },
+      );
       await page.waitForFunction(() => globalThis.__SP_VIEW__?.kind === 'fallback', { timeout: 20000 });
-      await page.waitForSelector('.toast', { timeout: 5000 });
+      await fallbackNotice;
       assert.match(await page.$eval('.toast-host', (el) => el.textContent), /simplified view/);
       await page.click('.enemybtn');
       await page.waitForSelector('.ff-pen__enemy', { timeout: 3000 });

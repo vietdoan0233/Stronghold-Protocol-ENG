@@ -77,3 +77,8 @@
 .rstat.is-best b { color: var(--gold); }
 .result__foot { margin-top: auto; padding-top: .2rem; display: flex; }
 .result__foot .btn { min-width: 3.4rem; }
+
+/* Keep the settlement action inside short landscape touch viewports (the 640×360 phone is the tightest fit). */
+@media (max-height: 600px) and (pointer: coarse), (max-height: 600px) and (any-pointer: coarse) {
+  .result__hero { gap: .08rem; }
+}

@@ -14,7 +14,7 @@
 //     (under name / tier, beside the portrait), visible without scrolling; the bond popup lists its facts and the
 //     current effect before the long description and keeps clear of the selected unit's underframe
 //  §16 the loadout's skill / module: shop card skill badge (mint when not the default; S1–S3 when the manifest has no
-//     icon for the chosen skill), detail card skill + 已调配, an elite with its module unequipped shows 未装备模组
+//     icon for the chosen skill), detail card skill + Loadout tag, an elite with its module unequipped shows No module equipped
 // Screenshots: test/e2e/out/fix-*.png.
 
 import { test, describe, before, after } from 'node:test';
@@ -342,7 +342,7 @@ describe('user playtest #2 — UI fixes (mock harness, headless Chrome)', { skip
 
   // ---- §16 loadout ---------------------------------------------------------------------------------------------------
 
-  test('loadout (DESIGN §16): shop card skill badge, detail card skill + 已调配, elite module 未装备模组', { skip: skipUnless('loadout') }, async () => {
+  test('loadout (DESIGN §16): shop skill badge and detail card Loadout tag / No module equipped', { skip: skipUnless('loadout') }, async () => {
     const { page, problems } = await open('phase=PREP&variant=loadout');
     const lo = await page.evaluate(() => globalThis.__MOCK__.S().priv.loadout);
     assert.ok(lo && Object.keys(lo).length >= 1, 'the mock sends m.private.loadout');
@@ -370,7 +370,7 @@ describe('user playtest #2 — UI fixes (mock harness, headless Chrome)', { skip
       assert.ok(await tapPiece(page, g), 'the elite is selected');
       await page.waitForSelector('.dpanel .dsec--module', { timeout: 3000 });
       const mod = await page.$eval('.dpanel .dmodule', (el) => ({ none: el.classList.contains('is-none'), text: el.textContent }));
-      assert.ok(mod.none && mod.text.includes('未装备模组'), `elite module unequipped (${mod.text})`);
+      assert.ok(mod.none && mod.text.includes('No module equipped'), `elite module unequipped (${mod.text})`);
     }
     assert.deepEqual(problems, []);
     await page.close();

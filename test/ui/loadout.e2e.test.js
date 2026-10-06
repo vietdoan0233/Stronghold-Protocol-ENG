@@ -48,7 +48,11 @@ describe('干员调配 overlay (real server, headless Chrome)', { skip: !ENABLED
     const problems = [];
     page.on('console', (m) => { if (m.type() === 'error') problems.push(`console: ${m.text()}`); });
     page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));
-    page.on('requestfailed', (r) => { if (!/fonts\.(googleapis|gstatic)/.test(r.url())) problems.push(`requestfailed: ${r.url()} ${r.failure()?.errorText}`); });
+    page.on('requestfailed', (r) => {
+      const error = r.failure()?.errorText;
+      // Filtering the operator roster replaces image nodes and cancels their in-flight requests by design.
+      if (error !== 'net::ERR_ABORTED' && !/fonts\.(googleapis|gstatic)/.test(r.url())) problems.push(`requestfailed: ${r.url()} ${error}`);
+    });
     page.on('response', (r) => { if (r.status() >= 400) problems.push(`http ${r.status()}: ${r.url()}`); });
     await page.evaluateOnNewDocument(() => {
       localStorage.setItem('sp.name', '调配测试');
@@ -165,7 +169,7 @@ describe('干员调配 overlay (real server, headless Chrome)', { skip: !ENABLED
     assert.equal(payload.v, 1);
     assert.deepEqual(payload.entries, stored.entries, 'what is exported is what is stored');
     await page.screenshot({ path: path.join(OUT, 'loadout-export.png') });
-    await page.evaluate(() => [...document.querySelectorAll('.modal__actions .btn')].find((b) => b.textContent.trim() === '关闭').click());
+    await page.evaluate(() => [...document.querySelectorAll('.modal__actions .btn')].find((b) => b.textContent.trim() === 'Close').click());
     await page.waitForFunction(() => !document.querySelector('.modal'), { timeout: 3000 });
 
     // wipe it, then 导入 the payload back
@@ -193,7 +197,7 @@ describe('干员调配 overlay (real server, headless Chrome)', { skip: !ENABLED
     // a payload this build cannot use at all (every chess unknown) must leave the loadout alone too (review fix)
     await page.$eval('[data-testid="loadout-io-text"]', (t) => { t.value = '{"v":1,"entries":{"chess_not_here":{"skill":0}}}'; t.dispatchEvent(new Event('input', { bubbles: true })); });
     await page.click('[data-testid="loadout-io-apply"]');
-    await page.waitForFunction(() => /no compatible loadout/i.test(document.body.textContent || ''), { timeout: 5000 });
+    await page.waitForFunction(() => /has no entries available in this version/i.test(document.body.textContent || ''), { timeout: 5000 });
     assert.ok(await page.$('.modal'), 'the dialog stays open for the player to fix the payload');
     assert.deepEqual(await page.evaluate(() => JSON.parse(localStorage.getItem('sp.pref.loadout')).entries), stored.entries, 'an import that keeps nothing changes nothing');
     assert.deepEqual(problems, []);
@@ -330,9 +334,14 @@ describe('干员调配 overlay (real server, headless Chrome)', { skip: !ENABLED
     await page.tap('.lo-card');
     await page.waitForSelector('.lo-detail .lo-skill', { visible: true });
     assert.notEqual(await page.$eval('.lo-roster', (el) => getComputedStyle(el).display), 'none', 'side by side');
-    // every skill option is reachable inside the viewport (the detail body scrolls)
-    const r = await page.$eval('.lo-detail .lo-skill:last-child', (el) => { el.scrollIntoView({ block: 'nearest' }); const b = el.getBoundingClientRect(); return { top: b.top, bottom: b.bottom }; });
-    assert.ok(r.top >= 0 && r.bottom <= 390, JSON.stringify(r));
+    // The detail body stays inside the viewport and can scroll the last option's bottom into view.
+    const r = await page.$eval('.lo-detail .lo-skill:last-child', (el) => {
+      el.scrollIntoView({ block: 'end' });
+      const rect = el.getBoundingClientRect();
+      const body = document.querySelector('.lo-detail__body').getBoundingClientRect();
+      return { top: rect.top, bottom: rect.bottom, bodyTop: body.top, bodyBottom: body.bottom };
+    });
+    assert.ok(r.bodyTop >= 0 && r.bodyBottom <= 390 && r.bottom <= r.bodyBottom + 1 && r.bottom > r.bodyTop, JSON.stringify(r));
     await page.tap('.lo-detail .lo-skill:last-child');
     await page.waitForFunction(() => document.querySelector('.lo-detail .lo-skill:last-child').classList.contains('is-on'));
     await page.screenshot({ path: path.join(OUT, 'loadout-phone-detail.png') });
@@ -378,27 +387,27 @@ describe('干员调配 overlay (real server, headless Chrome)', { skip: !ENABLED
     const { ctx, page, problems } = await open();
     await clickSel(page, '.lobby-screen [data-testid="loadout-open"]');
     await page.waitForSelector('.lo .lo-card', { visible: true, timeout: 15000 });
-    await pickChess(page, '隐现');
-    // between the skills and the modules, 精锐 shown first: the default module's numbers, the 3 × 4 range
-    assert.deepEqual(await page.$$eval('.lo-detail__body > .lo-sec > header h3', (els) => els.map((e) => e.firstChild.textContent)), ['技能', '局内数值', '模组']);
+    await pickChess(page, 'Insider');
+    // between the skills and the modules, Elite is shown first: the default module's numbers, the 3 × 4 range
+    assert.deepEqual(await page.$$eval('.lo-detail__body > .lo-sec > header h3', (els) => els.map((e) => e.firstChild.textContent)), ['Skill', 'In-Match Stats', 'Module']);
     const stats = await shownStats(page);
-    assert.deepEqual(Object.keys(stats), ['生命上限', '攻击', '防御', '法术抗性', '攻击间隔', '阻挡数', '部署费用', '再部署']);
-    assert.equal(stats['生命上限'], fmt(golden.statsBase.maxHp + mod.attr.maxHp));
-    assert.equal(stats['攻击'], fmt(golden.statsBase.atk + mod.attr.atk));
+    assert.deepEqual(Object.keys(stats), ['Max HP', 'ATK', 'DEF', 'RES', 'Attack Interval', 'Block', 'DP Cost', 'Redeploy']);
+    assert.equal(stats['Max HP'], fmt(golden.statsBase.maxHp + mod.attr.maxHp));
+    assert.equal(stats.ATK, fmt(golden.statsBase.atk + mod.attr.atk));
     assert.equal(await rangeTiles(page), base.rangeGrid.length);
     assert.equal(await page.$eval('.lo-sec--stats', (el) => el.dataset.variant), 'elite');
     await page.screenshot({ path: path.join(OUT, 'loadout-stats-desktop.png') });
-    // 不装备 → the base numbers; the skill choice changes nothing; 普通 → the normal chess; both toggles are independent
+    // No Module → the base numbers; the skill choice changes nothing; Normal → the normal operator; both toggles are independent
     await page.click('.lo-detail .lo-mod[data-module="none"]');
     await page.waitForFunction((v) => document.querySelector('.lo-sec--stats .dstat__v')?.textContent === v, {}, fmt(golden.statsBase.maxHp));
-    assert.equal((await shownStats(page))['攻击'], fmt(golden.statsBase.atk));
+    assert.equal((await shownStats(page)).ATK, fmt(golden.statsBase.atk));
     await page.click('.lo-detail .lo-skill[data-skill="0"]');
-    assert.equal((await shownStats(page))['攻击'], fmt(golden.statsBase.atk), 'a skill is not a stat');
+    assert.equal((await shownStats(page)).ATK, fmt(golden.statsBase.atk), 'a skill is not a stat');
     await page.click('.lo-sec--stats .lo-seg button[data-variant="normal"]');
     await page.waitForFunction((v) => document.querySelector('.lo-sec--stats .dstat__v')?.textContent === v, {}, fmt(base.stats.maxHp));
     assert.equal(await page.$eval('.lo-sec--stats', (el) => el.dataset.variant), 'normal');
     assert.equal(await page.$eval('.lo-skill.is-on', (el) => el.dataset.skill), '0');
-    assert.equal(await page.$eval('.lo-seg button.is-on', (el) => el.textContent.startsWith('普通')), true, 'the skill level toggle is its own');
+    assert.equal(await page.$eval('.lo-seg button.is-on', (el) => el.textContent.startsWith('Normal')), true, 'the skill level toggle is its own');
     // the layout: no sideways overflow, the range box beside the numbers
     const box = await page.evaluate(() => {
       const body = document.querySelector('.lo-detail__body');
@@ -407,10 +416,9 @@ describe('干员调配 overlay (real server, headless Chrome)', { skip: !ENABLED
       return { over: body.scrollWidth - body.clientWidth, beside: range.left >= grid.right - 1 && Math.abs(range.top - grid.top) < 2 };
     });
     assert.ok(box.over <= 1 && box.beside, JSON.stringify(box));
-    // 信仰搅拌机: SPT-Y's "攻击距离+1" draws one more tile in the 精锐 view (the toggle stays where it was left: 普通 has no
-    // module, and says so); 不装备 goes back
-    await pickChess(page, '信仰搅拌机');
-    assert.match(await page.$eval('.lo-stats__cap', (el) => el.textContent), /普通干员没有模组/);
+    // Faithful Mixer: SPT-Y's range +1 draws one more tile in the Elite view (Normal operators have no module).
+    await pickChess(page, 'Sankta Miksaparato');
+    assert.match(await page.$eval('.lo-stats__cap', (el) => el.textContent), /Normal operators have no module/);
     await page.click('.lo-sec--stats .lo-seg button[data-variant="elite"]');
     const t0 = await rangeTiles(page);
     await page.click('.lo-detail .lo-mod[data-module="uniequip_003_rmixer"]');
@@ -458,7 +466,7 @@ describe('干员调配 overlay (real server, headless Chrome)', { skip: !ENABLED
     // a choice made further down updates it (touch: the module card, 不装备)
     await page.tap('.lo-detail .lo-mod[data-module="none"]');
     await page.waitForFunction((v) => document.querySelector('.lo-sec--stats .dstat__v')?.textContent === v, {}, fmt(golden.statsBase.maxHp));
-    assert.equal((await shownStats(page))['攻击'], fmt(golden.statsBase.atk));
+    assert.equal((await shownStats(page)).ATK, fmt(golden.statsBase.atk));
     assert.deepEqual(problems, []);
     await ctx.close();
   });

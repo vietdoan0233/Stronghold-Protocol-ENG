@@ -69,6 +69,9 @@ html:not(.sp-in-match) .toast-host { margin-top: var(--sa-t); }
   transform: translate(-50%, -50%);
   background: transparent; border: 0; box-shadow: none; clip-path: none; pointer-events: auto;
 }
+/* The bond strip sits immediately above board row 12. Keep its 44 px touch target in the header so it cannot steal
+   touches on the row below; the visible bond button itself remains centered and clickable. */
+.sp-coarse .gm__bonds .bslot .bond::before { top: auto; bottom: 0; transform: translate(-50%, 0); }
 /* The 交流 panel's pager (‹ dots ›) sits in the strip under the emote cells (panel y 1.97–2.31rem, css/emotes.css). Its
    hit areas stay inside that strip and never overlap each other: a centred 44 px area of ‹ / › covered the centres of
    the bottom-left / bottom-right emotes (a tap there turned the page or hit the disabled ‹), and 28 px dot areas 0.21rem
@@ -83,6 +86,7 @@ html:not(.sp-in-match) .toast-host { margin-top: var(--sa-t); }
    comfortable to hit and to read, without changing the official layout. */
 @media (max-height: 600px) and (pointer: coarse), (max-height: 600px) and (any-pointer: coarse) {
   .readybtn { height: max(.56rem, 34px); }
+  .ewheel__btn { height: max(.56rem, 34px); }
   .toolbtn { min-height: max(.5rem, 30px); }
   .gm__gear { width: max(.56rem, 34px); height: max(.56rem, 34px); }
   /* ⚙ / 📖 / ⛶ keep their desktop proportion (half the button) instead of an 11 px glyph in the grown button */
