@@ -147,10 +147,12 @@ test('reconnect windows: co-op 10 min, solo singleReconnectTime 24 h (code, data
   assert.match(DESIGN, /24 h/);
   assert.match(META, /singleReconnectTime/);
   assert.match(dataRow('constants'), /singleReconnectTime/);
-  for (const [name, text] of [['README', README], ['DEPLOY', DEPLOY], ['PLAYING', PLAYING]]) {
+  for (const [name, text] of [['DEPLOY', DEPLOY], ['PLAYING', PLAYING]]) {
     assert.match(text, /24 小时/, `${name}: solo resume window`);
     assert.match(text, /10 分钟/, `${name}: co-op window`);
   }
+  assert.match(README, /24 hours/, 'README: solo resume window');
+  assert.match(README, /10 minutes/, 'README: co-op window');
   assert.ok(!/断线 10 分钟内可重连，掉线期间 AI 托管/.test(README), 'README: a dropped seat is not AI-played unless 暂离');
 });
 
@@ -158,7 +160,7 @@ test('equipment: g.equip replaceUid and locked equipped items are in the contrac
   assert.match(DESIGN, /`g\.equip \{itemUid, targetUid, replaceUid\?\}`/);
   assert.match(DESIGN, /equipped items are locked/);
   assert.match(META, /g\.equip\s*\n?\s*\{ itemUid, targetUid, replaceUid \}/);
-  assert.match(README, /已配发的装备锁定在干员身上/);
+  assert.match(README, /equipped gear is locked to the operator/);
   assert.match(PLAYING, /已配发的装备锁定在干员身上/);
 });
 
@@ -225,7 +227,7 @@ test('solo pause: g.pause {on} is solo-only and m.public.paused follows (code) �
   assert.match(DESIGN, /`g\.pause \{on\}`/);
   assert.match(DESIGN, /\*\*Solo pause/);
   assert.match(META, /`m\.public\.paused`|`paused`\n?\(solo pause/);
-  assert.match(README, /暂停（独立模拟）/);
+  assert.match(README, /Pause \(Solo Simulation\)/);
   assert.match(PLAYING, /同盟模拟的作战不能暂停/);
 });
 
@@ -291,7 +293,7 @@ test('lost models, live LP, detail card order, static game data (user playtest #
   assert.match(DESIGN, /pendingLp\? \/\* COMBAT \/ 联防 of a normal round/);
   assert.match(DESIGN, /`ownLeaks\(local, server\)`/);
   assert.match(PLAYING, /顶栏的目标生命值会\*\*立即\*\*显示扣除后的数值/);
-  assert.match(README, /漏怪时顶栏的目标生命值实时减少/);
+  assert.match(README, /target LP ticks down in real time/);
 });
 
 test('user playtest #4 (DESIGN §18): picking by tile, timers, 机变 two taps, down / element state, content — code and every doc agree', () => {
@@ -309,7 +311,7 @@ test('user playtest #4 (DESIGN §18): picking by tile, timers, 机变 two taps, 
   assert.match(DESIGN, /`ENEMY_REACH` 0\.6 tile/);
   assert.match(DESIGN, /render\/pick\.js/);
   assert.ok(!/pieceDragOver'\|/.test(DESIGN), 'DESIGN §9: no pieceDragOver event');
-  assert.match(README, /按地上的方格/);
+  assert.match(README, /go by the tile on the ground/);
   for (const [name, text] of [['README', README], ['PLAYING', PLAYING]]) {
     assert.ok(!/画面上实际画出的干员/.test(text), `${name}: no body picking`);
     assert.ok(!/模型抬高到手指上方|模型在手指上方/.test(text), `${name}: no touch lift`);
@@ -332,7 +334,7 @@ test('user playtest #4 (DESIGN §18): picking by tile, timers, 机变 two taps, 
   assert.match(META, /`ev\.preview` true/, 'META: onBattleStart handlers must not change the match for the stats preview');
   // #2 机变 two taps
   assert.match(PLAYING, /选卡要\*\*点两次\*\*/);
-  assert.match(README, /机变选卡/);
+  assert.match(README, /draft picks all take two clicks/);
   // #8 / #9 element gauges (爆发冷却) and knocked-out operators
   assert.equal(ELEMENT.erosion.ally.duration, 10, 'operators\' 侵蚀 burst has its 10 s cooldown');
   assert.deepEqual(ELEMENT_ORDER.slice(0, 4), ['neural', 'erosion', 'burn', 'apoptosis']);
@@ -509,7 +511,7 @@ test('user playtest #6 (DESIGN §20): summons, skill triggers, blocking, push fo
   assert.match(sec(10), /a tap anywhere on the card, its confirm strip included, is the card's tap/);
   assert.match(sec(18), /Each card shows its full effect text \(§20\.7\)/);
   // README: the test count stays in the right order of magnitude
-  assert.match(README, /约 31\d0 项/);
+  assert.match(README, /~3,1\d0/);
 });
 
 test('user playtest #6 follow-up: a merge consuming a deployed copy puts the elite on that tile (code + research + META / PLAYING / SIM agree)', () => {

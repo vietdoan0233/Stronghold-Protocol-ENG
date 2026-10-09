@@ -1,257 +1,280 @@
-# 卫戍协议：盟约 · Stronghold Protocol: Alliance
+# Stronghold Protocol: Alliance
 
-《明日方舟》季节性自走棋塔防玩法「卫戍协议：盟约」的**非官方同人复刻**：浏览器即开即玩，单人或 1–4 人联机合作。
+> [!NOTE]
+> **This is the English translation of the original Chinese project, [sganggs/Stronghold-Protocol](https://github.com/sganggs/Stronghold-Protocol)** (卫戍协议：盟约). All the game code and credit belong to the original authors; this fork translates the documentation and keeps up with the original's releases. Most files under `docs/` are still the original Chinese; the ones marked "(English)" in the [Documentation](#documentation) table were already in English.
+
+An **unofficial, non-commercial fan remake** of *Arknights'* seasonal auto-chess tower-defense mode "Stronghold Protocol: Alliance": play instantly in the browser, solo or 1–4 player online co-op.
 
 ![version](https://img.shields.io/badge/version-0.2.2-2ea44f)
 ![license](https://img.shields.io/badge/code%20license-GPL--3.0--or--later-blue)
 ![node](https://img.shields.io/badge/node-22%20%7C%2024-339933)
 
-## 声明
+## Disclaimer
 
 > [!IMPORTANT]
-> - 本项目是玩家自制的**非官方同人作品**，与上海鹰角网络科技有限公司（Hypergryph）、Yostar 及其关联方**没有任何关系**，未获其授权或认可。
-> - 《明日方舟》及「卫戍协议」相关的名称、角色、美术、音乐、音效、文本与数据等素材，版权归原权利人所有。这些素材**不适用**本项目的 GPL-3.0 许可证；GPL 只覆盖本项目自己编写的代码。
-> - 仅供学习交流与个人非商业使用。**严禁任何形式的盈利**，包括但不限于：售卖本项目或整合包、付费下载或付费分发、收费服务器或收费代开、广告 / 打赏 / 会员等变现方式，以及其他任何商业用途。
-> - 仓库源码不包含游戏的美术与音频素材（只有由官方数据表生成的数据和几张游戏截图，同样不适用 GPL）；[Releases](../../releases/latest) 中的完整包为了方便玩家附带了素材（精简包不带，首次启动时从公开镜像下载），下载即视为同意本声明。请勿将素材用于本项目以外的用途或单独再分发。完整条款见 [NOTICE.md](NOTICE.md)。
-> - 权利人如认为本项目侵犯其权益，请通过 Issue 联系，我们会**立即删除**相关内容。
-> - 本项目按「现状」提供，**不提供任何担保**，使用风险自负。
+> - This project is a player-made **unofficial fan work**. It has **no affiliation** with Shanghai Hypergryph Network Technology Co., Ltd. (Hypergryph), Yostar or their affiliates, and is not authorized or endorsed by them.
+> - The names, characters, art, music, sound effects, text, data and other materials related to *Arknights* and "Stronghold Protocol" are copyright of their respective owners. These materials are **not** covered by this project's GPL-3.0 license; the GPL covers only the code written by this project itself.
+> - For study, exchange and personal non-commercial use only. **Profiting from it in any form is strictly forbidden**, including but not limited to: selling this project or bundles of it, paid downloads or paid distribution, paid servers or paid hosting-for-hire, monetization via ads / donations / memberships, and any other commercial use.
+> - The repository source does not include the game's art or audio assets (only data generated from the official data tables and a few screenshots, which are likewise not covered by the GPL); the full bundles in the original project's [Releases](https://github.com/sganggs/Stronghold-Protocol/releases/latest) include assets for players' convenience (the lite bundle does not — it downloads them from public mirrors on first launch), and downloading them is taken as acceptance of this disclaimer. Please do not use the assets for anything other than this project, or redistribute them separately. Full terms are in [NOTICE.md](NOTICE.md).
+> - If a rights holder believes this project infringes their rights, please get in touch via an Issue and we will **remove** the relevant content immediately.
+> - This project is provided "as is", **without any warranty**; use it at your own risk.
 
-English summary: [below](#english).
-
-| 同盟房间 | 策略轮选 | 休整期（商店 / 盟约） |
+| Co-op room | Strategy draft | Rest phase (shop / alliances) |
 |---|---|---|
-| ![房间](docs/img/room.jpg) | ![策略](docs/img/band-draft.jpg) | ![休整期](docs/img/prep.jpg) |
-| **部署方向轮盘** | **作战** | **最终攻势** |
-| ![方向](docs/img/facing-wheel.jpg) | ![作战](docs/img/combat.jpg) | ![最终攻势](docs/img/final-assault.jpg) |
+| ![room](docs/img/room.jpg) | ![strategy](docs/img/band-draft.jpg) | ![rest phase](docs/img/prep.jpg) |
+| **Facing wheel** | **Combat** | **Final Assault** |
+| ![facing](docs/img/facing-wheel.jpg) | ![combat](docs/img/combat.jpg) | ![final assault](docs/img/final-assault.jpg) |
 
-## 目录
+## Contents
 
-- [声明](#声明) · [简介](#简介) · [功能一览](#功能一览)
-- [快速开始](#快速开始)：[整合包](#方式一整合包推荐) · [从源码运行](#方式二从源码运行) · [系统要求](#系统要求) · [端口与配置](#端口与配置) · [局域网联机](#和朋友一起玩局域网)
-- [联机方式](#联机方式) · [操作](#操作) · [文档](#文档) · [开发与测试](#开发与测试) · [项目结构](#项目结构)
-- [许可证](#许可证) · [致谢与数据来源](#致谢与数据来源) · [贡献](#贡献)
+- [Disclaimer](#disclaimer) · [Overview](#overview) · [Features](#features)
+- [Quick start](#quick-start): [Run from source](#option-1-run-from-source) · [All-in-one bundle](#option-2-all-in-one-bundle) · [System requirements](#system-requirements) · [Ports and configuration](#ports-and-configuration) · [Play on a LAN](#play-with-friends-lan)
+- [Connecting over the internet](#connecting-over-the-internet) · [Controls](#controls) · [Documentation](#documentation) · [Development and testing](#development-and-testing) · [Project structure](#project-structure)
+- [License](#license) · [Credits and data sources](#credits-and-data-sources) · [Contributing](#contributing)
 
-## 简介
+## Overview
 
-「卫戍协议：盟约」是自走棋 + 塔防：休整期在调度中心招募干员、摆阵、配装备，作战期干员自动部署，迎击从红门涌来的敌人，漏过去的敌人扣目标生命值。本项目在浏览器里复刻了这一玩法，规则和数值尽量对照官方数据表与 PRTS 核对。
+"Stronghold Protocol: Alliance" is auto-chess + tower defense: during the rest phase you recruit operators, arrange your formation and fit gear at the Dispatch Center; during combat your operators deploy automatically and fight off the enemies pouring in from the red door, and enemies that leak through cost you Life Points. This project recreates that mode in the browser, keeping the rules and numbers as close to the official data tables and PRTS as possible.
 
-- **独立模拟**（单人）与**同盟模拟**（1–4 人**合作**，没有 PvP；空位可以加 AI 队友）。
-- 服务器是一个 Node.js 程序，**战斗在各玩家的浏览器里模拟**（和官方一样），服务器只管经济与回合，一台低功耗小主机就能开服。
-- 当前版本 0.2.2：干员可以单独设置潜能和练度（默认满潜、精英2 Lv.60），新增日文语音和统计数据页，按官方补上失衡、整数秒攻击间隔 30 帧等规则，并修复了 0.2.1 发布后玩家和 GitHub 上反馈的问题，详见 [CHANGELOG.md](CHANGELOG.md)。仍有少数规则按推断实现，与官方不一致的地方欢迎在 Issue 里反馈。
+- **Solo Simulation** (single player) and **Alliance Simulation** (1–4 player **co-op**, no PvP; empty seats can be filled with AI teammates).
+- The server is a single Node.js program, and **combat is simulated in each player's browser** (just like the official game); the server only handles economy and rounds, so a low-power mini-PC is enough to host.
+- **Languages:** the interface and game texts are available in Chinese (the original default), English, 日本語, 한국어 and 繁體中文. An English browser gets English automatically; otherwise switch on the title screen or in Settings. Game texts come from the official clients; the Japanese, Korean and Traditional Chinese interface strings are machine translations (corrections welcome: [docs/I18N.md](docs/I18N.md)).
+- Current version 0.2.2: operators can have their potential and training level set individually (default max potential, Elite 2 Lv.60), a Japanese voice option and a statistics page were added, rules such as Unbalance (失衡) and whole-frame (30 fps) attack intervals were brought in line with the official game, and the issues reported by players and on GitHub after the 0.2.1 release were fixed — see [CHANGELOG.md](CHANGELOG.md). A few rules are still implemented from inference — if anything differs from the official game, feedback via Issues is welcome.
 
-## 功能一览
+## Features
 
-- **完整的一局**：确认本局信息 → 策略轮选（40 名策略）→ 14 回合 → 结算称号；险境及以上满足条件时进入第 15 回合「隐秘核心」。
-- **4 种难度**：标准 / 险境 / 绝境 / 终极，独立与同盟各一套参数，均取自官方数据。
-- **休整期**：招募、刷新、冻结、升级调度中心；整备区与临时整备区；从整备区拖到棋盘部署，用**方向轮盘**选择朝向。同盟模拟的卡池共用。
-- **晋升精锐**：3 名同名干员自动合成精锐，并获得一次高一阶的免费招募。
-- **干员与调配**：112 名可招募干员（+ 精锐）及其技能、天赋和特质；开局前可以为每名干员选择携带的技能（283 个技能全部手工实现）和精锐的模组。
-- **盟约与层数**：23 个盟约（8 个势力核心盟约 + 附加盟约），层数整局保留，每个盟约最多 999 层。
-- **装备与机变**：装备与法术，同名装备合成、特定组合赋予盟约效果；已配发的装备锁定在干员身上。部分回合开始前有机变选卡（装备、资金、干员、层数、悬赏等）。
-- **自动作战**：技能按官方「技能策略」自动释放；按接触半径阻挡，阻挡者倒下时由接触的干员接替；元素损伤与元素爆发；召唤物由玩家手动摆放；推开 / 拉拽按力度与重量计算；被击倒的干员留在原地显示再部署倒计时。
-- **地形与敌人**：阻隔工事、射击台、源石流吹风机、沼泽、排气格栅、涨潮等地形装置；空中与近地悬浮敌人、悬赏敌人。
-- **联防**：有人漏怪、又有人完美作战时，完美作战的队友带着阵容帮忙拦截漏掉的敌人。
-- **最终攻势与隐秘核心**：两人共享一个战场，全队共同削减同一条领袖血条；10 个敌方领袖，巨型领袖约 5×3 格的受击范围，以及官方的限伤规则。
-- **结算称号**：卫戍之星、不朽盟约、坚若磐石等 6 个称号。
-- **断线重连**：同盟模拟断线后 10 分钟内重新打开页面即可回到原座位，掉线期间按原阵容自动作战，也可以「暂离」交给 AI 托管；独立模拟 24 小时内可以回来继续（同一个浏览器）。
-- **交互细节**：漏怪时顶栏的目标生命值实时减少（结算时确定）；点选、拖放和配发装备都按地上的方格；购买、升级和机变选卡都需要点两次确认；只有一名玩家时除作战外不计时。
-- **画面与声音**：真实 Spine 小人、官方 BGM 与音效、表情（6 套 × 6 个）、作战特效；可选的官方 3D 棋盘（需要从本机客户端提取贴图）。
-- **手机与电脑**：触摸拖拽、长按查看详情，推荐横屏；设置里可以调低画质。
+- **A complete match**: confirm match info → strategy draft (40 strategies) → 14 rounds → settlement title; on Hazard and above, a 15th round "Hidden Core" appears when the conditions are met.
+- **4 difficulties**: Standard / Hazard / Peril / Ultimate, each with its own parameters for solo and alliance play, all taken from the official data.
+- **Rest phase**: recruit, refresh, freeze, upgrade the Dispatch Center; Reserve and Temporary Reserve; drag from the Reserve onto the board to deploy, choosing facing with the **facing wheel**. In Alliance Simulation the operator pool is shared.
+- **Elite promotion**: 3 operators of the same name automatically merge into an Elite and grant one free recruit of the next tier up.
+- **Operators and loadouts**: 112 recruitable operators (+ their Elites) with their skills, talents and traits; before a match you can choose the skill each operator carries (all 283 skills implemented by hand) and the Elite's module.
+- **Alliances and layers**: 23 alliances (8 faction core alliances + add-on alliances), with layers kept for the whole match, up to 999 layers per alliance.
+- **Gear and the draft**: equipment and arts, same-name gear merging, and specific combinations that grant alliance effects; equipped gear is locked to the operator. Some rounds begin with a draft pick (gear, funds, operators, layers, bounties, and so on).
+- **Automatic combat**: skills fire automatically following the official "skill strategy"; blocking is by contact radius, and when a blocker falls an operator in contact takes over; elemental damage and elemental bursts; summons are placed by hand; knockback / pull are computed from force and weight; a knocked-down operator stays in place showing its redeploy countdown.
+- **Terrain and enemies**: barricades, firing platforms, Originium-current blowers, swamps, exhaust grilles, rising tides and other terrain devices; airborne and low-hovering enemies, and bounty enemies.
+- **Unite Phase**: when someone leaks enemies while someone else had a perfect combat, the teammate with the perfect combat brings their formation in to help intercept the leaked enemies.
+- **Final Assault and Hidden Core**: two players share one battlefield and the whole team chips away at the same leader's health bar; 10 enemy leaders, a giant leader with a roughly 5×3-tile hit area, and the official damage-cap rule.
+- **Settlement titles**: 6 titles such as Star of the Garrison, Immortal Alliance and Rock Solid.
+- **Reconnection**: in Alliance Simulation, reopen the page within 10 minutes of a disconnect to return to your seat — your formation keeps fighting on its own while you are away, and you can also "step out" and hand over to an AI; in Solo Simulation you can come back within 24 hours (same browser).
+- **Interaction details**: the top bar's target LP ticks down in real time as enemies leak (finalized at settlement); selecting, drag-and-drop and fitting gear all go by the tile on the ground; buying, upgrading and draft picks all take two clicks to confirm; with only one player, nothing is timed except combat.
+- **Visuals and sound**: real Spine models, the official BGM and sound effects, emotes (6 sets × 6), and combat effects; an optional official 3D board (requires extracting textures from a local client).
+- **Phone and desktop**: touch drag, long-press for details, landscape recommended; you can lower the quality in Settings.
 
-## 快速开始
+## Quick start
 
-### 方式一：整合包（推荐）
+Two ways to get running. **Option 1 (from source) is the one for this repository**; Option 2 uses the original project's pre-built zip.
 
-[Releases](../../releases/latest) 里有两种整合包，代码和运行依赖完全相同，二选一；已经装好 0.2.x 的，升级时只下载更新包即可：
+Either way you need **Node.js 22 or 24 (LTS)** installed first:
 
-- **完整包** `Stronghold-Protocol-v<版本>.zip`（约 505 MB，解压后约 710 MB）：附带全部美术 / 音频（含中文、日文两套干员语音和官方 3D 棋盘贴图），解压就能玩，不需要再下载任何东西。**推荐。**
-- **精简包** `Stronghold-Protocol-v<版本>-lite.zip`（约 22 MB）：不带素材，第一次启动时自动从公开镜像下载美术、Spine 模型、音频、字体、表情和「玩法说明」教程图（约 550 MB，可中断，再次启动会续传）；官方 3D 棋盘等本地客户端素材不在其中（见下面的「本地客户端素材」）。适合下载大文件不方便的情况。
-- **更新包** `Stronghold-Protocol-v<版本>-update.zip`（0.2.1 起提供，大小看改动多少，通常只有几 MB）：只含比之前的 0.2.x 版本改动过的文件，用来把已经装好的 0.2.x（完整包或精简包装的都行）升级到新版本，不用重新下载整个包。用法：先停止服务器（关掉窗口；装了开机自启的运行 `scripts\install-service-windows.ps1 -Stop`），把 zip 里 `Stronghold-Protocol` 文件夹的全部内容合并到安装文件夹、覆盖同名文件（Windows 资源管理器里复制粘贴即可；macOS 不要用访达拖放，它会整个替换文件夹，请用 `unzip -o`，见 [docs/DEPLOY.md](docs/DEPLOY.md) 第 1.5 节），再照常启动。启动时会先核对全部程序文件、删除新版本不再用的旧文件，然后正常运行；如果这个文件夹不是更新包对应的版本（例如 0.1.x，或者程序文件被改过），会提示下载完整包，服务器不启动。全新安装请用完整包或精简包。
+- Windows: run `winget install OpenJS.NodeJS.LTS` in PowerShell, or download an installer from <https://nodejs.org/en/download>.
+- macOS: `brew install node@22`, or download an installer from the official site.
+- Linux: your distro's package manager, nvm or fnm.
 
-两种包都只含运行和部署需要的文件（服务器、客户端、数据、启动脚本、setup / doctor / 素材下载工具、许可证与说明、[docs/PLAYING.md](docs/PLAYING.md) 和 [docs/DEPLOY.md](docs/DEPLOY.md)）；测试、开发工具和设计文档只在源码仓库里。
+Check it worked with `node --version` (it should print `v22…` or `v24…`).
 
-1. **安装 Node.js 22 或 24（LTS）**
-   - Windows：在 PowerShell 里运行 `winget install OpenJS.NodeJS.LTS`，或到 <https://nodejs.org/zh-cn/download> 下载安装包。
-   - macOS：`brew install node@22`，或到官网下载安装包。
-   - Linux：发行版的包管理器、nvm 或 fnm。
-2. **下载**：在 [Releases](../../releases/latest) 页面下载最新版本的完整包（或精简包），解压到一个路径较短的文件夹（Windows 上建议不要放在 OneDrive 同步的目录里）。
-3. **启动**
-   - Windows：双击 **`scripts\start-windows.bat`**。如果弹出「安全警告」，点「运行」；Windows 防火墙弹窗请勾选「专用网络」并允许。
-   - macOS / Linux：在解压出的文件夹里运行 `./scripts/start.sh`（或 `bash scripts/start.sh`）。
-4. 浏览器会自动打开 `http://localhost:3000`。窗口里列出的局域网地址可以直接发给同一网络的朋友。关闭窗口（或按 `Ctrl+C`）即停止服务器。
+### Option 1: Run from source
 
-### 方式二：从源码运行
+#### First-time setup (once)
 
 ```bash
-git clone https://github.com/sganggs/Stronghold-Protocol.git
-cd Stronghold-Protocol
-npm install        # 安装依赖（postinstall 会把 pixi / preact / three 复制到 public/vendor）
-npm run setup      # 检查环境，并从公开镜像下载约 550 MB 美术 / 音频（可中断，再次运行会续传）
-npm start          # 启动服务器：http://localhost:3000
+git clone https://github.com/vietdoan0233/Stronghold-Protocol-ENG.git
+cd Stronghold-Protocol-ENG
+npm install        # install dependencies (postinstall copies pixi / preact / three into public/vendor)
+npm run setup      # check the environment and download ~550 MB of art / audio from public mirrors (interruptible; re-running resumes)
 ```
 
-也可以直接运行启动脚本（Windows `scripts\start-windows.bat`，macOS / Linux `scripts/start.sh`）：首次会自动安装依赖、下载素材，然后启动服务器并打开浏览器。
-
-- **本地客户端素材（可选）**：官方 3D 棋盘、部分官方界面图标（交流按钮与表情面板的边框、模组类型图标等）、灼热 / 炽焰源石虫和 39 个召唤物（多数自选召唤物）的官方模型需要从本机的《明日方舟》PC 客户端提取（Windows 原生客户端、macOS 的 CrossOver 或 PlayCover）。`npm run setup` 检测到客户端时会询问是否提取（需要 Python 3.8+，依赖装在项目内的 `.venv-extract`，不影响系统）；之后可以用 `node tools/setup.mjs --local` 重新提取，或用 `--game "<…/StreamingAssets/AB/Windows>"` 指定路径。没有客户端时游戏照常运行，这几样换成替代样式：2D 棋盘、样式相近的图标、染色的普通源石虫、召唤物头像。表情和「玩法说明」的教程图随上面的素材一起从公开镜像下载，不需要客户端。没有客户端的服务器（例如 Linux VPS）也可以从**同一版本**的整合包（完整包；精简包没有）里复制 `public/assets/local/` 和 `data/local-assets.json`，见 [docs/DEPLOY.md](docs/DEPLOY.md) 的「本地客户端素材」。
-- 素材下载优先使用 GitHub，失败时自动改用 jsDelivr 镜像。
-- `npm run doctor`（即 `node tools/doctor.mjs`）可以随时诊断：Node 版本、素材是否完整、端口占用、局域网地址和防火墙。
-
-### 系统要求
-
-| 项目 | 要求 |
-|---|---|
-| 开服的电脑 | Windows / macOS / Linux，Node.js 22 或 24（LTS）；磁盘约 700–850 MB（素材、依赖与本地提取贴图：完整包解压后约 710 MB）；内存空闲约 100 MB，每局再加几 MB |
-| 玩家 | 支持 WebGL 的现代浏览器（Chrome / Edge / Firefox / Safari 最新版），电脑、手机或平板（横屏） |
-| 网络 | 首次进入游戏时，每位玩家要从开服的电脑下载几十 MB 素材（之后走浏览器缓存）；对局中流量很小 |
-
-显卡较弱时可以在「设置」里调低画质，或在网址后加 `?board=2d`（强制 2D 棋盘）/ `?render=fallback`（不用 WebGL 的简化画面）。
-
-### 端口与配置
-
-默认监听 **TCP 3000**。换端口：启动脚本加 `--port 3001`，或设置环境变量 `PORT`。
-
-| 环境变量 | 默认 | 说明 |
-|---|---|---|
-| `PORT` | `3000` | 监听端口 |
-| `HOST` | `::` | 监听地址。默认 `::` 是双栈：同一个端口同时接受 IPv6 和 IPv4；`0.0.0.0` = 只 IPv4；`127.0.0.1` = 只允许本机，放在反向代理后面时使用 |
-| `SP_COMBAT` | `client` | `client`：各玩家浏览器模拟自己的战斗（服务器负载极低）；`server`：由服务器模拟并推流 |
-| `SP_VERIFY` | `off` | 服务器复算客户端上报的战斗结果：`off` / `sample`（约 1/8 抽查）/ `all`（全部复算，更耗 CPU） |
-| `TRUST_PROXY` | `auto` | 是否信任 `X-Forwarded-For` 等转发头：`auto` 只信任来自本机 / 内网的代理；`1` 总是；`0` 从不 |
-| `DEBUG` | 空 | 设为任意值输出详细日志 |
-| `SP_NO_BROWSER` | 空 | 设为 `1` 时启动脚本不自动打开浏览器 |
-
-设置方式：macOS / Linux `PORT=8080 npm start`；PowerShell `$env:PORT=8080; npm start`；cmd `set "PORT=8080" && npm start`。健康检查：`GET /healthz`。
-
-### 和朋友一起玩（局域网）
-
-1. 打开页面 → 输入昵称 → **同盟模拟** → 创建房间。房主选择难度，可以添加 / 移除 AI 队友；开始前也可以把其他博士移出房间（对方可凭密钥重新加入）。
-2. 把 4 位字母的**同盟密钥**，或「复制链接」得到的 `http://<地址>:3000/?room=密钥` 发给朋友。
-3. 所有人点「准备就绪」后房主开始。
-4. 同一 Wi-Fi / 路由器下的朋友打开启动窗口里列出的地址（形如 `http://192.168.x.x:3000`）即可。打不开时多半是防火墙：Windows 首次启动时在弹窗中允许「专用网络」，或运行 `npm run doctor` 查看具体命令；访客 Wi-Fi 常开启「AP 隔离」，也会导致连不上。
-
-刷新页面或断线后，同盟模拟 10 分钟内、独立模拟 24 小时内重新打开即可回到原座位。服务器把房间和对局都保存在内存里，**重启服务器会结束所有对局**。
-
-## 联机方式
-
-朋友不在同一个局域网时，下面是几类常见做法，按自己的情况选一种即可。这里只做简单介绍，提到的工具和服务只是举例，本项目与它们没有任何关系，也不做推荐；具体的安装、费用和使用规则请以各自的官方说明为准。部署细节（防火墙、开机自启、反向代理与 HTTPS、Docker）见 **[docs/DEPLOY.md](docs/DEPLOY.md)**。
-
-| 方式 | 怎么做 | 适合 |
-|---|---|---|
-| **同一局域网直连** | 把启动窗口里的局域网地址发给朋友 | 同一个家、宿舍或网吧 |
-| **组网工具（虚拟局域网）** | 例如 Tailscale、ZeroTier、EasyTier、蒲公英：开服的人和朋友都安装同一个工具并加入同一个网络，朋友用开服电脑的虚拟 IP 访问 `http://<虚拟 IP>:3000` | 固定的几个熟人；不暴露到公网。朋友也要装客户端，部分工具需要注册账号；跨地区时可能走中继而变慢 |
-| **内网穿透 / 隧道** | 只有开服的人运行客户端，朋友直接打开网址。例如自建的 frp（需要一台有公网 IP 的服务器）、Cloudflare 的 `cloudflared tunnel --url http://localhost:3000`（临时地址，每次启动都会变；国内访问延迟可能较高）、国内的樱花 frp 一类公共穿透服务（通常需要实名，大陆节点承载网页可能有备案要求） | 不想改路由器、没有公网 IP；免费线路带宽小时，首次加载素材会慢一些 |
-| **云服务器 / VPS 直接部署** | 在 VPS 上运行整合包，或用仓库自带的 `Dockerfile`；用 Caddy / Nginx 加上 HTTPS。选离玩家近、线路好的地区（面向大陆玩家时，境外机房要关注回程线路，否则晚高峰延迟可能很高；大陆服务器绑定域名需要 ICP 备案） | 想长期开服、玩家分布在不同地区 |
-
-通用注意事项：
-
-- 游戏是**单个常驻 Node.js 进程 + WebSocket**（路径 `/ws`），只能跑一个实例，必须部署在域名根路径；Vercel 之类的 Serverless 平台和 GitHub Pages 之类的静态托管都不适用。反向代理要转发 WebSocket 升级。
-- 游戏没有账号系统，**知道地址的人都能进来**。请只把地址发给朋友，不要公开发布，也不要搭建公开大厅；这同时能降低素材版权方面的风险。
-- 有公网 IPv4 时也可以在路由器上做端口转发，但这会把家里的电脑直接暴露在公网上，优先考虑上面的方式。
-
-## 操作
-
-| 操作 | 方法 |
-|---|---|
-| 购买 / 升级调度中心 / 机变选卡 | 点一次选中，再点一次确认（`D` 升级） |
-| 部署 / 移动干员 | 从整备区拖到棋盘格 → 出现方向轮盘 → 往上 / 右 / 下 / 左滑动选择朝向后松手；松在中心或点「✕ 点击取消」取消。拖动时指针 / 手指所在的格子就是落点，能放下时模型直接站在这一格上（不能放下时跟在指针下） |
-| 调整朝向 | 把干员拖回它自己的格子，再选方向 |
-| 出售 / 撤退 / 销毁装备 | 点击单位所在的格子 → 底部按钮「出售 +1」「撤退」；也可以把棋盘上的干员拖回整备区撤退。整备区里的装备与法术只能「销毁」，已配发的装备锁定在干员身上（干员出售或合成精锐时退回整备区） |
-| 装备 | 把装备拖到干员所在的格子上（每人 2 件；满了会弹出替换窗口，被替换的一件会被销毁）；法术拖到地块上并选方向 |
-| 查看详情 | 右键或长按单位 / 卡牌（属性为实时数值，高于基础值为绿色、低于为红色） |
-| 快捷键 | `R` 刷新 · `F` 冻结 · `D` 升级 · `Q` 撤退 / `X` 出售选中的干员 · `Space` 准备就绪 · `Esc` 取消 / 关闭；除 `Esc` 外都可以在「设置 → 快捷键」里改成别的键（[玩法指南 §11](docs/PLAYING.md#11-快捷键)） |
-| 方向轮盘键盘操作 | 方向键预览 · `Enter` 确认 · `Esc` 取消 |
-| 暂停（独立模拟） | 作战中（含最终攻势 / 隐秘核心）点顶栏的「暂停」或按 `Space`，再点「继续作战」（或 `Space`）继续；同盟模拟的作战不能暂停 |
-| 表情 | 左下角「交流」，左右滑动（或方向键）换主题，冷却 1 秒 |
-| 观战 | 自己的作战结束后（或休整期）点左侧队友头像 →「前往查看」；不参战的朋友可以在大厅输入同盟密钥点「观战」（每个同盟最多 2 名观战者，本作新增） |
-| 统计（本机） | 标题画面右上角、大厅、等待室的「统计」：胜率、策略通过率、称号、战斗累计和对局记录（点一行回看结算页）；只存在本机浏览器里，可以导出 / 导入，没清完第一个回合就退出的对局不计入统计（[玩法指南 §12](docs/PLAYING.md#13-统计本机)） |
-
-完整的规则、数值和小技巧见 **[docs/PLAYING.md](docs/PLAYING.md)**（游戏内左下角也有「玩法说明」）。
-
-## 文档
-
-| 文档 | 内容 |
-|---|---|
-| [CHANGELOG.md](CHANGELOG.md) | 更新记录：每个版本修复了什么、哪些反馈经核实不是问题 |
-| [docs/PLAYING.md](docs/PLAYING.md) | 玩法指南：流程、经济、招募与晋升、摆阵、联防、盟约、最终攻势、结算称号 |
-| [docs/DEPLOY.md](docs/DEPLOY.md) | 部署指南：Windows 开服与开机自启、防火墙、组网 / 隧道、反向代理与 HTTPS、Docker、systemd、排错 |
-| [docs/WINDOWS.md](docs/WINDOWS.md) | Windows 便携包：怎么打一份「零安装」包（`scripts/make-windows-bundle.mjs`）、包里放了什么、授权注意事项 |
-| [docs/DESIGN.md](docs/DESIGN.md) | 架构与契约（英文）：索引，按章节号找到文件；现行规则在 `docs/design/`（范围与目录分工、坐标与时间、战斗引擎、对局、网络协议、渲染与 UI），各次试玩和各版本的规则修订与依据在 `docs/history/` |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 代码地图（英文）：服务器、联机协议和前后端共用的战斗模拟，0.2.0 重构后的目录，数据流，黄金结果与导入边界，常见改动从哪里入手 |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | 参与贡献：准备环境、运行测试、忠实原则、提交与 PR 约定、怎样添加自选干员（中文，末尾附英文摘要） |
-| [docs/SIM.md](docs/SIM.md) | 战斗模拟引擎参考（英文）：钩子、技能描述格式、职业默认行为 |
-| [docs/META.md](docs/META.md) | 对局与经济引擎（英文）：回合流程、商店、联防、最终攻势的实现细节 |
-| [docs/DATA.md](docs/DATA.md) | 由官方数据表生成的游戏数据（英文） |
-| [docs/ASSETS.md](docs/ASSETS.md) | 素材来源、目录结构与清单（英文） |
-| [docs/I18N.md](docs/I18N.md) | 界面语言（英文）：界面文字、游戏文本与服务器消息怎样翻译，覆盖范围；**添加一种语言只需在 `public/i18n/` 放一个语言文件**（社区翻译步骤见「Adding a language」，内容包格式见 [docs/PACKS.md](docs/PACKS.md)） |
-| [docs/BALANCE.md](docs/BALANCE.md) | 难度模型与测量（英文） |
-| [docs/research/](docs/research/00-INDEX.md) | 官方规则、数据与界面的调研记录 |
-
-## 开发与测试
+#### Every time you play
 
 ```bash
-npm run dev                 # node --watch：改动服务器代码后自动重启
-node --test                 # 单元 + 集成测试（约 3170 项；缺少素材 / 浏览器的用例会自动跳过）
-SP_E2E=1 node --test test/ui/mock.e2e.test.js        # 浏览器端到端测试，需要本机 Chrome（CHROME_PATH 可指定路径）
-SP_REAL_E2E=1 node --test test/ui/real.e2e.test.js   # 需要 Chrome + 已下载的素材
-RENDER_E2E=1 node --test 'test/render/*.browser.test.js'   # 渲染测试，部分需要本地提取的棋盘贴图
-GOLDEN_FULL=1 node --test test/golden.test.js           # 黄金结果：固定种子的整套战斗与人机对局摘要（默认只跑快速子集）
-node tools/perfbench.mjs --cpu 1,4,6 --profile             # 真实战斗的帧耗时基准（Chrome 降速 CPU 近似中低端手机），需要 Chrome + 已下载的素材
+cd Stronghold-Protocol-ENG
+npm start          # starts the server; then open http://localhost:3000
 ```
 
-- 游戏数据由 `npm run build-data`（`tools/build-data.mjs`）从官方数据表生成，不要手工修改 `data/*.json`。
-- 性能测试：`/dev/battle-perf.html` 在浏览器里跑一场真实战斗（对局用的战斗运行器、模拟和渲染），实时显示帧率与逐帧耗时；在手机上打开后点击「开始测量（10 秒）」，生成的报告可以复制后附在反馈中。用到的战斗来自 `node tools/capture-specs.mjs` 从固定种子的机器人对局里截取的数据（`public/dev/perf/`）。
-- 只重构、不改玩法的提交不能改变 `test/golden/*.json`；有意改变玩法时运行 `npm run golden:update`，检查差异后随改动一起提交（见 [test/golden/README.md](test/golden/README.md)）。
-- GitHub Actions（[.github/workflows/ci.yml](.github/workflows/ci.yml)）在 Ubuntu 与 Windows、Node 22 / 24 上运行 `npm ci`、`node --test` 和服务器冒烟测试。
-- 代码怎么分层、改某个规则该从哪个文件入手，见 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)。
+That's all — `install` and `setup` are **not** needed again. Press `Ctrl+C` in the terminal to stop the server.
 
-## 项目结构
+**Shortcut:** instead of the commands above you can run the launch script — Windows: double-click `scripts\start-windows.bat`; macOS / Linux: `./scripts/start.sh`. The first run installs dependencies and downloads the assets by itself; every later run just starts the server and opens your browser.
 
-| 路径 | 内容 |
+#### Updating to a newer version
+
+```bash
+cd Stronghold-Protocol-ENG
+git pull
+npm install        # only needed if package.json changed, but it's harmless to run
+npm run setup      # re-checks the assets and downloads anything new
+```
+
+#### Optional extras and diagnostics
+
+- **Local-client assets (optional)**: the official 3D board, some official UI icons (the borders of the chat button and emote panel, the module-type icons, etc.), the Blazing / Flaming Originium Slug and the official models for 39 summons (most of the selectable summons) need to be extracted from a local *Arknights* PC client (the native Windows client, or CrossOver / PlayCover on macOS). When `npm run setup` detects a client it asks whether to extract (requires Python 3.8+, with dependencies installed inside the project's `.venv-extract`, leaving your system untouched); afterwards you can re-extract with `node tools/setup.mjs --local`, or point at a path with `--game "<…/StreamingAssets/AB/Windows>"`. Without a client the game runs as normal and uses stand-ins for these: the 2D board, look-alike icons, tinted ordinary Originium Slugs, and summon avatars. Emotes and the "How to play" tutorial images are downloaded from the public mirrors along with the assets above and do not need a client. A server without a client (a Linux VPS, say) can also copy `public/assets/local/` and `data/local-assets.json` from the full bundle **of the same version** (the lite bundle doesn't have them) — see "Local client assets" in [docs/DEPLOY.md](docs/DEPLOY.md).
+- Asset downloads prefer GitHub and fall back to the jsDelivr mirror on failure.
+- `npm run doctor` (i.e. `node tools/doctor.mjs`) can diagnose things at any time: Node version, whether the assets are complete, port usage, LAN addresses and the firewall.
+
+### Option 2: All-in-one bundle
+
+No Git or command line needed, but note these zips come from the **original project's** [Releases](https://github.com/sganggs/Stronghold-Protocol/releases/latest) page and so are the original (Chinese-documented) build. There are three kinds; the code and runtime dependencies are identical in all of them, so choose one:
+
+- **Full bundle** `Stronghold-Protocol-v<version>.zip` (~505 MB, ~710 MB unzipped): includes all art / audio (the Chinese and Japanese operator voices and the official 3D board textures too) — unzip and play, nothing else to download. **Recommended.**
+- **Lite bundle** `Stronghold-Protocol-v<version>-lite.zip` (~22 MB): contains no assets; on its first launch it downloads the art, Spine models, audio, fonts, emotes and the "How to play" tutorial images (~550 MB) from public mirrors (interruptible; the next launch resumes). The official 3D board and other local-client assets are not included (see "Local-client assets" under Option 1). Good if downloading a big file is awkward.
+- **Update bundle** `Stronghold-Protocol-v<version>-update.zip` (available from 0.2.1; usually only a few MB): holds only the files changed since earlier 0.2.x releases, for upgrading an existing 0.2.x install (full or lite) without downloading a whole bundle. To use it, first stop the server (close the window; if you installed start-on-boot, run `scripts\install-service-windows.ps1 -Stop`), then merge the whole contents of the `Stronghold-Protocol` folder in the zip into your install folder, overwriting files of the same name (copy and paste in Windows Explorer; on macOS don't drag and drop in Finder, which replaces the whole folder — use `unzip -o`, see section 1.5 of [docs/DEPLOY.md](docs/DEPLOY.md)), then start as usual. On startup it first verifies all program files and deletes old files the new version no longer uses, then runs normally; if the folder isn't the version the update bundle is for (e.g. 0.1.x, or program files were modified), it tells you to download the full bundle and the server doesn't start. For a fresh install use the full or lite bundle.
+
+The full and lite bundles contain only what's needed to run and deploy (server, client, data, launch scripts, setup / doctor / asset-download tools, licenses and notes, [docs/PLAYING.md](docs/PLAYING.md) and [docs/DEPLOY.md](docs/DEPLOY.md)); tests, developer tools and design documents are only in the source repository.
+
+#### First-time setup (once)
+
+1. Install Node.js 22 or 24 (see above).
+2. Download the latest full (or lite) bundle and unzip it into a folder with a short path (on Windows, avoid OneDrive-synced directories).
+
+#### Every time you play
+
+- **Windows:** double-click **`scripts\start-windows.bat`**. If a "security warning" pops up, click "Run"; if the Windows Firewall prompts, tick "Private networks" and allow it.
+- **macOS / Linux:** in the unzipped folder, run `./scripts/start.sh` (or `bash scripts/start.sh`).
+
+A browser opens `http://localhost:3000` automatically. The LAN addresses listed in the window can be sent directly to friends on the same network. Closing the window (or pressing `Ctrl+C`) stops the server.
+
+### System requirements
+
+| Item | Requirement |
 |---|---|
-| `server/` | 入口 `index.js`；Node HTTP 静态服务 + WebSocket（`/ws`，代码在 `http/`）、大厅、对局引擎（`match/`）、战斗模拟（`sim/`，浏览器与服务器共用） |
-| `shared/` | 前后端共用的常量与网络协议 |
-| `public/` | 浏览器客户端（原生 ES 模块，PixiJS + pixi-spine、three.js 3D 棋盘、Preact + htm UI） |
-| `data/` | 由官方数据表生成的游戏数据与素材清单 `assets.json` |
-| `tools/` | `setup.mjs` / `doctor.mjs`、素材下载 `fetch-assets.mjs`、数据构建、本地提取 `local-extract/` |
-| `scripts/` | 启动脚本（Windows / macOS / Linux）、Windows 开机自启 |
-| `docs/` | 文档与调研 |
-| `test/` | `node:test` 测试 |
+| Host PC | Windows / macOS / Linux, Node.js 22 or 24 (LTS); about 700–850 MB of disk (assets, dependencies and locally extracted textures; the full bundle is ~710 MB unzipped); about 100 MB of free memory, plus a few MB per match |
+| Players | A modern browser with WebGL support (latest Chrome / Edge / Firefox / Safari), on a desktop, phone or tablet (landscape) |
+| Network | On first entering the game, each player downloads a few tens of MB of assets from the host PC (served from the browser cache afterwards); in-match traffic is small |
 
-## 许可证
+On a weak GPU you can lower the quality in "Settings", or add `?board=2d` (force the 2D board) / `?render=fallback` (a simplified, non-WebGL view) to the URL.
 
-- **代码**：本项目自己编写的代码以 **GPL-3.0-or-later** 发布，全文见 [LICENSE](LICENSE)；另附一条 GPL 第 7 条的附加许可，允许与 pixi-spine 中的 Spine Runtimes 组合分发（见 [NOTICE.md](NOTICE.md)）。
-- **游戏素材不在许可范围内**：《明日方舟》相关的美术、音乐、音效、文本与数据等版权归原权利人所有，不适用 GPL，使用限制见上方的[声明](#声明)和 [NOTICE.md](NOTICE.md)。
-- **第三方组件**各自遵循其许可证：通过 npm 安装的库（整合包的 `node_modules` 中附带各自的许可证文件）、`tools/local-extract/aklz4.py` 的算法（BSD-3-Clause），以及字体等，清单与许可证全文见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)。
+### Ports and configuration
 
-## 致谢与数据来源
+Listens on **TCP 3000** by default. To change the port: pass `--port 3001` to the launch script, or set the `PORT` environment variable.
 
-- 游戏数据：[Kengxxiao/ArknightsGameData](https://github.com/Kengxxiao/ArknightsGameData)。
-- 素材来源：[yuanyan3060/ArknightsGameResource](https://github.com/yuanyan3060/ArknightsGameResource)、[fexli/ArknightsResource](https://github.com/fexli/ArknightsResource)、[isHarryh/Ark-Models](https://github.com/isHarryh/Ark-Models)、[ArknightsAssets/ArknightsAssets2](https://github.com/ArknightsAssets/ArknightsAssets2)；字体来自 [TimWangZi/The-font-of-Arknights](https://github.com/TimWangZi/The-font-of-Arknights) 与 Google Fonts（Noto Sans SC）。详见 [docs/ASSETS.md](docs/ASSETS.md)。
-- 规则核对参考：[PRTS 明日方舟中文 Wiki](https://prts.wiki/)。
-- LZ4AK 解包：`tools/local-extract/aklz4.py` 的算法来自 [isHarryh/Ark-Unpacker](https://github.com/isHarryh/Ark-Unpacker)（BSD-3-Clause，经 MooncellWiki/UnityPy）；解析 Unity 资源使用 [UnityPy](https://github.com/K0lb3/UnityPy)（MIT）。
-- 库：[PixiJS](https://pixijs.com/)（MIT）、[pixi-spine](https://github.com/pixijs/spine)（MIT；其中包含的 Spine Runtime 另受 [Spine Runtimes License](https://esotericsoftware.com/spine-runtimes-license) 约束）、[three.js](https://threejs.org/)（MIT）、[Preact](https://preactjs.com/) + [htm](https://github.com/developit/htm)（MIT）、[ws](https://github.com/websockets/ws)（MIT）。
+| Environment variable | Default | Description |
+|---|---|---|
+| `PORT` | `3000` | Listening port |
+| `HOST` | `::` | Listening address. The default `::` is dual-stack: one port accepts both IPv6 and IPv4; `0.0.0.0` = IPv4 only; `127.0.0.1` = local machine only (use this behind a reverse proxy) |
+| `SP_COMBAT` | `client` | `client`: each player's browser simulates its own combat (very low server load); `server`: the server simulates and streams it |
+| `SP_VERIFY` | `off` | Server re-checks client-reported combat results: `off` / `sample` (about 1/8 spot-checked) / `all` (re-check everything, more CPU) |
+| `TRUST_PROXY` | `auto` | Whether to trust forwarding headers such as `X-Forwarded-For`: `auto` trusts only proxies from the local machine / private network; `1` always; `0` never |
+| `DEBUG` | empty | Set to any value to output verbose logs |
+| `SP_NO_BROWSER` | empty | Set to `1` to stop the launch script from opening the browser automatically |
 
-感谢以上项目的作者与维护者，以及鹰角网络带来的这款游戏。
+How to set them: macOS / Linux `PORT=8080 npm start`; PowerShell `$env:PORT=8080; npm start`; cmd `set "PORT=8080" && npm start`. Health check: `GET /healthz`.
 
-## 贡献
+### Play with friends (LAN)
 
-欢迎提 Issue 反馈 bug、与官方规则不一致的地方或改进建议，也欢迎提交 Pull Request：
+1. Open the page → enter a nickname → **Alliance Simulation** → create a room. The host picks the difficulty and can add / remove AI teammates; before starting, the host can also remove other Doctors from the room (they can rejoin with the key).
+2. Send friends the 4-letter **alliance key**, or the `http://<address>:3000/?room=KEY` link from "Copy link".
+3. Once everyone clicks "Ready", the host starts.
+4. Friends on the same Wi-Fi / router open an address listed in the launch window (something like `http://192.168.x.x:3000`). If it won't open, it's usually the firewall: on Windows, allow "Private networks" in the prompt at first launch, or run `npm run doctor` for the exact commands; guest Wi-Fi often has "AP isolation" on, which also blocks the connection.
 
-- 准备环境、运行测试、忠实原则和提交约定见 [CONTRIBUTING.md](CONTRIBUTING.md)。
-- 提交前请运行 `node --test`，并同步更新相关文档；文档使用简体中文，代码与注释使用英文。
-- 提交的代码将以 GPL-3.0-or-later 发布。
-- 请不要提交任何游戏素材文件（`public/assets/` 等目录已被 `.gitignore` 排除）。
-- 本项目坚持非商业：请不要提交广告、付费、打赏等任何形式的变现功能。
+After a refresh or a disconnect, reopening within 10 minutes (Alliance Simulation) or 24 hours (Solo Simulation) returns you to your seat. The server keeps rooms and matches in memory, so **restarting the server ends all matches**.
 
----
+## Connecting over the internet
 
-## English
+When friends aren't on the same LAN, here are some common approaches — pick whichever fits your situation. This is only a brief overview; the tools and services mentioned are just examples, this project has no relationship with them and does not endorse them, and you should follow each one's own documentation for installation, cost and usage rules. Deployment details (firewall, start-on-boot, reverse proxy and HTTPS, Docker) are in **[docs/DEPLOY.md](docs/DEPLOY.md)**.
 
-An **unofficial, non-commercial fan remake** of Arknights' seasonal auto-chess tower-defense mode *Stronghold Protocol: Alliance*, played in the browser: solo, or 1–4 player co-op (AI teammates can fill seats). Combat is simulated in each player's browser, so a low-power PC can host.
+| Approach | How | Good for |
+|---|---|---|
+| **Direct connection on the same LAN** | Send friends the LAN address from the launch window | The same home, dorm or internet café |
+| **Mesh networking (virtual LAN)** | e.g. Tailscale, ZeroTier, EasyTier: the host and the friends all install the same tool and join the same network, and friends use the host PC's virtual IP to reach `http://<virtual IP>:3000` | A fixed group of acquaintances; not exposed to the public internet. Friends must install a client too, and some tools require an account; across regions it may route through a relay and slow down |
+| **NAT traversal / tunneling** | Only the host runs a client, and friends just open a URL. E.g. a self-hosted frp (needs a server with a public IP), Cloudflare's `cloudflared tunnel --url http://localhost:3000` (a temporary address that changes each launch), or a public tunneling service (these often require identity verification, and serving web pages from mainland-China nodes may need an ICP filing) | You don't want to touch the router and have no public IP; on a free low-bandwidth line the first asset load will be slower |
+| **Cloud server / VPS deployment** | Run the bundle on a VPS, or use the repo's bundled `Dockerfile`; add HTTPS with Caddy / Nginx. Pick a region close to the players with a good line (for players in mainland China, watch the return routes of overseas data centers, or evening-peak latency can be very high; binding a domain to a mainland server needs an ICP filing) | Running a server long-term, with players in different regions |
 
-- **Run:** download the full bundle `Stronghold-Protocol-v<version>.zip` (~505 MB, all the art inside, the Chinese and Japanese operator voices included) from [Releases](../../releases/latest) — or the lite one, `…-lite.zip` (~22 MB), which downloads the art (~550 MB) on its first start; from 0.2.1 on, `…-update.zip` holds only the files changed since the earlier 0.2.x releases: stop the server, extract it over an existing 0.2.x folder and start again (the first start deletes the files the new version dropped and verifies the install) — install Node.js 22 or 24, then double-click `scripts\start-windows.bat` (Windows) or run `./scripts/start.sh` (macOS / Linux) and open <http://localhost:3000>. From source: `npm install && npm run setup && npm start` (setup downloads ~550 MB of art from public mirrors, the emotes and the how-to-play pages included; the official 3D board, some official HUD icons, two enemy models and 39 summon models are extracted from a local Arknights client — without one the game uses the 2D board and look-alike stand-ins (the summons show their avatars), and a server can copy `public/assets/local/` and `data/local-assets.json` from the full bundle of the same version).
-- **Languages:** Chinese (the default), English, 日本語, 한국어 and 繁體中文 — switch on the title screen or in Settings. Game texts come from the official clients; the Japanese, Korean and Traditional Chinese interface strings are machine translations (corrections welcome: [docs/I18N.md](docs/I18N.md)).
-- **Play with friends:** create a co-op room and share the 4-letter key or the `?room=KEY` link. On a LAN, use the address printed at start; otherwise use a virtual-LAN tool, a tunnel or a VPS — see [docs/DEPLOY.md](docs/DEPLOY.md).
-- **Disclaimer:** not affiliated with or endorsed by Hypergryph or Yostar. All Arknights names, art, audio, text and data are © their respective owners and are **not** covered by this project's GPL licence. For study and personal non-commercial use only — no selling, paid distribution, paid servers or monetisation of any kind. Content will be removed on request of the rights holders. Provided "as is", without warranty.
-- **License:** code GPL-3.0-or-later ([LICENSE](LICENSE)); game assets excluded.
-- **Contributing:** [CONTRIBUTING.md](CONTRIBUTING.md) (an English summary at its end); the code map is [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+General notes:
+
+- The game is a **single long-running Node.js process + WebSocket** (path `/ws`); only one instance can run, and it must be deployed at the root path of a domain. Serverless platforms like Vercel and static hosts like GitHub Pages are not suitable. The reverse proxy must forward the WebSocket upgrade.
+- The game has no account system, so **anyone who knows the address can get in**. Only send the address to friends, don't post it publicly, and don't run a public lobby; this also reduces asset-copyright risk.
+- With a public IPv4 you can also set up port forwarding on the router, but that exposes your home PC directly to the internet — prefer the approaches above.
+
+## Controls
+
+| Action | How |
+|---|---|
+| Buy / upgrade the Dispatch Center / draft pick | Click once to select, click again to confirm (`D` to upgrade) |
+| Deploy / move an operator | Drag from the Reserve to a board tile → the facing wheel appears → swipe up / right / down / left to pick a facing, then release; release at the center or click "✕ click to cancel" to cancel. While dragging, the tile under the pointer / finger is the drop target, and when the operator can be placed there its model stands right on that tile (otherwise it follows the pointer) |
+| Change facing | Drag the operator back onto its own tile, then pick a facing |
+| Sell / retreat / destroy gear | Click the unit's tile → the bottom buttons "Sell +1" / "Retreat"; you can also drag a board operator back to the Reserve to retreat. Gear and arts in the Reserve can only be "destroyed", and equipped gear is locked to the operator (returned to the Reserve when the operator is sold or merged into an Elite) |
+| Equip | Drag gear onto the operator's tile (2 per operator; when full, a replace dialog pops up and the replaced piece is destroyed); drag arts onto a tile and pick a facing |
+| View details | Right-click or long-press a unit / card (stats are live values — green when above the base value, red when below) |
+| Shortcuts | `R` refresh · `F` freeze · `D` upgrade · `Q` retreat / `X` sell the selected operator · `Space` ready · `Esc` cancel / close; everything except `Esc` can be rebound in "Settings → Shortcuts" ([How-to-play §11](docs/PLAYING.md#11-快捷键)) |
+| Facing wheel, keyboard | Arrow keys to preview · `Enter` to confirm · `Esc` to cancel |
+| Pause (Solo Simulation) | During combat (including the Final Assault / Hidden Core) click "Pause" in the top bar or press `Space`, then click "Resume combat" (or `Space`) to continue; combat in Alliance Simulation cannot be paused |
+| Emotes | "Chat" at the bottom left; swipe left / right (or arrow keys) to change the set, 1-second cooldown |
+| Spectate | After your own combat ends (or during the rest phase), click a teammate's portrait on the left → "Go watch"; friends not in the match can enter the alliance key in the lobby and click "Spectate" (up to 2 spectators per alliance, new in this remake) |
+| Statistics (local) | "Statistics" at the top right of the title screen, in the lobby and in the waiting room: win rate, strategy clear rate, titles, cumulative combat totals and the match history (click a row to revisit its settlement page); stored only in your browser, can be exported / imported, and matches quit before clearing the first round don't count ([How-to-play §12](docs/PLAYING.md#13-统计本机)) |
+
+The full rules, numbers and tips are in **[docs/PLAYING.md](docs/PLAYING.md)** (also available in-game via "How to play" at the bottom left).
+
+## Documentation
+
+| Document | Contents |
+|---|---|
+| [CHANGELOG.md](CHANGELOG.md) | Change log: what each version fixed, and which pieces of feedback turned out not to be bugs |
+| [docs/PLAYING.md](docs/PLAYING.md) | Gameplay guide: flow, economy, recruiting and promotion, formation, the Unite Phase, alliances, the Final Assault, settlement titles |
+| [docs/DEPLOY.md](docs/DEPLOY.md) | Deployment guide: hosting and start-on-boot on Windows, firewall, mesh networking / tunneling, reverse proxy and HTTPS, Docker, systemd, troubleshooting |
+| [docs/WINDOWS.md](docs/WINDOWS.md) | The Windows portable bundle: how to build a "zero-install" package (`scripts/make-windows-bundle.mjs`), what is in it, licensing notes |
+| [docs/DESIGN.md](docs/DESIGN.md) | Architecture and contracts (English): an index by section number; current rules are in `docs/design/` (scope and directory responsibilities, coordinates and time, the combat engine, the match, the network protocol, rendering and UI), and the rule revisions and rationale for each playtest and version are in `docs/history/` |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Code map (English): the server, the multiplayer protocol and the combat simulation shared by front and back end, the directory layout after the 0.2.0 refactor, data flow, golden results and import boundaries, where to start for common changes |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Contributing: setting up, running tests, the fidelity principle, commit and PR conventions, how to add a selectable operator (Chinese, with an English summary at the end) |
+| [docs/SIM.md](docs/SIM.md) | Combat simulation engine reference (English): hooks, skill-description format, profession defaults |
+| [docs/META.md](docs/META.md) | Match and economy engine (English): round flow, shop, the Unite Phase, and Final Assault implementation details |
+| [docs/DATA.md](docs/DATA.md) | The game data generated from the official data tables (English) |
+| [docs/ASSETS.md](docs/ASSETS.md) | Asset sources, directory structure and the manifest (English) |
+| [docs/I18N.md](docs/I18N.md) | Interface languages (English): how UI text, game text and server messages are translated and how far that coverage goes; **adding a language only takes one language file in `public/i18n/`** (see "Adding a language" for the community-translation steps, and [docs/PACKS.md](docs/PACKS.md) for the content-pack format) |
+| [docs/BALANCE.md](docs/BALANCE.md) | The difficulty model and measurements (English) |
+| [docs/research/](docs/research/00-INDEX.md) | Research notes on the official rules, data and UI |
+
+## Development and testing
+
+```bash
+npm run dev                 # node --watch: auto-restart the server after code changes
+node --test                 # unit + integration tests (~3,170; cases needing assets / a browser skip automatically)
+SP_E2E=1 node --test test/ui/mock.e2e.test.js        # browser end-to-end tests, needs a local Chrome (CHROME_PATH can point at it)
+SP_REAL_E2E=1 node --test test/ui/real.e2e.test.js   # needs Chrome + downloaded assets
+RENDER_E2E=1 node --test 'test/render/*.browser.test.js'   # render tests, some need locally extracted board textures
+GOLDEN_FULL=1 node --test test/golden.test.js           # golden results: summaries of whole fixed-seed battles and bot matches (only a fast subset runs by default)
+node tools/perfbench.mjs --cpu 1,4,6 --profile             # frame-time benchmark of a real battle (Chrome with throttled CPU approximates a low/mid-range phone); needs Chrome + downloaded assets
+```
+
+- The game data is generated by `npm run build-data` (`tools/build-data.mjs`) from the official data tables — do not edit `data/*.json` by hand.
+- Performance testing: `/dev/battle-perf.html` runs a real battle in the browser (the match's battle runner, simulation and rendering) and shows the frame rate and per-frame cost live; open it on a phone and click "Start measuring (10 s)", then copy the generated report into your feedback. The battles it uses are captured from fixed-seed bot matches by `node tools/capture-specs.mjs` (`public/dev/perf/`).
+- Commits that only refactor and don't change gameplay must not change `test/golden/*.json`; when you deliberately change gameplay, run `npm run golden:update`, review the diff and commit it with the change (see [test/golden/README.md](test/golden/README.md)).
+- GitHub Actions ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs `npm ci`, `node --test` and a server smoke test on Ubuntu and Windows, Node 22 / 24.
+- How the code is layered and which file to start from when changing a rule: see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+## Project structure
+
+| Path | Contents |
+|---|---|
+| `server/` | Entry `index.js`; Node HTTP static serving + WebSocket (`/ws`, code in `http/`), lobby, match engine (`match/`), combat simulation (`sim/`, shared by browser and server) |
+| `shared/` | Constants and the network protocol shared by client and server |
+| `public/` | The browser client (native ES modules, PixiJS + pixi-spine, three.js 3D board, Preact + htm UI) |
+| `data/` | The game data generated from the official data tables, and the asset manifest `assets.json` |
+| `tools/` | `setup.mjs` / `doctor.mjs`, asset download `fetch-assets.mjs`, data build, local extraction `local-extract/` |
+| `scripts/` | Launch scripts (Windows / macOS / Linux), Windows start-on-boot |
+| `docs/` | Documentation and research |
+| `test/` | `node:test` tests |
+
+## License
+
+- **Code**: the code written by this project itself is released under **GPL-3.0-or-later**; see [LICENSE](LICENSE) for the full text, plus an additional permission under GPL section 7 allowing combination and distribution with the Spine Runtimes in pixi-spine (see [NOTICE.md](NOTICE.md)).
+- **Game assets are not covered by the license**: the *Arknights* art, music, sound effects, text and data are copyright of their respective owners, are not covered by the GPL, and their usage restrictions are in the [Disclaimer](#disclaimer) above and in [NOTICE.md](NOTICE.md).
+- **Third-party components** each follow their own license: the libraries installed via npm (the bundle's `node_modules` includes each one's license file), the algorithm in `tools/local-extract/aklz4.py` (BSD-3-Clause), fonts, and so on; the full list and license texts are in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+
+## Credits and data sources
+
+- The original project: [sganggs/Stronghold-Protocol](https://github.com/sganggs/Stronghold-Protocol) — this repository is its English translation.
+- Game data: [Kengxxiao/ArknightsGameData](https://github.com/Kengxxiao/ArknightsGameData).
+- Asset sources: [yuanyan3060/ArknightsGameResource](https://github.com/yuanyan3060/ArknightsGameResource), [fexli/ArknightsResource](https://github.com/fexli/ArknightsResource), [isHarryh/Ark-Models](https://github.com/isHarryh/Ark-Models), [ArknightsAssets/ArknightsAssets2](https://github.com/ArknightsAssets/ArknightsAssets2); fonts from [TimWangZi/The-font-of-Arknights](https://github.com/TimWangZi/The-font-of-Arknights) and Google Fonts (Noto Sans SC). See [docs/ASSETS.md](docs/ASSETS.md) for details.
+- Rule-checking reference: [PRTS Arknights Chinese Wiki](https://prts.wiki/).
+- LZ4AK unpacking: the algorithm in `tools/local-extract/aklz4.py` comes from [isHarryh/Ark-Unpacker](https://github.com/isHarryh/Ark-Unpacker) (BSD-3-Clause, via MooncellWiki/UnityPy); parsing Unity assets uses [UnityPy](https://github.com/K0lb3/UnityPy) (MIT).
+- Libraries: [PixiJS](https://pixijs.com/) (MIT), [pixi-spine](https://github.com/pixijs/spine) (MIT; the Spine Runtime it contains is additionally subject to the [Spine Runtimes License](https://esotericsoftware.com/spine-runtimes-license)), [three.js](https://threejs.org/) (MIT), [Preact](https://preactjs.com/) + [htm](https://github.com/developit/htm) (MIT), [ws](https://github.com/websockets/ws) (MIT).
+
+Thanks to the authors and maintainers of the projects above, and to Hypergryph for bringing us this game.
+
+## Contributing
+
+Issues reporting bugs, discrepancies with the official rules or suggestions for improvement are welcome, as are Pull Requests:
+
+- Setting up, running tests, the fidelity principle and commit conventions are in [CONTRIBUTING.md](CONTRIBUTING.md).
+- Before submitting, please run `node --test` and update the relevant docs. In the original project, documentation is written in Simplified Chinese and code / comments in English.
+- Submitted code will be released under GPL-3.0-or-later.
+- Please do not commit any game asset files (directories such as `public/assets/` are already excluded by `.gitignore`).
+- This project stays non-commercial: please do not submit any form of monetization feature such as ads, paywalls or donations.
