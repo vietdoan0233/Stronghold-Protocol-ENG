@@ -14,7 +14,7 @@
 //     (under name / tier, beside the portrait), visible without scrolling; the bond popup lists its facts and the
 //     current effect before the long description and keeps clear of the selected unit's underframe
 //  §16 the loadout's skill / module: shop card skill badge (mint when not the default; S1–S3 when the manifest has no
-//     icon for the chosen skill), detail card skill + Loadout tag, an elite with its module unequipped shows No module equipped
+//     icon for the chosen skill), detail card skill + 已调配, an elite with its module unequipped shows 未装备模组
 // Screenshots: test/e2e/out/fix-*.png.
 
 import { test, describe, before, after } from 'node:test';
@@ -328,8 +328,8 @@ describe('user playtest #2 — UI fixes (mock harness, headless Chrome)', { skip
       // the playtest's case (a unit left of the board, card docked right) — the popup keeps clear of the underframe
       assert.equal(pop.coversButtons, false, `the bond popup (${pop.place}) keeps clear of the underframe buttons`);
       assert.ok(!pop.coversCard || pop.over, `the popup covers the card only when placed over it (${pop.place})`);
-      const iNow = pop.secs.findIndex((t) => t.includes('Current Effect'));
-      const iDesc = pop.secs.findIndex((t) => t.includes('Alliance Effect'));
+      const iNow = pop.secs.findIndex((t) => t.includes('当前效果'));
+      const iDesc = pop.secs.findIndex((t) => t.includes('盟约效果'));
       if (iNow >= 0) assert.ok(iNow < iDesc, `current effect before the description (${pop.secs})`);
       assert.ok(pop.factsIn);
       assert.ok(pop.btnTop.every(Boolean), 'the underframe stays above the bond popup');
@@ -342,13 +342,13 @@ describe('user playtest #2 — UI fixes (mock harness, headless Chrome)', { skip
 
   // ---- §16 loadout ---------------------------------------------------------------------------------------------------
 
-  test('loadout (DESIGN §16): shop skill badge and detail card Loadout tag / No module equipped', { skip: skipUnless('loadout') }, async () => {
+  test('loadout (DESIGN §16): shop card skill badge, detail card skill + 已调配, elite module 未装备模组', { skip: skipUnless('loadout') }, async () => {
     const { page, problems } = await open('phase=PREP&variant=loadout');
     const lo = await page.evaluate(() => globalThis.__MOCK__.S().priv.loadout);
     assert.ok(lo && Object.keys(lo).length >= 1, 'the mock sends m.private.loadout');
     const badges = await page.$$eval('.scard__skill', (els) => els.map((el) => ({ custom: el.classList.contains('is-custom'), title: el.getAttribute('title') || '' })));
     assert.ok(badges.length >= 3, 'every operator card shows its skill');
-    assert.ok(badges.some((b) => b.custom && b.title.includes('from Loadout')), `a card with a non-default skill (${JSON.stringify(badges)})`);
+    assert.ok(badges.some((b) => b.custom && b.title.includes('已调配')), `a card with a non-default skill (${JSON.stringify(badges)})`);
     assert.ok(badges.some((b) => !b.custom), 'default skills stay plain');
     // a chosen skill is never a blank square: its icon, or its slot letter when the manifest has no icon for it
     const marks = await page.$$eval('.scard__skill.is-custom', (els) => els.map((el) => ({ img: el.querySelector('img')?.getAttribute('src') || null, glyph: el.querySelector('.scard__sglyph')?.textContent || null })));
@@ -370,7 +370,7 @@ describe('user playtest #2 — UI fixes (mock harness, headless Chrome)', { skip
       assert.ok(await tapPiece(page, g), 'the elite is selected');
       await page.waitForSelector('.dpanel .dsec--module', { timeout: 3000 });
       const mod = await page.$eval('.dpanel .dmodule', (el) => ({ none: el.classList.contains('is-none'), text: el.textContent }));
-      assert.ok(mod.none && mod.text.includes('No module equipped'), `elite module unequipped (${mod.text})`);
+      assert.ok(mod.none && mod.text.includes('未装备模组'), `elite module unequipped (${mod.text})`);
     }
     assert.deepEqual(problems, []);
     await page.close();

@@ -13,22 +13,27 @@ test('observeTarget: prep, own battle running / over, boss pairs, eliminated pla
   const players = [P('a', 0), P('b', 1), P('c', 2, { alive: false })];
   assert.equal(isClientCombat(pubOf('PREP', [], players)), true);
   assert.deepEqual(observeTarget(players[1], pubOf('PREP', [], players), 'a'), { fieldId: 'n:b' });
-  assert.match(observeTarget(players[2], pubOf('PREP', [], players), 'a').reason, /eliminated/);
+  assert.match(observeTarget(players[2], pubOf('PREP', [], players), 'a').reason, /淘汰/);
   const combat = (liveA) => pubOf('COMBAT', [
     { fieldId: 'n:a', kind: 'normal', players: ['a'], live: liveA },
     { fieldId: 'n:b', kind: 'normal', players: ['b'], live: true, progress: { killed: 3, total: 8, done: false } },
   ], players);
-  assert.match(observeTarget(players[1], combat(true), 'a').reason, /during combat/);
+  assert.match(observeTarget(players[1], combat(true), 'a').reason, /作战中无法查看/);
   assert.deepEqual(observeTarget(players[1], combat(true), 'a', { ownDone: true }), { fieldId: 'n:b' }, 'the local battle already ended');
   assert.deepEqual(observeTarget(players[1], combat(false), 'a'), { fieldId: 'n:b' });
   assert.deepEqual(observeTarget(players[0], combat(false), 'a', { observing: true }), { back: true });
-  assert.deepEqual(teammateProgress(combat(false), 'a'), [{ playerId: 'b', name: 'B', isBot: false, killed: 3, total: 8, done: false }]);
+  // the teammate's capsule reads `resolved` (the field's own enemies knocked out or leaked); a report without one falls
+  // back to `killed` (public/js/battle/observe.js teammateProgress)
+  assert.deepEqual(teammateProgress(combat(false), 'a'), [{ playerId: 'b', name: 'B', isBot: false, killed: 3, resolved: 3, total: 8, done: false }]);
+  const reported = pubOf('COMBAT', [{ fieldId: 'n:b', kind: 'normal', players: ['b'], live: true, progress: { killed: 5, resolved: 3, total: 8, done: false } }], players);
+  assert.deepEqual(teammateProgress(reported, 'a'), [{ playerId: 'b', name: 'B', isBot: false, killed: 5, resolved: 3, total: 8, done: false }],
+    'a reported `resolved` wins over `killed` (5 counted knock-outs — splits included —, 3 of the round\'s own enemies resolved)');
   const fa = pubOf('FINAL_ASSAULT', [
     { fieldId: 'b1', kind: 'boss', players: ['a', 'b'], live: true },
     { fieldId: 'b2', kind: 'boss', players: ['d'], live: true },
   ], [...players, P('d', 3)]);
-  assert.equal(observeTarget(P('d', 3), fa, 'a').reason, "Can't view the other pair's battlefield");
-  assert.match(observeTarget(players[1], fa, 'a').reason, /same battlefield/);
+  assert.match(observeTarget(P('d', 3), fa, 'a').reason, /另一组/);
+  assert.match(observeTarget(players[1], fa, 'a').reason, /同一战场/);
   const dead = pubOf('FINAL_ASSAULT', fa.fields, [{ ...players[0], alive: false }, players[1], P('d', 3)]);
   assert.deepEqual(observeTarget(P('d', 3), dead, 'a'), { fieldId: 'b2' }, 'eliminated: anything');
 });
@@ -36,9 +41,9 @@ test('observeTarget: prep, own battle running / over, boss pairs, eliminated pla
 test('cameraLayers: ‹ LEFT / 全景 / RIGHT › with "你自己" / name / "无人在家"; none for normal or single boss fields', () => {
   const pub = { players: [P('a', 0), P('b', 1)] };
   const unite = { fieldId: 'u', kind: 'unite', rect: { r0: 9, r1: 12, c0: 0, c1: 20 }, players: ['a', 'b'], sides: { a: 'R', b: 'L' } };
-  assert.deepEqual(cameraLayers(unite, pub, 'a').map((l) => [l.key, l.label]), [['L', 'B'], ['ALL', 'Panorama'], ['R', 'You']]);
+  assert.deepEqual(cameraLayers(unite, pub, 'a').map((l) => [l.key, l.label]), [['L', 'B'], ['ALL', '全景'], ['R', '你自己']]);
   const single = { ...unite, players: ['b'], sides: { b: 'L' } };
-  assert.deepEqual(cameraLayers(single, pub, 'a').map((l) => l.label), ['B', 'Panorama', 'Nobody Here']);
+  assert.deepEqual(cameraLayers(single, pub, 'a').map((l) => l.label), ['B', '全景', '无人在家']);
   assert.deepEqual(cameraLayers({ kind: 'normal' }, pub, 'a'), []);
   assert.deepEqual(cameraLayers({ kind: 'boss', players: ['a'], sides: { a: 'L' } }, pub, 'a'), [], 'a solo boss field has no halves');
   assert.deepEqual(layerCamera(unite, 'R', 'R'), { rect: unite.rect, side: 'R', half: true });

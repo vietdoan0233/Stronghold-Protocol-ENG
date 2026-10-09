@@ -19,8 +19,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const mod = (rel) => import(pathToFileURL(path.join(ROOT, rel)).href);
 
-describe('make-windows-bundle.mjs: --out must not point to the repository or a parent', () => {
-  test('rejects the repository and all parent directories', async () => {
+describe('make-windows-bundle.mjs: --out 不能指向仓库自己或它的上级', () => {
+  test('仓库本身与它的上级目录都要拒绝', async () => {
     const { outDirIsUnsafe } = await mod('scripts/make-windows-bundle.mjs');
     assert.equal(outDirIsUnsafe(ROOT), true, '仓库本身');
     assert.equal(outDirIsUnsafe(path.dirname(ROOT)), true, '仓库的上一级');
@@ -28,7 +28,7 @@ describe('make-windows-bundle.mjs: --out must not point to the repository or a p
     assert.equal(outDirIsUnsafe(path.join(ROOT, '..', path.basename(ROOT))), true, '写成 .. 绕一圈也还是仓库自己');
   });
 
-  test('allows output directories outside the repository', async () => {
+  test('仓库之外的目录放行（默认产物就是仓库的兄弟目录）', async () => {
     const { outDirIsUnsafe } = await mod('scripts/make-windows-bundle.mjs');
     assert.equal(outDirIsUnsafe(path.join(path.dirname(ROOT), 'Stronghold-Protocol-Windows')), false, '默认产物位置');
     assert.equal(outDirIsUnsafe(path.join(os.tmpdir(), 'sp-bundle-out')), false, '临时目录');
@@ -36,7 +36,7 @@ describe('make-windows-bundle.mjs: --out must not point to the repository or a p
     assert.equal(outDirIsUnsafe(path.join(ROOT, 'dist-win')), false, '仓库内的子目录');
   });
 
-  test('treats case variants as the same path on Windows and macOS', async () => {
+  test('大小写不同也算同一个目录（Windows / macOS 的文件系统默认不区分大小写）', async () => {
     const { outDirIsUnsafe } = await mod('scripts/make-windows-bundle.mjs');
     // Linux 的默认文件系统区分大小写：`/HOME/X` 就是另一个目录，放行才对。
     const sameThing = process.platform !== 'linux';
@@ -44,7 +44,7 @@ describe('make-windows-bundle.mjs: --out must not point to the repository or a p
     assert.equal(outDirIsUnsafe(ROOT.replace(/\//g, path.sep).toLowerCase()), sameThing, '全小写写法');
   });
 
-  test('resolves paths that pass through a symbolic link', async () => {
+  test('经过符号链接的路径会被认出来（macOS 的 /tmp 就是指向 /private/tmp 的链接）', async () => {
     const { outDirIsUnsafe } = await mod('scripts/make-windows-bundle.mjs');
     const base = await fsp.mkdtemp(path.join(os.tmpdir(), 'sp-link-'));
     try {
@@ -66,8 +66,8 @@ describe('make-windows-bundle.mjs: --out must not point to the repository or a p
   });
 });
 
-describe('make-windows-bundle.mjs: --force only removes empty directories or previous bundles', () => {
-  test('allows a missing directory, an empty directory, or a previous bundle', async () => {
+describe('make-windows-bundle.mjs: --force 只肯删空目录或上一次的包', () => {
+  test('不存在 / 空目录 / 上一次打的包 → 可以删', async () => {
     const { forceDeleteVerdict } = await mod('scripts/make-windows-bundle.mjs');
     const base = await fsp.mkdtemp(path.join(os.tmpdir(), 'sp-force-'));
     try {
@@ -79,7 +79,7 @@ describe('make-windows-bundle.mjs: --force only removes empty directories or pre
 
       const bundle = path.join(base, 'bundle');
       await fsp.mkdir(path.join(bundle, 'app'), { recursive: true });
-      await fsp.writeFile(path.join(bundle, 'README-Quickstart.md'), '# x');
+      await fsp.writeFile(path.join(bundle, 'README-开箱即用.md'), '# x');
       await fsp.writeFile(path.join(bundle, 'LICENSE'), 'x');
       assert.equal(forceDeleteVerdict(bundle), 'bundle');
     } finally {
@@ -87,7 +87,7 @@ describe('make-windows-bundle.mjs: --force only removes empty directories or pre
     }
   });
 
-  test('refuses non-empty directories that are not previous bundles', async () => {
+  test('有东西但不是上次的包 → 一律拒绝（包括桌面、仓库、只有半份的产物）', async () => {
     const { forceDeleteVerdict } = await mod('scripts/make-windows-bundle.mjs');
     const base = await fsp.mkdtemp(path.join(os.tmpdir(), 'sp-force2-'));
     try {
@@ -104,7 +104,7 @@ describe('make-windows-bundle.mjs: --force only removes empty directories or pre
       assert.equal(forceDeleteVerdict(half), 'refuse', '只有 app 没有说明：可能是别人的目录，不删');
       const half2 = path.join(base, 'half2');
       await fsp.mkdir(half2);
-      await fsp.writeFile(path.join(half2, 'README-Quickstart.md'), '# x');
+      await fsp.writeFile(path.join(half2, 'README-开箱即用.md'), '# x');
       assert.equal(forceDeleteVerdict(half2), 'refuse', '只有说明没有 app：同样不删');
 
       const file = path.join(base, 'afile');
@@ -116,44 +116,44 @@ describe('make-windows-bundle.mjs: --force only removes empty directories or pre
   });
 });
 
-describe('make-windows-bundle.mjs: portable bundle instructions', () => {
-  test('clearly explains offline play and online font loading', async () => {
+describe('make-windows-bundle.mjs: 包内说明的措辞', () => {
+  test('不再声称「不访问外网」，改成联网 / 断网两种情况都讲清', async () => {
     const { bundleReadme } = await mod('scripts/make-windows-bundle.mjs');
     const r = bundleReadme({ version: 'v22.23.3', withNode: true });
-    assert.ok(!/does not access the internet/i.test(r), 'the Google Fonts external link remains enabled');
-    assert.match(r, /Play offline/);
+    assert.ok(!/不访问外网/.test(r), 'index.html 的 Google Fonts 外链没改，不能说这个包不访问外网');
+    assert.match(r, /不联网也能玩/, '断网可用要写清楚');
     assert.match(r, /Google Fonts/, '联网时会去 Google Fonts 加载字体，要如实说明');
-    assert.match(r, /offline/i, 'offline fallback should be explained');
-    assert.match(r, /does not need Node\.js installed/i);
+    assert.match(r, /断网/, '断网时的回退也要写');
+    assert.match(r, /不需要安装 Node/);
     assert.match(r, /node\\node\.exe/);
   });
 
-  test('includes each required project and asset notice', async () => {
+  test('每条授权要点都在（素材归原权利人 / 不适用 GPL / 不单独再分发 / 可要求删除 / 无担保）', async () => {
     const { bundleReadme } = await mod('scripts/make-windows-bundle.mjs');
     for (const withNode of [true, false]) {
       const r = bundleReadme({ version: 'v22.23.3', withNode });
-      assert.match(r, /belong to their respective rights holders/, `withNode=${withNode}`);
-      assert.match(r, /not covered by the GPL/, `withNode=${withNode}`);
-      assert.match(r, /redistribute them separately/, `withNode=${withNode}`);
-      assert.match(r, /remove the relevant material promptly/, `withNode=${withNode}`);
-      assert.match(r, /without warranties/, `withNode=${withNode}`);
-      assert.match(r, /Commercial use is prohibited/, `withNode=${withNode}`);
-      assert.ok(!/the entire bundle is licensed under GPL/i.test(r), `withNode=${withNode}`);
+      assert.match(r, /版权归原权利人所有/, `withNode=${withNode}`);
+      assert.match(r, /不适用.*GPL/, `withNode=${withNode}`);
+      assert.match(r, /单独再分发/, `withNode=${withNode}`);
+      assert.match(r, /立即删除/, `withNode=${withNode}`);
+      assert.match(r, /不提供任何担保/, `withNode=${withNode}`);
+      assert.match(r, /严禁任何形式的盈利/, `withNode=${withNode}`);
+      assert.ok(!/本包按 GPL/.test(r), `withNode=${withNode}: 不能写「本包按 GPL-3.0-or-later 分发」`);
     }
   });
 
-  test('--no-node instructions require a local Node.js installation', async () => {
+  test('--no-node 时不再写「不需要安装 Node」，目录结构也不列 node\\', async () => {
     const { bundleReadme } = await mod('scripts/make-windows-bundle.mjs');
     const r = bundleReadme({ version: 'v22.23.3', withNode: false });
-    assert.ok(!/does not need Node\.js installed/i.test(r), 'the bundle does not include portable Node.js');
-    assert.match(r, /does not include portable Node\.js/i);
-    assert.ok(!/node\\node\.exe/.test(r), 'the folder listing must not include node.exe');
-    assert.ok(!/LICENSE-node\.txt/.test(r), 'the folder listing must not include the Node.js license');
+    assert.ok(!/不需要安装 Node/.test(r), '没带便携 Node 就不能说不用装');
+    assert.match(r, /没有带便携版 Node/, '要明确告诉玩家自己去装 Node 22/24');
+    assert.ok(!/node\\node\.exe/.test(r), '目录结构里不该出现 node.exe');
+    assert.ok(!/LICENSE-node\.txt/.test(r), '也不该提 node\\LICENSE-node.txt');
   });
 });
 
-describe('make-windows-bundle.mjs: PowerShell single-quote escaping', () => {
-  test("escapes apostrophes in paths so Expand-Archive receives the full path", async () => {
+describe('make-windows-bundle.mjs: PowerShell 单引号转义', () => {
+  test("路径里的 ' 要写成 ''（否则 Expand-Archive 那条命令会被截断）", async () => {
     const { psSingleQuote } = await mod('scripts/make-windows-bundle.mjs');
     assert.equal(psSingleQuote('C:\\tmp\\node.zip'), "'C:\\tmp\\node.zip'");
     assert.equal(psSingleQuote("C:\\it's here\\node.zip"), "'C:\\it''s here\\node.zip'");
@@ -161,8 +161,8 @@ describe('make-windows-bundle.mjs: PowerShell single-quote escaping', () => {
   });
 });
 
-describe('make-windows-bundle.mjs: recursive asset copying', () => {
-  test('copyDir skips dot-prefixed entries and symbolic links', async () => {
+describe('make-windows-bundle.mjs: 素材整树复制', () => {
+  test('copyDir 跳过点开头的条目（打包机器自己的 .DS_Store）与符号链接', async () => {
     const { copyDir } = await mod('scripts/make-windows-bundle.mjs');
     const base = await fsp.mkdtemp(path.join(os.tmpdir(), 'sp-copydir-'));
     try {
@@ -199,7 +199,7 @@ describe('make-windows-bundle.mjs: recursive asset copying', () => {
     }
   });
 
-  test('copyFiles skips missing files and copies the rest', async () => {
+  test('copyFiles 跳过不存在的文件，其余照常复制', async () => {
     const { copyFiles } = await mod('scripts/make-windows-bundle.mjs');
     const base = await fsp.mkdtemp(path.join(os.tmpdir(), 'sp-copyfiles-'));
     try {

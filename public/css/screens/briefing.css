@@ -58,10 +58,10 @@
 .brief-boss__when { font-size: .15rem; color: var(--orange-hi); }
 .brief-boss__abil { margin: .04rem 0 0; padding-left: .18rem; display: flex; flex-direction: column; gap: .04rem; font-size: .14rem; line-height: 1.6; color: var(--text-md); }
 
-.brief-stage { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .06rem .2rem; padding: .12rem .18rem; background: rgba(12, 15, 14, .8); border: 1px solid var(--line); }
-.brief-stage__k { display: flex; flex-wrap: wrap; align-items: baseline; gap: .02rem .12rem; min-width: 0; }
-.brief-stage__pool { font-size: .14rem; color: var(--text-lo); }
-.brief-stage__name { display: flex; align-items: center; gap: .08rem; min-width: 0; margin-left: auto; font-size: .19rem; font-weight: 700; text-align: right; }
+.brief-stage { display: flex; align-items: center; justify-content: space-between; gap: .2rem; padding: .12rem .18rem; background: rgba(12, 15, 14, .8); border: 1px solid var(--line); }
+.brief-stage__k { display: flex; align-items: baseline; gap: .12rem; min-width: 0; }
+.brief-stage__pool { font-size: .14rem; color: var(--text-lo); white-space: nowrap; }
+.brief-stage__name { display: flex; align-items: center; gap: .08rem; font-size: .19rem; font-weight: 700; }
 .brief-stage__name .icon { width: .2rem; height: .2rem; color: var(--mint-500); }
 
 .brief-factions { display: flex; flex-direction: column; gap: .1rem; min-height: 0; }
@@ -89,6 +89,10 @@
 .brief-banned__n { margin-left: auto; font-size: .22rem; color: var(--red-premium); }
 .brief-banned__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(.6rem, 1fr)); gap: .08rem; }
 .brief-banned__grid .uthumb { --ut: .6rem; }
+/* 0.2.0: the player's own 自选 pieces out of the shop this match (ui/matchInfo.js DiyBannedLine; m.private.diyBanned) */
+.brief-banned__diy { margin: .1rem 0 0; font-size: .14rem; line-height: 1.5; color: var(--text-dim, #b8c2bf); }
+.diybanned__tag { display: inline-block; margin-right: .06rem; padding: .01rem .06rem; font-size: .12rem; font-weight: 700;
+  letter-spacing: .08em; background: var(--mint-500); color: var(--text-on-mint); vertical-align: .01rem; }
 
 .brief__foot { position: relative; z-index: 2; flex: none; display: flex; align-items: center; justify-content: flex-end; gap: .4rem; padding: .18rem .5rem .3rem; }
 .brief-ready { display: flex; align-items: center; gap: .16rem; }

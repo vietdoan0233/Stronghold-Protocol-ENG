@@ -66,7 +66,7 @@ test('战术决策 overlay: the same card twice is two cards — own keys, same 
   assert.deepEqual(cards.map((c) => c.key), [0, 1, 2, 3, 4, 5], 'keyed by index, never by card id');
   const face = (c) => ({ name: [...walk(c)].find((n) => hasClass(n, 'spcard__name')).props.children, team: [...walk(c)].some((n) => hasClass(n, 'spcard__tag--team')), title: c.props.title });
   assert.deepEqual(face(cards[a]), face(cards[b]));
-  assert.equal(face(cards[a]).name, 'Supply');
+  assert.equal(face(cards[a]).name, '补给');
   assert.equal(face(cards[a]).team, true, '全队获得');
   assert.deepEqual(resolveSpCard(sp.cards[a], 'tactic'), resolveSpCard(sp.cards[b], 'tactic'));
   assert.equal(sp.cards[a].id, sp.cards[b].id);

@@ -106,29 +106,29 @@ describe('shop bar: the merge tag and the armed card', () => {
   test('the 可晋升 tag says where the elite goes (the board copy\'s place / the hand)', () => {
     const slot = { kind: 'chess', id: A, price: 1, basePrice: 1 };
     const tagOf = (priv) => [...walk(ChessCard({ slot, idx: 0, priv, onBuy() {}, onDetail() {} }))].find((v) => hasClass(v, 'scard__mergetag'));
-    assert.equal(tagOf({ board: [onBoard(A, 10, 4)], hand: [inHand(A, 2)] })?.props.title, 'The Elite will appear at its original spot in the combat area');
-    assert.equal(tagOf({ board: [], hand: [inHand(A, 1), inHand(A, 2)] })?.props.title, 'The Elite will enter the Reserve');
+    assert.equal(tagOf({ board: [onBoard(A, 10, 4)], hand: [inHand(A, 2)] })?.props.title, '精锐干员将出现在作战区原位置');
+    assert.equal(tagOf({ board: [], hand: [inHand(A, 1), inHand(A, 2)] })?.props.title, '精锐干员将进入整备区');
     assert.equal(tagOf({ board: [], hand: [inHand(A, 1)] }), undefined, 'no tag before the merge');
   });
   test('touch shows no title: the detail card the first tap opens says where the elite goes (QA 6b)', async () => {
     await data.loadAll('chess', 'garrisons', 'assets', 'bonds', 'items');
     const board = { board: [onBoard(A, 10, 4)], hand: [inHand(A, 2)] };
     const hand = { board: [], hand: [inHand(A, 1), inHand(A, 2)] };
-    assert.equal(mergeHint(board, A), 'The Elite will appear at its original spot in the combat area');
-    assert.equal(mergeHint(hand, A), 'The Elite will enter the Reserve');
+    assert.equal(mergeHint(board, A), '精锐干员将出现在作战区原位置');
+    assert.equal(mergeHint(hand, A), '精锐干员将进入整备区');
     assert.equal(mergeHint({ board: [], hand: [inHand(A, 1)] }, A), null, 'no merge yet');
     assert.equal(mergeHint(board, golden(A)), null, 'an elite card never merges');
     // the first tap: ShopBar tapCard → onDetail(id, 'chess', mergeHint) → game.js setDetail({ …, hint }) → resolveDetail
     assert.match(read('public/js/ui/shopBar.js'), /setArmed\(key\); onDetail\(slot\.id, detailKind, detailKind === 'chess' \? mergeHint\(priv, slot\.id\) : null\)/);
-    assert.match(read('public/js/screens/game.js'), /onDetail=\$\{\(id, kind, hint\) => setDetail\(\{ kind: kind === 'item' \? 'item' : 'chess', id, hint: hint \|\| null \}\)\}/);
+    assert.match(read('public/js/screens/game.js'), /onDetail=\$\{\(id, kind, hint\) => setDetail\(\{ kind: kind === 'item' \? 'item' : 'chess', id, hint: hint \|\| null(?:, tap: \+\+cardTap\.current)? \}\)\}/);
     const r = resolveDetail({ kind: 'chess', id: A, hint: mergeHint(board, A) }, new Map());
-    assert.equal(r.hint, 'The Elite will appear at its original spot in the combat area');
+    assert.equal(r.hint, '精锐干员将出现在作战区原位置');
     const blocks = ChessDetail({ chess: r.chess, piece: null, editable: false, bonds: [], loadout: null, hint: r.hint });
     assert.equal(blocks[0].key, 'head');
     assert.equal(blocks[1].key, 'merge', 'right under the header');
     assert.ok(hasClass(blocks[1], 'dhint'));
     const text = JSON.stringify(blocks[1].props.children);
-    assert.ok(text.includes('Promotable: ') && text.includes('The Elite will appear at its original spot in the combat area'), text);
+    assert.ok(text.includes('可晋升：') && text.includes('精锐干员将出现在作战区原位置'), text);
     assert.ok(!ChessDetail({ chess: r.chess, piece: null, editable: false, bonds: [], loadout: null }).some((b) => b.key === 'merge'), 'no hint, no line');
   });
   test('an elite card never merges (server completesChessMerge refuses isGolden): no pips, no tag, no target tile', () => {
@@ -171,6 +171,6 @@ describe('shop bar: the merge tag and the armed card', () => {
     assert.match(src, /onArm=\$\{setArmedCard\}/, 'ShopBar reports the armed card');
     assert.match(src, /mergeTarget\(priv, armedCard\.id, gd\.chess\)/, 'the target comes from gameLogic.mergeTarget');
     assert.match(src, /view\.highlightTiles\(mergeAt \? \[\[mergeAt\.row, mergeAt\.col\]\] : \[\], MERGE_HL\)/, 'its own highlight group (cleared with [])');
-    assert.match(src, /const MERGE_HL = Object\.freeze\(\{ group: 'mergeTile'/);
+    assert.match(read('public/js/screens/game/marks.js'), /const MERGE_HL = Object\.freeze\(\{ group: 'mergeTile'/);
   });
 });

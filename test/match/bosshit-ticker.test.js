@@ -45,8 +45,8 @@ function toHiddenCore({ mode = 'coop', difficulty = 'NORMAL', humans = 1, client
   return { h, m, end, hits };
 }
 
-/** The threshold a BOSS_HIT ticker announces (its config param, from the text: "over N%"). */
-const stepOf = (hit) => Number(/over (\d+)%/.exec(hit.text)[1]) / 100;
+/** The threshold a BOSS_HIT ticker announces (its config param, from the text: "超过N%"). */
+const stepOf = (hit) => Number(/超过(\d+)%/.exec(hit.text)[1]) / 100;
 
 /** Every ticker of `phase` announces at most what the player really dealt to that leader, in rising order, once each. */
 function assertTruthful(hits, phase, players) {

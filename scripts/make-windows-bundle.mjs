@@ -7,11 +7,11 @@
 //   node\node.exe            官方 Windows x64 便携版 Node（版本与 sha256 钉在下面的 NODE_PIN）
 //   node\LICENSE-node.txt    Node 自己的许可证（和 node.exe 一起从官方 zip 里取出来）
 //   app\                     游戏本体：**只收 git 跟踪的文件** + 生产依赖 + 素材，离线可玩
-//   Start-Game.bat             app\scripts\launch.mjs --no-setup
-//   README-Quickstart.md       给玩家看的说明（含非官方 / 严禁盈利 / 素材版权声明）
+//   启动游戏.bat             app\scripts\launch.mjs --no-setup
+//   README-开箱即用.md       给玩家看的说明（含非官方 / 严禁盈利 / 素材版权声明）
 //   LICENSE / NOTICE.md / THIRD-PARTY-NOTICES.md
 //
-// 目标机器什么都不用装：解压 → 双击 Start-Game.bat。素材约 330 MB 是硬成本，包因此较大。
+// 目标机器什么都不用装：解压 → 双击 启动游戏.bat。素材约 330 MB 是硬成本，包因此较大。
 //
 // 三条硬规则（都是踩过的坑）：
 //   1. app\ 的文件清单来自 `git ls-files`，不是手写的跳过表 —— `.env` / `.venv` / `.claude` /
@@ -83,22 +83,21 @@ function parseArgs(argv) {
   return o;
 }
 
-const HELP = [
-  'node scripts/make-windows-bundle.mjs — Build a Windows portable bundle',
-  '',
-  '  --out <dir>        Bundle output directory (default: <repository parent>/Stronghold-Protocol-Windows)',
-  '  --no-node          Omit portable Node.js (the target PC must have Node.js 22+)',
-  '  --force            Replace only an empty directory or a previous bundle',
-  '  --node-version X   Select a Node.js version (default: ' + NODE_PIN.version + '); also provide --sha256',
-  '  --sha256 <hash>    SHA-256 for the selected win-x64 ZIP (from official SHASUMS256.txt)',
-  '',
-  '  app\\ contains tracked files, production dependencies (npm ci --omit=dev), and public/{assets,fonts,vendor}.',
-  '  Local files such as .env, .venv, .claude, and scripts/service.env.cmd are never bundled.',
-  '  data/local-assets.json is included if present; it is required to use locally extracted 3D board textures.',
-  '',
-  '  The bundle is not compressed, index.html is unchanged, and there is no installer.',
-  '  Start-Game.bat runs app\\scripts\\launch.mjs --no-setup (assets are included, so setup needs no network).',
-].join('\n');
+const HELP = `node scripts/make-windows-bundle.mjs — 生成 Windows 开箱即用便携包
+
+  --out <dir>        产物目录（默认 <仓库上一级>/Stronghold-Protocol-Windows）
+  --no-node          不下载便携版 Node（目标机器需自备 Node 22+）
+  --force            目录已存在时先删掉（只肯删空目录，或上一次打的便携包；其余情况拒绝）
+  --node-version X   换一个 Node 版本（默认 ${NODE_PIN.version}）；换版本必须同时给 --sha256
+  --sha256 <hash>    该版本 win-x64.zip 的 sha256（取自官方 SHASUMS256.txt）
+
+  app\\ 里只放 git 跟踪的文件 + 生产依赖（npm ci --omit=dev）+ public/{assets,fonts,vendor}；
+  因此 .env / .venv / .claude / scripts/service.env.cmd 这些本机文件不会被打进去。
+  data/local-assets.json 存在时（本机提取过 3D 棋盘贴图）会一起收，否则贴图进了包也用不上。
+
+  不压缩、不改 index.html、不装开始界面：包里的 启动游戏.bat 就是
+  \`app\\scripts\\launch.mjs --no-setup\`（素材已在包里，不需要联网准备）。
+`;
 
 /**
  * 路径的规范形式：把符号链接、macOS 的 `/tmp`、Windows 的 8.3 短名与大小写都归一。
@@ -146,7 +145,7 @@ export function outDirIsUnsafe(out, root = ROOT) {
 }
 
 /** 上一次打的便携包长这样：包根有这份说明，还有一个 app\ 目录。 */
-const BUNDLE_MARKERS = Object.freeze(['README-Quickstart.md', 'app']);
+const BUNDLE_MARKERS = Object.freeze(['README-开箱即用.md', 'app']);
 
 /**
  * `--force` 允不允许删掉这个目录？
@@ -180,7 +179,7 @@ export function forceDeleteVerdict(dir) {
 function trackedFiles() {
   const r = spawnSync('git', ['-C', ROOT, 'ls-files', '-z'], { maxBuffer: 256 * 1024 * 1024 });
   if (r.error || r.status !== 0) {
-    throw new Error('git ls-files failed: the bundle includes only tracked files; run this in a complete Git repository');
+    throw new Error('git ls-files 失败：打包只收版本库里跟踪的文件，请在完整的 git 仓库里运行');
   }
   return r.stdout.toString('utf8').split('\0').filter(Boolean);
 }
@@ -267,10 +266,10 @@ async function installProductionDeps(appDir) {
   await fsp.mkdir(stage, { recursive: true });
   for (const f of ['package.json', 'package-lock.json']) {
     const src = path.join(ROOT, f);
-    if (!fs.existsSync(src)) throw new Error(`Missing ${f}; cannot install production dependencies`);
+    if (!fs.existsSync(src)) throw new Error(`缺少 ${f}：无法安装生产依赖`);
     await fsp.copyFile(src, path.join(stage, f));
   }
-  console.log('  · Installing production dependencies with npm ci --omit=dev…');
+  console.log('  · 安装生产依赖 npm ci --omit=dev（稍等）…');
   // --ignore-scripts：本仓库的 postinstall 是 `node tools/vendor.mjs`（把 npm 里的前端库拷进
   // public/vendor）。这个暂存目录里只有一份 package.json，脚本根本不存在，npm ci 会在 postinstall
   // 阶段 MODULE_NOT_FOUND；而 public/vendor 本来就是整目录进包（见 ASSET_DIRS），不需要再跑一次。
@@ -280,7 +279,7 @@ async function installProductionDeps(appDir) {
   const r = IS_WIN
     ? spawnSync('cmd.exe', ['/d', '/s', '/c', 'npm', ...args], { cwd: stage, stdio: 'inherit' })
     : spawnSync('npm', args, { cwd: stage, stdio: 'inherit' });
-  if (r.error || r.status !== 0) throw new Error('npm ci --omit=dev failed (the portable bundle needs production dependencies; check your internet connection)');
+  if (r.error || r.status !== 0) throw new Error('npm ci --omit=dev 失败（便携包需要生产依赖，请先联网）');
   await fsp.rm(path.join(appDir, 'node_modules'), { recursive: true, force: true });
   await fsp.rename(path.join(stage, 'node_modules'), path.join(appDir, 'node_modules'));
   await fsp.rm(stage, { recursive: true, force: true });
@@ -314,9 +313,9 @@ function extractZip(zipPath, dir) {
   for (const [cmd, args] of attempts) {
     const r = spawnSync(cmd, args, { stdio: 'ignore' });
     if (!r.error && r.status === 0) return cmd;
-    last = `${cmd}: ${r.error ? r.error.message : `exit code ${r.status}`}`;
+    last = `${cmd}: ${r.error ? r.error.message : `退出码 ${r.status}`}`;
   }
-  throw new Error(`Failed to extract ${path.basename(zipPath)} (requires tar or unzip; Windows can also use Expand-Archive): ${last}`);
+  throw new Error(`解压 ${path.basename(zipPath)} 失败（需要 tar / unzip，Windows 上也可以是 Expand-Archive）：${last}`);
 }
 
 /**
@@ -330,16 +329,16 @@ async function ensureNodeZip(version, wantHash) {
   if (fs.existsSync(zipPath)) {
     const h = crypto.createHash('sha256').update(await fsp.readFile(zipPath)).digest('hex');
     if (h === wantHash) return zipPath;
-    console.log(`  · Checksum mismatch for ${path.relative(ROOT, zipPath)}; downloading it again`);
+    console.log(`  · ${path.relative(ROOT, zipPath)} 校验失败，重新下载`);
   }
 
   const url = `https://nodejs.org/dist/${version}/${zipName}`;
-  console.log(`  · Downloading ${url} (about 30 MB)`);
+  console.log(`  · 下载 ${url}（约 30 MB）`);
   const res = await fetch(url);
-  if (!res.ok) throw new Error(`Download failed: ${res.status} ${res.statusText}`);
+  if (!res.ok) throw new Error(`下载失败 ${res.status} ${res.statusText}`);
   const buf = Buffer.from(await res.arrayBuffer());
   const got = crypto.createHash('sha256').update(buf).digest('hex');
-  if (got !== wantHash) throw new Error(`${zipName} SHA-256 mismatch:\n    expected ${wantHash}\n    got      ${got}`);
+  if (got !== wantHash) throw new Error(`${zipName} sha256 不匹配：\n    期望 ${wantHash}\n    实际 ${got}`);
   await fsp.mkdir(NODE_CACHE_DIR, { recursive: true });
   await fsp.writeFile(zipPath, buf);
   return zipPath;
@@ -362,13 +361,13 @@ async function extractPortableNode(bundleNodeDir, version, zipPath) {
     const tool = extractZip(zipPath, tmp);
     const nodeExe = path.join(tmp, rootName, 'node.exe');
     const license = path.join(tmp, rootName, 'LICENSE');
-    if (!fs.existsSync(nodeExe)) throw new Error(`node.exe was not found after extraction: ${nodeExe}`);
+    if (!fs.existsSync(nodeExe)) throw new Error(`解压后没找到 node.exe：${nodeExe}`);
     // 发出去的二进制必须带它自己的许可证 —— 官方 zip 里就有，取出来放旁边。
-    if (!fs.existsSync(license)) throw new Error(`The official ZIP has no LICENSE file: ${license} (cannot distribute the bundle without it)`);
+    if (!fs.existsSync(license)) throw new Error(`官方 zip 里没有 LICENSE：${license}（不能就这样打包发出去）`);
     await fsp.mkdir(bundleNodeDir, { recursive: true });
     await fsp.copyFile(nodeExe, path.join(bundleNodeDir, 'node.exe'));
     await fsp.copyFile(license, path.join(bundleNodeDir, 'LICENSE-node.txt'));
-    console.log(`    Extractor: ${tool}`);
+    console.log(`    解压器：${tool}`);
     return {
       version,
       bytes: (await fsp.stat(path.join(bundleNodeDir, 'node.exe'))).size,
@@ -379,7 +378,7 @@ async function extractPortableNode(bundleNodeDir, version, zipPath) {
   }
 }
 
-/** Windows launcher batch file; keep its contents ASCII-only. */
+/** 启动 .bat（内容保持纯 ASCII，中文只出现在文件名里）。 */
 function bat(body) {
   return `@echo off\r\nchcp 65001 >nul\r\nsetlocal\r\nset "HERE=%~dp0"\r\nset "NODE="\r\nif exist "%HERE%node\\node.exe" set "NODE=%HERE%node\\node.exe"\r\nif not defined NODE set "NODE=node"\r\n${body}\r\nset "CODE=%ERRORLEVEL%"\r\nif not "%CODE%"=="0" pause\r\nexit /b %CODE%\r\n`;
 }
@@ -390,69 +389,67 @@ function bat(body) {
  */
 export function bundleReadme({ version, withNode }) {
   const nodeNeed = withNode
-    ? 'The target PC does not need Node.js installed: node\\node.exe contains portable Node.js ' + version + '.'
-    : 'This bundle does not include portable Node.js. Install Node.js 22 or 24 LTS on the target PC first.';
-  const nodeLicence = withNode ? ' and node\\LICENSE-node.txt (Node.js MIT license)' : '';
+    ? `目标机器**不需要安装 Node**：包内的 \`node\\node.exe\` 就是便携版 Node ${version}。`
+    : '这个包**没有带便携版 Node**，请先在这台机器上安装 Node 22 或 24（LTS）。';
+  const nodeLicence = withNode ? ' 与 `node\\LICENSE-node.txt`（Node 自己的 MIT 许可证）' : '';
   const tree = withNode
-    ? [
-        'node\\node.exe                   Portable Node.js VERSION (official x64 archive, SHA-256 verified)',
-        'node\\LICENSE-node.txt           Node.js license (MIT)',
-        'app\\                             Game files: server / shared / public (all assets) / data / scripts / tools',
-        'Start-Game.bat                   Runs app\\scripts\\launch.mjs --no-setup',
-        'README-Quickstart.md             This file',
-        'LICENSE / NOTICE.md / THIRD-PARTY-NOTICES.md',
-      ].join('\n').replace('VERSION', version)
-    : [
-        'app\\                             Game files: server / shared / public (all assets) / data / scripts / tools',
-        'Start-Game.bat                   Runs app\\scripts\\launch.mjs --no-setup',
-        'README-Quickstart.md             This file',
-        'LICENSE / NOTICE.md / THIRD-PARTY-NOTICES.md',
-        '',
-        'The node\\ directory is not included; install Node.js 22 or 24 LTS yourself.',
-      ].join('\n');
+    ? `node\\node.exe            便携版 Node ${version}（官方 x64，已经 sha256 校验）
+node\\LICENSE-node.txt    Node 自己的许可证（MIT）
+app\\                    游戏本体：server / shared / public（全部素材）/ data / scripts / tools
+启动游戏.bat             app\\scripts\\launch.mjs --no-setup
+README-开箱即用.md       本文件
+LICENSE / NOTICE.md / THIRD-PARTY-NOTICES.md`
+    : `app\\                    游戏本体：server / shared / public（全部素材）/ data / scripts / tools
+启动游戏.bat             app\\scripts\\launch.mjs --no-setup
+README-开箱即用.md       本文件
+LICENSE / NOTICE.md / THIRD-PARTY-NOTICES.md
 
-  return [
-    '# Stronghold Protocol: Alliance — Windows portable bundle',
-    '',
-    'After extraction, double-click Start-Game.bat. Assets and dependencies are included; nothing else needs to be downloaded.',
-    nodeNeed,
-    '',
-    'Play offline: artwork, audio, dependencies, and fonts are included. Offline, the page uses the bundled app\\public\\fonts',
-    '(Bender / Novecento Wide) and system sans-serif fonts; gameplay is unaffected. When online, the page also loads',
-    'web fonts such as Noto Sans SC from Google Fonts (the external link in index.html is unchanged and does not block',
-    'rendering). This makes Chinese text look closer to the original; offline font loading will not block the game or cause errors.',
-    '',
-    '## Notices',
-    '',
-    '> [!IMPORTANT]',
-    '> - This is an unofficial fan project made by players. It is not affiliated with, authorized, or endorsed by Hypergryph, Yostar, or their affiliates.',
-    '> - Arknights and Stronghold Protocol: Alliance names, characters, artwork, music, sound effects, text, and data belong to their respective rights holders. Those materials are not covered by the GPL-3.0 license for this project; GPL covers only code written for this project.',
-    '> - This project is for learning, discussion, and personal non-commercial use only. Commercial use is prohibited, including selling the project or bundled packages, paid downloads or distribution, paid hosting or setup services, monetization through ads, tips, or memberships, and any other commercial use.',
-    '> - The bundle includes game artwork and audio for convenience. By downloading it, you agree to this notice. Do not use the assets outside this project or redistribute them separately. See NOTICE.md for the full terms.',
-    '> - Rights holders may contact us through an Issue if they believe this project infringes their rights; we will remove the relevant material promptly.',
-    '> - This project is provided as is, without warranties. Use it at your own risk.',
-    '',
-    'LICENSE in the bundle applies only to code written for this project. Licenses for bundled Node.js (MIT) and other third-party components are listed in THIRD-PARTY-NOTICES.md' + nodeLicence + '.',
-    '',
-    '## How to play',
-    '',
-    'Host a game    Double-click Start-Game.bat. This PC hosts the game and opens it in a browser.',
-    '               The console prints a LAN address to share with friends (for example, http://192.168.1.23:3000).',
-    'Join a game    You do not need this bundle; open the host URL in your browser.',
-    '',
-    'The first time you host, Windows Firewall may prompt you. Allow access on private networks so friends can connect.',
-    'After creating a room, share its 4-digit room code or the copied link (…/?room=code) with friends.',
-    '',
-    '## Folder contents',
-    '',
-    String.fromCharCode(96, 96, 96),
-    tree,
-    String.fromCharCode(96, 96, 96),
-    '',
-    'To uninstall, delete the whole folder. The bundle does not write to the registry or install files in system directories.',
-    'Save data and nicknames are stored in the browser localStorage on that PC.',
-  ].join('\n');
+（没有 node\\ 这一层：本包不带便携版 Node，请自行安装 Node 22/24 LTS）`;
+
+  return `# 卫戍协议：盟约 · Windows 开箱即用包
+
+解压后**双击 \`启动游戏.bat\`** 即可，素材与依赖都在包里，不需要再下载任何东西。
+${nodeNeed}
+
+**不联网也能玩**：美术 / 音频 / 依赖 / 字体全部在包内，断网时用自带的 \`app\\public\\fonts\`
+（Bender / Novecento Wide）和系统黑体，玩法不受影响。**联网时**页面还会去 Google Fonts 加载
+Noto Sans SC 这类网页字体（\`index.html\` 里那条外链这次没有改，它也不阻塞渲染），
+只是让中文更接近原版观感 —— 断网不会因此卡住或报错。
+
+## 声明
+
+> [!IMPORTANT]
+> - 本项目是玩家自制的**非官方同人作品**，与上海鹰角网络科技有限公司（Hypergryph）、Yostar 及其关联方**没有任何关系**，未获其授权或认可。
+> - 《明日方舟》及「卫戍协议」相关的名称、角色、美术、音乐、音效、文本与数据等素材，版权归原权利人所有。这些素材**不适用**本项目的 GPL-3.0 许可证；GPL 只覆盖本项目自己编写的代码。
+> - 仅供学习交流与个人非商业使用。**严禁任何形式的盈利**，包括但不限于：售卖本项目或整合包、付费下载或付费分发、收费服务器或收费代开、广告 / 打赏 / 会员等变现方式，以及其他任何商业用途。
+> - 本包为了方便玩家附带了游戏的美术与音频素材，下载即视为同意本声明。请勿将素材用于本项目以外的用途或**单独再分发**。完整条款见 [NOTICE.md](NOTICE.md)。
+> - 权利人如认为本项目侵犯其权益，请通过 Issue 联系，我们会**立即删除**相关内容。
+> - 本项目按「现状」提供，**不提供任何担保**，使用风险自负。
+
+包内 [LICENSE](LICENSE) 里的 GPL-3.0-or-later 覆盖的是**本项目自己编写的代码**；内置 Node.js（MIT）以及其它
+第三方组件的许可见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)${nodeLicence}。
+
+## 怎么玩
+
+\`\`\`
+本机当服务器   双击 启动游戏.bat：在这台电脑开服，浏览器自动打开；
+               控制台会打印「发给朋友」的局域网地址（形如 http://192.168.1.23:3000）
+连别人的服务器 不需要这个包，直接用浏览器打开对方的网址就行
+\`\`\`
+
+第一次开服时 Windows 防火墙可能弹窗，勾选**允许专用网络**（否则朋友连不上）。
+建房后把 4 位「同盟密钥」或「复制链接」（\`…/?room=密钥\`）发给朋友即可。
+
+## 目录结构
+
+\`\`\`
+${tree}
+\`\`\`
+
+卸载＝直接删掉整个文件夹（不写注册表、不放系统目录）。存档/昵称在该电脑的浏览器 localStorage 里。
+`;
 }
+
 async function main() {
   const o = parseArgs(process.argv.slice(2));
   if (o.help) { console.log(HELP); return 0; }
@@ -465,106 +462,106 @@ async function main() {
   let nodeHash = NODE_PIN.sha256;
   if (o.nodeSpec) {
     if (!/^v?\d+\.\d+\.\d+$/.test(o.nodeSpec)) {
-      console.error(`✖ --node-version must be a specific version such as v22.23.3; received ${o.nodeSpec}. Moving targets such as latest-22.x make builds non-reproducible.`);
+      console.error(`✖ --node-version 要写成 v22.23.3 这样的具体版本，收到的是 ${o.nodeSpec}（latest-22.x 这类浮动版本不行，那样两次打包内容会不一样）。`);
       return 1;
     }
     nodeVersion = o.nodeSpec.startsWith('v') ? o.nodeSpec : `v${o.nodeSpec}`;
     if (nodeVersion !== NODE_PIN.version) {
       if (!/^[0-9a-f]{64}$/.test(o.sha256)) {
-        console.error(`✖ --node-version ${nodeVersion} differs from the pinned ${NODE_PIN.version}. Also provide --sha256 <64 hexadecimal characters> from the official SHASUMS256.txt.`);
+        console.error(`✖ --node-version ${nodeVersion} 与仓库里钉死的 ${NODE_PIN.version} 不同，必须同时给 --sha256 <64 位十六进制>（取自官方 SHASUMS256.txt）。`);
         return 1;
       }
       nodeHash = o.sha256;
     }
   }
 
-  console.log(`\nStronghold Protocol: Alliance · Windows portable bundle\n  Repository: ${ROOT}\n  Output:     ${out}\n`);
+  console.log(`\n卫戍协议 · Windows 开箱即用包\n  源仓库：${ROOT}\n  产物：  ${out}\n`);
 
   // --out 指到仓库本身 / 上级目录时直接拒绝；--force 另外只肯删「空目录」或「上一次打的包」。
   if (outDirIsUnsafe(out)) {
-    console.error(`✖ --out points to the repository or one of its parent directories: ${out}\n  --force could delete the repository. Choose a directory outside it (for example, D:\\Game\\Stronghold-Protocol-Windows).`);
+    console.error(`✖ --out 指向仓库本身或它的上级目录：${out}\n  加 --force 会把仓库删掉，请换一个仓库之外的目录（例如 D:\\Game\\Stronghold-Protocol-Windows）。`);
     return 1;
   }
   const verdict = forceDeleteVerdict(out);
   if (verdict !== 'missing') {
     if (!o.force) {
-      console.error(`✖ ${out} already exists. Add --force to replace it; only empty directories or a previous bundle can be removed.`);
+      console.error(`✖ ${out} 已存在。要覆盖请加 --force —— 它只会删掉空目录，或上一次打的便携包，其余情况一律拒绝。`);
       return 1;
     }
     if (verdict === 'refuse') {
-      console.error(`✖ ${out} exists, but it is neither empty nor recognizable as a previous bundle (the root must contain README-Quickstart.md and app\\).`
-        + '\n  It was left untouched to prevent accidental deletion. Verify and remove it yourself, or choose another --out (for example, D:\\Game\\Stronghold-Protocol-Windows).');
+      console.error(`✖ ${out} 已存在，但它既不是空目录，也不像上一次打的便携包（包根要有 README-开箱即用.md 和 app\\）。`
+        + '\n  为免误删，这里不会动它：请自己确认后删掉，或换一个 --out（例如 D:\\Game\\Stronghold-Protocol-Windows）。');
       return 1;
     }
     await fsp.rm(out, { recursive: true, force: true });
-    console.log(`  · Removed ${out} (${verdict === 'empty' ? 'empty directory' : 'previous bundle'})`);
+    console.log(`  · 清掉 ${out}（${verdict === 'empty' ? '空目录' : '上一次的便携包'}）`);
   }
   await fsp.mkdir(out, { recursive: true });
 
   // 1) 游戏代码：只收 git 跟踪的文件
   const all = trackedFiles();
   const wanted = all.filter((rel) => !SKIP_TRACKED.some((p) => rel === p || rel.startsWith(p)));
-  console.log(`  · Copying game files (${wanted.length} tracked files; skipping ${all.length - wanted.length} test/ files)…`);
+  console.log(`  · 复制游戏本体（git 跟踪的 ${wanted.length} 个文件，略过 ${all.length - wanted.length} 个 test/ 文件）…`);
   const copied = await copyFiles(wanted, appDir);
-  console.log(`    Done: ${copied.files} files / ${MB(copied.bytes)}`);
+  console.log(`    完成：${copied.files} 个文件 / ${MB(copied.bytes)}`);
 
   // 2) 素材与前端库（不进版本库，必须存在）
   for (const d of ASSET_DIRS) {
     if (!fs.existsSync(path.join(ROOT, d))) {
-      throw new Error(`Missing ${d}; run node tools/setup.mjs first to prepare assets and frontend libraries`);
+      throw new Error(`缺少 ${d} —— 先运行 node tools/setup.mjs 把素材 / 前端库准备好`);
     }
   }
-  console.log(`  · Copying assets and frontend libraries (${ASSET_DIRS.join(', ')})…`);
+  console.log(`  · 复制素材与前端库（${ASSET_DIRS.join('、')}）…`);
   let assetFiles = 0; let assetBytes = 0;
   for (const d of ASSET_DIRS) {
     // eslint-disable-next-line no-await-in-loop
     const s = await copyDir(path.join(ROOT, d), path.join(appDir, d));
     assetFiles += s.files; assetBytes += s.bytes;
   }
-  console.log(`    Done: ${assetFiles} files / ${MB(assetBytes)}`);
+  console.log(`    完成：${assetFiles} 个文件 / ${MB(assetBytes)}`);
 
   // 2b) 3D 棋盘贴图的清单（本机提取过才有）：贴图在 public/assets/local 里，靠这份 JSON 才会被游戏采用。
   const localManifest = path.join(ROOT, LOCAL_ASSET_MANIFEST);
   const localTextures = path.join(ROOT, 'public', 'assets', 'local');
   if (fs.existsSync(localManifest)) {
     await fsp.copyFile(localManifest, path.join(appDir, LOCAL_ASSET_MANIFEST));
-    console.log(`    Including ${LOCAL_ASSET_MANIFEST} (manifest for 3D board textures in public/assets/local)`);
+    console.log(`    带上 ${LOCAL_ASSET_MANIFEST}（3D 棋盘贴图的清单，贴图本体在 public/assets/local）`);
   } else if (fs.existsSync(localTextures)) {
-    console.log(`    ! public/assets/local exists, but ${LOCAL_ASSET_MANIFEST} is missing; the textures would be unused. `
-      + 'Run node tools/setup.mjs --local to generate the manifest, or remove that directory.');
+    console.log(`    ! 有 public/assets/local 但没有 ${LOCAL_ASSET_MANIFEST}：贴图进了包也用不上，`
+      + '先跑 node tools/setup.mjs --local 生成清单（或删掉该目录）');
   }
 
   // 3) 生产依赖
   await installProductionDeps(appDir);
   const deps = await dirSize(path.join(appDir, 'node_modules'));
-  console.log(`    Done: ${deps.files} files / ${MB(deps.bytes)} (production dependencies only)`);
+  console.log(`    完成：${deps.files} 个文件 / ${MB(deps.bytes)}（只含生产依赖）`);
 
   // 4) 便携版 Node（每次都从校验过的 zip 重新解压）
-  let nodeInfo = { version: '(not bundled; install Node.js 22+ on the target PC)', bytes: 0 };
+  let nodeInfo = { version: '（未打包，目标机器需自备 Node 22+）', bytes: 0 };
   if (o.node) {
-    console.log(`  · Preparing portable Node.js ${nodeVersion}…`);
+    console.log(`  · 准备便携版 Node ${nodeVersion}…`);
     await fsp.mkdir(nodeDir, { recursive: true });
     const zipPath = await ensureNodeZip(nodeVersion, nodeHash);
     nodeInfo = await extractPortableNode(nodeDir, nodeVersion, zipPath);
-    console.log(`    Done: Node.js ${nodeInfo.version} / ${MB(nodeInfo.bytes)} + LICENSE`);
+    console.log(`    完成：Node ${nodeInfo.version} / ${MB(nodeInfo.bytes)} + LICENSE`);
   }
 
   // 5) 包根的法律文件（本项目的 LICENSE / NOTICE / 第三方声明）
   for (const f of LEGAL_FILES) {
     const src = path.join(ROOT, f);
     if (!fs.existsSync(src)) {
-      console.log(`    ! ${f} is missing from the repository; it will not be included in the bundle`);
+      console.log(`    ! 版本库里没有 ${f}，包根将缺少这份声明`);
       continue;
     }
     await fsp.copyFile(src, path.join(out, f));
   }
 
-  await fsp.writeFile(path.join(out, 'Start-Game.bat'), bat('"%NODE%" "%HERE%app\\scripts\\launch.mjs" --no-setup %*'), 'latin1');
-  await fsp.writeFile(path.join(out, 'README-Quickstart.md'), bundleReadme({ version: nodeVersion, withNode: !!o.node }), 'utf8');
+  await fsp.writeFile(path.join(out, '启动游戏.bat'), bat('"%NODE%" "%HERE%app\\scripts\\launch.mjs" --no-setup %*'), 'latin1');
+  await fsp.writeFile(path.join(out, 'README-开箱即用.md'), bundleReadme({ version: nodeVersion, withNode: !!o.node }), 'utf8');
 
   const total = await dirSize(out);
-  console.log(`\n✔ Portable bundle created: ${out}\n  ${total.files} files / ${MB(total.bytes)}`);
-  console.log('  Double-click Start-Game.bat to start a local game and open it in your browser.');
+  console.log(`\n✔ 便携包已生成：${out}\n  ${total.files} 个文件 / ${MB(total.bytes)}`);
+  console.log('  双击「启动游戏.bat」即可（本机开服，浏览器自动打开）。');
   return 0;
 }
 

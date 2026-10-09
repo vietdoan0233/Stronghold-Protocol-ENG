@@ -1,7 +1,7 @@
 // Live operator stats (user playtest #4 item 7 — the detail card showed the fixed record numbers): g.unitStats answers
 // m.unitStats { seq, round, units } with the stats every unit of the player's board starts its next battle with — the
 // real battle input (equipment, bonds / layers, 特质, band and 机变 effects, the onBattleStart meta) built into a Battle
-// that is started and read, never stepped (server/match/Match.js unitStats); the shape is shared/protocol.js
+// that is started and read, never stepped (server/match/match/intents.js unitStats); the shape is shared/protocol.js
 // unitStatsEntry (also the browser runner's live battle stats, test/match/runner.test.js). The preview changes nothing
 // of the match.
 import { test } from 'node:test';
@@ -42,6 +42,11 @@ test('protocol: g.unitStats { seq? } and g.bandFocus { bandId? } validate; m.uni
   assert.equal(validateC2S({ t: 'g.bandFocus', bandId: 'band_bldsk' }), null);
   assert.notEqual(validateC2S({ t: 'g.bandFocus', bandId: 'a b' }), null);
   assert.ok(S2C.includes('m.unitStats'));
+  assert.equal(validateC2S({ t: 'g.choice', idx: 0 }), null);
+  assert.equal(validateC2S({ t: 'g.choice', idx: 2, choiceId: 'seed-2.choice.12' }), null);
+  for (const choiceId of [null, '', 'a b', 12, 'a'.repeat(65)]) {
+    assert.notEqual(validateC2S({ t: 'g.choice', idx: 0, choiceId }), null);
+  }
 });
 
 test('unitStatsEntry: effective stats next to the base, rounded for display; the interval from bat / aspd when absent', () => {

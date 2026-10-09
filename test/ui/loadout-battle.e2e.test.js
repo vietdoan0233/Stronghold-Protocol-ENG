@@ -5,8 +5,8 @@
 //
 //   SP_E2E=1 node --test test/ui/loadout-battle.e2e.test.js
 //
-// The operator: elite Wild Mane (chess_char_1_19_b). Default = S2 + its default module (ATK +40, ASPD +3).
-// Chosen here: S1 (ON_DEPLOY: ASPD +100 for 25 s) + No Module — so right after the unit deploys the
+// The chess: elite 野鬃 (chess_char_1_19_b). Default = S2 夹枪冲锋 (25/40 SP) + module 长枪替补套装 (ATK +40, ASPD +3).
+// Chosen here: S1 骑枪刺击 (ON_DEPLOY: "部署后攻击速度+100" for 25 s) + 不装备 — so right after the unit deploys the
 // local battle must show S1 active with a draining duration bar, ASPD +100 and the no-module stats (ATK 524, ASPD 100).
 // The server is test/e2e/fastServer.mjs with its starter-kit hook (SP_START_CHESS: the elite in the hand at round 1);
 // everything else is the real match engine and the real UI driven by real mouse input.
@@ -31,12 +31,10 @@ const untimed = (c) => c.page.evaluate(() => ({
 }));
 
 describe('user playtest #2 item 1 — loadout chosen in the UI fights in the local battle (real server)', { skip: !ENABLED && 'set SP_E2E=1 (Chrome + public/assets)' }, () => {
-  test('Wild Mane S1 + No Module reaches m.private.loadout and the battle spec, then runs with base stats', { timeout: 6 * 60 * 1000 }, async () => {
+  test('干员调配 S1 + 不装备 for 野鬃 → m.private.loadout → b.start spec → the local sim runs S1 with the no-module stats', { timeout: 6 * 60 * 1000 }, async () => {
     const chess = JSON.parse(readFileSync(path.join(ROOT, 'data/chess.json'), 'utf8'));
-    const en = JSON.parse(readFileSync(path.join(ROOT, 'public/locales/en/chess.json'), 'utf8')).strings;
     const rec = (Array.isArray(chess) ? chess : Object.values(chess.chess || chess)).find((x) => x && x.chessId === ELITE);
     const s1 = rec.skills.find((s) => s.index === 0);
-    const s1Name = en[s1.name] || s1.name;
     assert.equal(s1.skillId, 'skchr_wildmn_1');
     assert.equal(s1.spType, 'ON_DEPLOY');
     assert.notEqual(rec.skills.find((s) => s.isDefault).index, 0, 'S1 is not the default skill');
@@ -52,36 +50,36 @@ describe('user playtest #2 item 1 — loadout chosen in the UI fights in the loc
       await c.click('.lobby-screen [data-testid="loadout-open"]');
       await c.page.waitForSelector('.lo .lo-card', { visible: true, timeout: 15000 });
       await c.click('.lo-search input');
-      await c.page.keyboard.type('Wild Mane'); // 野鬃 (the page shows the English overlay names)
+      await c.page.keyboard.type('野鬃');
       await c.page.waitForFunction(() => document.querySelectorAll('.lo-card').length === 1, { timeout: 5000 });
-      await c.click('.lo-card');
-      await c.click('.lo-detail .lo-skill[data-skill="0"]');
-      // Scroll the No Module radio into the detail panel's scrollport; Client.click only handles on-screen centers.
-      const noModule = '.lo-detail .lo-mod--none[data-module="none"]';
-      await c.page.waitForSelector(noModule, { visible: true, timeout: 5000 });
-      await c.page.$eval(noModule, (el) => el.scrollIntoView({ block: 'center', inline: 'nearest' }));
-      await c.click(noModule, 'No Module');
-      await c.page.waitForFunction(() => document.querySelector('.lo-skill.is-on[data-skill="0"]') && document.querySelector('.lo-mod.is-on[data-module="none"]'), { timeout: 3000 });
-      await c.page.waitForFunction(() => /Synced/.test(document.querySelector('.lo-sync')?.textContent || ''), { timeout: 8000 });
+      await c.click('.lo-card__pick');
+      // the row's quick choices (0.2.2: the roster is one list, a row per operator with its skills and the elite's
+      // modules; the detail's own module cards sit below the fold) — the row and the detail agree on S1 + 不装备
+      await c.click('.lo-card .lo-q--skill[data-skill="0"]');
+      await c.click('.lo-card .lo-q--mod[data-module="none"]');
+      await c.page.waitForFunction(() => document.querySelector('.lo-card .lo-q--skill[data-skill="0"]')?.getAttribute('aria-pressed') === 'true'
+        && document.querySelector('.lo-card .lo-q--mod[data-module="none"]')?.getAttribute('aria-pressed') === 'true'
+        && document.querySelector('.lo-detail .lo-skill.is-on[data-skill="0"]') && document.querySelector('.lo-detail .lo-mod.is-on[data-module="none"]'), { timeout: 3000 });
+      await c.page.waitForFunction(() => /已同步/.test(document.querySelector('.lo-sync')?.textContent || ''), { timeout: 8000 });
       await c.shot('overlay');
       await c.page.keyboard.press('Escape');
       await c.page.waitForFunction(() => !document.querySelector('.lo'), { timeout: 3000 });
 
       // 2) a solo 标准 match: the briefing's m.private carries the loadout
-      await c.click('.mode-card', 'Solo Simulation');
-      await c.click('.diff-card', 'Standard Simulation');
-      await c.click('.create-box button', 'Start Solo Simulation');
+      await c.click('.mode-card', '独立模拟');
+      await c.click('.diff-card', '标准模拟');
+      await c.click('.create-box button', '开始独立模拟');
       await c.waitFor((s) => !!s.room, 'solo room');
-      if (!(await c.st()).phase) await c.click('.room-bar__right button', 'Start Simulation', { timeout: 20000 });
+      if (!(await c.st()).phase) await c.click('.room-bar__right button', '开始模拟', { timeout: 20000 });
       await c.waitFor((s) => s.phase === 'INFO_CHECK', 'briefing', 30000);
       const lo = await c.page.evaluate(() => globalThis.__SP__.store.get().match.private?.loadout ?? null);
       assert.deepEqual(lo, { [BASE]: { skill: 0, module: 'none' } }, 'the match received the loadout');
-      await c.click('.brief__foot .btn--primary', 'Ready');
+      await c.click('.brief__foot .btn--primary', '准备就绪');
       await c.waitFor((s) => s.phase === 'BAND_DRAFT', 'band draft', 30000);
       await sleep(500);
       assert.deepEqual(await untimed(c), { deadline: false, shown: 0 }, 'item 11: the solo strategy draft is untimed');
       await c.click('.dband', null, { nth: 1 });
-      await c.click('.draft-detail__btns .btn--primary', 'Confirm Selection');
+      await c.click('.draft-detail__btns .btn--primary', '确认选择');
       await c.waitFor((s) => s.phase === 'PREP' && !s.ready && s.hand > 0, 'prep with the starter kit', 60000);
       await sleep(1800); // camera flight + pieces
       assert.deepEqual(await untimed(c), { deadline: false, shown: 0 }, 'item 11: solo prep is untimed');
@@ -100,7 +98,7 @@ describe('user playtest #2 item 1 — loadout chosen in the UI fights in the loc
       await c.waitFor((s) => s.board > 0, 'placed', 8000);
       await sleep(600);
 
-      // The placed Elite's detail card shows the selected skill's Loadout tag and No module equipped.
+      // the detail card of the placed elite shows the chosen skill (已调配) and 未装备模组
       let detail = null;
       for (const at of [0.72, 0.4, 0.88]) {
         const p = await c.piecePoint(piece.uid, at);
@@ -112,20 +110,23 @@ describe('user playtest #2 item 1 — loadout chosen in the UI fights in the loc
           module: document.querySelector('.dpanel .dmodule')?.textContent || '',
           none: !!document.querySelector('.dpanel .dmodule.is-none'),
           // the record (base) value: with live stats (user playtest #4 item 7: the start-of-battle preview) it is the
-          // cell's title "Base N", else the value itself
+          // cell's title "基础 N", else the value itself
           stats: Object.fromEntries([...document.querySelectorAll('.dpanel .dstat')].map((el) => [el.querySelector('.dstat__k')?.textContent,
-            (el.getAttribute('title') || '').replace(/^Base /, '') || el.querySelector('.dstat__v')?.textContent])),
+            (el.getAttribute('title') || '').replace(/^基础 /, '') || el.querySelector('.dstat__v')?.textContent])),
           trait: document.querySelector('.dpanel .dtrait')?.textContent || '',
         })), () => null);
         if (detail) break;
       }
       assert.ok(detail, 'the detail card opens for the placed elite');
-      assert.ok(detail.skill.includes(s1Name) && detail.tag, `detail card: ${s1Name} Loadout tag (${JSON.stringify(detail)})`);
-      assert.ok(detail.none && detail.module.includes('No module equipped'), `detail card: No module equipped (${JSON.stringify(detail)})`);
-      // …and the stats / trait the unit fights with: no module (ATK 524, interval 1.00 s, "Obtain 1 DP") — not the default module's
-      assert.equal(detail.stats.ATK, String(rec.statsBase.atk), `detail card ATK without the module (${JSON.stringify(detail.stats)})`);
-      assert.equal(detail.stats['Attack Interval'], '1.00s', 'detail card interval: ASPD 100');
-      assert.match(detail.trait, /Obtain 1 DP/, `detail card trait without the module (${detail.trait})`);
+      assert.ok(detail.skill.includes(s1.name) && detail.tag, `detail card: ${s1.name} 已调配 (${JSON.stringify(detail)})`);
+      assert.ok(detail.none && detail.module.includes('未装备模组'), `detail card: 未装备模组 (${JSON.stringify(detail)})`);
+      // …and the stats / 特性 the unit fights with: no module (ATK 524, interval 1.00 s, "获得1点") — not the default module's;
+      // 0.2.2: the card's base value carries the player's 练度, here the default 精英2 Lv.60 (effects.json aceffect_char_4,
+      // ×1.1 ATK — a multiplier of its own, the unit's def keeps the record's 524)
+      const t4 = JSON.parse(readFileSync(path.join(ROOT, 'data/effects.json'), 'utf8')).aceffect_char_4.buffs.find((b) => b.key === 'char_attribute_mul').bb;
+      assert.equal(detail.stats['攻击'], String(Math.round(rec.statsBase.atk * t4.atk)), `detail card ATK without the module, at the default 练度 (${JSON.stringify(detail.stats)})`);
+      assert.equal(detail.stats['攻击间隔'], '1.00s', 'detail card interval: ASPD 100');
+      assert.match(detail.trait, /获得1点部署费用/, `detail card 特性 without the module (${detail.trait})`);
       await c.shot('detail');
       await c.page.keyboard.press('Escape');
       await c.page.waitForFunction(() => !document.querySelector('.dpanel'), { timeout: 4000 });

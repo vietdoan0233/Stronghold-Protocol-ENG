@@ -1,10 +1,12 @@
-# Third-party notices
+# Third-party notices（第三方组件声明）
 
 Stronghold Protocol's own code is licensed under **GPL-3.0-or-later** (see [LICENSE](LICENSE) and [NOTICE.md](NOTICE.md)).
 The components below are **not** part of that grant: each stays under its own licence, reproduced at the end of this
 file. Nothing here is committed to the repository except `tools/local-extract/aklz4.py`; the client libraries are
 installed by npm and copied into `public/vendor/` by `tools/vendor.mjs` (postinstall), and the release bundle carries
 them (with `node_modules/`, which keeps each package's own licence file).
+
+本项目自己的代码采用 GPL-3.0-or-later；下列第三方组件各自保留原许可证，不受 GPL 约束。
 
 ## Software
 
@@ -38,17 +40,29 @@ at all, this project grants an additional permission under GPL-3.0 section 7 for
 ## Game data, art and audio
 
 All names, characters, artwork, Spine models, UI graphics, music, sound effects and game data of *Arknights* /
-"Stronghold Protocol: Alliance" are © Shanghai Hypergryph Network Technology Co., Ltd. and its licensors
+「卫戍协议：盟约」 are © Shanghai Hypergryph Network Technology Co., Ltd. (上海鹰角网络科技有限公司) and its licensors
 (Yostar and others). They are **not** licensed under the GPL and this project grants no rights to them; see
 [NOTICE.md](NOTICE.md) for the non-commercial terms. Community mirrors used by `tools/fetch-assets.mjs` /
-`tools/build-data.mjs` / `tools/locale.mjs`: [Kengxxiao/ArknightsGameData](https://github.com/Kengxxiao/ArknightsGameData),
-[Kengxxiao/ArknightsGameData_YoStar](https://github.com/Kengxxiao/ArknightsGameData_YoStar) (the official Global English text),
+`tools/build-data.mjs`: [Kengxxiao/ArknightsGameData](https://github.com/Kengxxiao/ArknightsGameData),
 [yuanyan3060/ArknightsGameResource](https://github.com/yuanyan3060/ArknightsGameResource),
 [fexli/ArknightsResource](https://github.com/fexli/ArknightsResource),
 [isHarryh/Ark-Models](https://github.com/isHarryh/Ark-Models),
 [ArknightsAssets/ArknightsAssets2](https://github.com/ArknightsAssets/ArknightsAssets2) — thanks to their maintainers.
-Quotations of PRTS Wiki, BWIKI, NGA, Bahamut and other community pages in `docs/` stay under the terms of their
+The English game texts (`data/i18n/en.json`, `tools/build-i18n.mjs`) come from the official EN client tables mirrored by
+[ArknightsAssets/ArknightsGamedata](https://github.com/ArknightsAssets/ArknightsGamedata) (`en/gamedata`, the default
+source) and [Kengxxiao/ArknightsGameData_YoStar](https://github.com/Kengxxiao/ArknightsGameData_YoStar) (`en_US`,
+`--source yostar`); same terms as the rest of the game data.
+Quotations of PRTS Wiki, BWIKI, NGA, 巴哈姆特 and other community pages in `docs/` stay under the terms of their
 sources (the wikis' texts are CC BY-NC-SA).
+
+## Translations
+
+The English UI strings (`public/i18n/en.json`) and the fallback game-text translations (`tools/i18n/fallback-pr70.json`)
+are based on GitHub PR #70 (branch `en-translation`) by **@YuriRestia**, reused with credit and released with the project
+under GPL-3.0-or-later (docs/I18N.md). PR #70 named ak-spa-database.pages.dev and arknights.wiki.gg as references: texts
+it took from ak-spa-database.pages.dev (no licence) are excluded; arknights.wiki.gg is CC BY-SA 4.0, which may be combined
+into a GPL-3.0 work (the one-way compatibility Creative Commons declared) — thanks to its contributors. Official game
+terms and names in those files remain © Hypergryph / Yostar.
 
 ---
 

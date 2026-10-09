@@ -43,7 +43,8 @@ test('parseStored: tolerant of junk, keeps structurally valid entries; toStored 
 test('exportPayload / serializeExport: versioned envelope, entries copied; parseImport round trip', () => {
   const entries = { [INSIDE]: { skill: 0 }, [SWIRE]: { module: SWIRE_ALT } };
   const p = exportPayload(entries, { now: Date.UTC(2026, 9, 3, 4, 5, 6) });
-  assert.deepEqual(Object.keys(p).sort(), ['count', 'entries', 'exportedAt', 'kind', 'v'], 'exactly the envelope, no unused field');
+  assert.deepEqual(Object.keys(p).sort(), ['count', 'entries', 'exportedAt', 'kind', 'ops', 'v'], 'exactly the envelope (0.2.2: + the 潜能 / 练度 ops), no unused field');
+  assert.deepEqual(p.ops, {}, 'no settings: an empty map (an import then resets the settings to the defaults)');
   assert.equal(p.kind, LOADOUT_EXPORT_KIND);
   assert.equal(p.v, LOADOUT_VERSION);
   assert.equal(p.count, 2);
@@ -71,7 +72,7 @@ test('parseImport: accepts the envelope, the stored form, a bare map and text; r
   }
   const newer = parseImport({ v: LOADOUT_VERSION + 1, entries });
   assert.equal(newer.ok, false, 'a NEWER payload is refused, never mis-read');
-  assert.match(newer.error, /Update the game before importing/, 'the player is told to update the game');
+  assert.match(newer.error, /请先更新游戏/, 'the player is told to update the game');
   assert.equal(parseImport({ kind: 'some.other.tool', entries }).ok, false, "another tool's payload");
   assert.equal(parseImport({ v: LOADOUT_VERSION, entries: {} }).ok, false, 'nothing to import');
   assert.equal(parseImport({ v: LOADOUT_VERSION, entries: { 'bad id': { skill: 0 } } }).ok, false, 'no structurally valid entry');
@@ -200,13 +201,13 @@ test('display helpers: module badge, stat rows, skill tags', () => {
   assert.equal(moduleBadge({ typeName: 'MAR-X' }), 'X');
   assert.equal(moduleBadge({ typeName: 'ISW-α' }), 'α');
   assert.equal(moduleBadge(null, MODULE_NONE), '—');
-  assert.deepEqual(attrRows({ maxHp: 80, atk: 22, def: 0 }).map((r) => [r.label, r.text, r.positive]), [['Max HP', '+80', true], ['ATK', '+22', true]]);
-  assert.deepEqual(attrRows({ cost: -1, respawnTime: -4 }).map((r) => [r.label, r.text, r.positive]), [['DP Cost', '-1', true], ['Redeploy Time', '-4s', true]]);
+  assert.deepEqual(attrRows({ maxHp: 80, atk: 22, def: 0 }).map((r) => [r.label, r.text, r.positive]), [['生命上限', '+80', true], ['攻击力', '+22', true]]);
+  assert.deepEqual(attrRows({ cost: -1, respawnTime: -4 }).map((r) => [r.label, r.text, r.positive]), [['部署费用', '-1', true], ['再部署时间', '-4秒', true]]);
   assert.deepEqual(attrRows(null), []);
   const t = skillTags(IB.skills[1]);
-  assert.equal(t.sp, 'Auto Recovery');
+  assert.equal(t.sp, '自动回复');
   assert.equal(t.cost, IB.skills[1].spCost);
-  assert.equal(t.duration, 'Ammo');
+  assert.equal(t.duration, '弹药');
   assert.equal(skillLabel(2), 'S3');
   const passive = skillTags({ skillType: 'PASSIVE', spType: 8 });
   assert.equal(passive.passive, true);
@@ -262,7 +263,7 @@ test('sync: welcome sends the sanitised loadout; edits are debounced; identical 
   const s = installLoadoutSync({ net, timers: T, target, getChessReady: async () => CHESS, lookupChess: get });
   net.emit('welcome', {});
   await T.advance(100);
-  assert.deepEqual(net.sent, [{ t: 'room.loadout', entries: { [INSIDE]: { skill: 0 } } }], 'stale entry dropped');
+  assert.deepEqual(net.sent, [{ t: 'room.loadout', entries: { [INSIDE]: { skill: 0 } }, ops: {} }], 'stale entry dropped (no 潜能 / 练度 set: ops {})');
   assert.equal(target.get().sync, 'synced');
   target.set({ entries: { [INSIDE]: { skill: 0 }, [SWIRE]: { module: SWIRE_ALT } } });
   target.set({ entries: { [INSIDE]: { skill: 0 }, [SWIRE]: { module: MODULE_NONE } } });
@@ -361,15 +362,15 @@ test('overlay auto-close: briefing entry closes when INFO_CHECK ends; lobby / ro
   assert.equal(shouldAutoClose({ open: false, from: 'briefing' }, PHASE.PREP, true, true), false);
 });
 
-test('untimed phases show no countdown: the "No countdown" placeholder of Countdown is hidden (user playtest #11)', () => {
+test('untimed phases show no countdown: the "无倒计时" placeholder of Countdown is hidden (user playtest #11)', () => {
   const css = readFileSync(path.join(ROOT, 'public/css/screens/loadout.css'), 'utf8');
-  assert.match(css, /\.countdown\[aria-label="No countdown"\]\s*\{\s*display:\s*none;/);
+  assert.match(css, /\.countdown\[aria-label="无倒计时"\]\s*\{\s*display:\s*none;/);
   const html = readFileSync(path.join(ROOT, 'public/index.html'), 'utf8');
   assert.match(html, /<link rel="stylesheet" href="\/css\/screens\/loadout\.css" \/>/, 'loaded on every page');
   // contract with ui/components.js: a missing deadline renders the Countdown with exactly that aria-label (or nothing)
   const comp = readFileSync(path.join(ROOT, 'public/js/ui/components.js'), 'utf8');
   const fn = comp.slice(comp.indexOf('export function Countdown'), comp.indexOf('export function Countdown') + 2500);
-  assert.ok(/'No countdown'/.test(fn) || /return null/.test(fn), 'Countdown marks (or skips) the untimed state');
+  assert.ok(/'无倒计时'/.test(fn) || /return null/.test(fn), 'Countdown marks (or skips) the untimed state');
 });
 
 test('the background layer (.lo__bg: mint glow + grid) keeps position: absolute — no later rule of the same specificity overrides it (PR #14)', () => {
@@ -468,7 +469,7 @@ test('sync: an edit refused because the match locked its loadout is told to the 
   await net.reply('WRONG_PHASE');
   assert.equal(target.get().sync, 'locked');
   assert.equal(told.length, 1);
-  assert.match(told[0], /take effect in the next match/);
+  assert.match(told[0], /下一局生效/);
   s.dispose();
 });
 
@@ -480,7 +481,7 @@ test('sync: an empty loadout is sent without loading chess.json (no 1.6 MB downl
   const s = installLoadoutSync({ net, timers: T, target, getChessReady: async () => { loads++; return CHESS; }, lookupChess: get, notify: () => {} });
   net.emit('welcome', {});
   await T.advance(100);
-  assert.deepEqual(net.sent, [{ t: 'room.loadout', entries: {} }]);
+  assert.deepEqual(net.sent, [{ t: 'room.loadout', entries: {}, ops: {} }]);
   assert.equal(loads, 0);
   await net.reply();
   target.set({ entries: { [INSIDE]: { skill: 0 } } });
@@ -496,7 +497,7 @@ test('entry badge (review fix): counts like the screen once chess.json is loaded
   const entries = { [INSIDE]: { skill: 0 }, chess_char_9_99_a: { skill: 1 }, chess_char_1_05_a: { skill: 0 }, [IB.goldenId]: { skill: 0 } };
   assert.equal(get('chess_char_1_05_a').isHidden, true, 'fixture: 红豆 is retired');
   assert.equal(badgeCount(entries, null), 4, 'before the data: the stored entries');
-  assert.equal(badgeCount(entries, get), 1, 'with the data: only chess the screen shows as Adjusted');
+  assert.equal(badgeCount(entries, get), 1, 'with the data: only chess the screen shows as 已调整');
   assert.equal(badgeCount(entries, get), changedCount(entries, get));
   assert.equal(badgeCount({}, get), 0);
 });

@@ -1,7 +1,8 @@
 # Glossary — Chinese → English
 
-The single glossary for the English localization (CHANGES.md): the same Chinese term always maps to the same English
-term, in the UI chrome (`public/js/**`), in the game-data tables (`public/locales/en/*.json`) and in the server's
+The English edition's term list: the same Chinese term always maps to the same English term, in the UI (`t()` in
+`public/js/**`, the values in `public/i18n/en.json`), in the game-data tables (`tools/i18n/fork/en/*.json`, the source of
+the fork's game-text fallback) and in the server's
 runtime messages. When a term is missing, add it here **in the same commit** that first uses it.
 
 ## Sources, in order of authority
@@ -11,8 +12,8 @@ runtime messages. When a term is missing, add it here **in the same commit** tha
    (`enemy_handbook_table`), skills / talents / traits / modules (`skill_table`, `character_table`, `uniequip_table`),
    status terms (`gamedata_const.termDescriptionDict`), and the earlier season `act1vautochess` of this very mode
    ("Entry Protocol", "Funds", "Supply Level", "Strategy", "Starting Strategy", "Operators", "Unite" wording …).
-   Use these verbatim. `tools/locale.mjs harvest` pulls them into the tables.
-2. **Established project terms** — CHANGES.md §2 and the translated docs (`docs/PLAYING.md`, `README.md`).
+   Use these verbatim. The official English wording is applied by `tools/build-i18n.mjs` (docs/I18N.md §2).
+2. **Established project terms** — the glossary table of docs/I18N.md and the translated docs (`docs/PLAYING.md`, `README.md`).
 3. **New wording**, only for mode-specific text with no official English: short, in the voice of the game
    (*Doctor*, *Operators*, *Deploy*, *Retreat*, *Dispatch*), never a word-for-word calque.
 

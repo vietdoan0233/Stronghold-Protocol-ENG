@@ -144,18 +144,18 @@ const textOf = (v) => {
 };
 
 describe('变形同构体 — what the popup and the card show', () => {
-  test('the popup: On Field 3 and Members 3/11 — the wearer lit, tagged Isomorph, titled Polymorphic Isomorph', () => {
+  test('the popup: 在场 3 and 成员 3/11 — the wearer lit, tagged 同构, titled 变形同构体', () => {
     const priv = privWith({ board: [{ ...piece(VIC[0]), row: 9, col: 3 }, { ...piece(VIC[1]), row: 9, col: 4 }, { ...piece(WEARER, [ISO, HAMMER]), row: 9, col: 5 }] });
     const entry = { bondId: 'victoriaShip', count: 3, active: true, tier: 1, layers: 0, thresholds: [3, 6], countsHand: false };
     const v = BondPopup({ bondId: 'victoriaShip', entry, priv, onClose() {} });
-    const head = [...walk(v)].filter((x) => x.type === 'h4').map(textOf).find((t) => t.startsWith('Members'));
-    assert.equal(head.replace(/\s+/g, ''), `Members3/${bonds.victoriaShip.visibleMembers.length + 1}`);
-    assert.match(textOf([...walk(v)].find((x) => hasClass(x, 'bpop__facts'))), /On Field\s*3/);
+    const head = [...walk(v)].filter((x) => x.type === 'h4').map(textOf).find((t) => t.startsWith('成员'));
+    assert.equal(head.replace(/\s+/g, ''), `成员3/${bonds.victoriaShip.visibleMembers.length + 1}`);
+    assert.match(textOf([...walk(v)].find((x) => hasClass(x, 'bpop__facts'))), /在场\s*3/);
     const iso = [...walk(v)].filter((x) => hasClass(x, 'bpop__member') && hasClass(x, 'is-granted'));
     assert.equal(iso.length, 1);
     assert.ok(hasClass(iso[0], 'is-on'));
-    assert.match(iso[0].props.title, /Polymorphic Isomorph/);
-    assert.ok([...walk(iso[0])].some((x) => hasClass(x, 'bpop__iso') && textOf(x) === 'Isomorph'));
+    assert.match(iso[0].props.title, /变形同构体/);
+    assert.ok([...walk(iso[0])].some((x) => hasClass(x, 'bpop__iso') && textOf(x) === '同构'));
   });
 
   test('the card\'s bond chips: the granted bond with its count, dashed and tagged; resolveDetail hands a teammate unit\'s items on', () => {
@@ -166,7 +166,7 @@ describe('变形同构体 — what the popup and the card show', () => {
     assert.deepEqual(chips.map((x) => x.props['data-bond']), ['lateranoShip', 'swiftShip', 'victoriaShip']);
     const vic = chips[2];
     assert.ok(hasClass(vic, 'is-granted') && hasClass(vic, 'is-active'));
-    assert.match(vic.props.title, /维多利亚 \(Polymorphic Isomorph\): 3\/6 on the field/);
+    assert.match(vic.props.title, /维多利亚（变形同构体）：在场 3\/6/);
     assert.ok(!hasClass(chips[0], 'is-granted'));
     const d = resolveDetail({ kind: 'unit', unit: { id: 7, side: 'ally', ownerId: 'p2', defId: WEARER, items: [ISO, HAMMER] } }, new Map());
     assert.deepEqual(d.unitItems, [ISO, HAMMER]);

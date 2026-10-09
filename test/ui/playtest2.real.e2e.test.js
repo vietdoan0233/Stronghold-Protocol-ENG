@@ -20,7 +20,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
-import { Client, ROOT, sleep, hasChrome, startRealServer, problemsOf } from '../e2e/client.mjs';
+import { Client, ROOT, sleep, hasChrome, startRealServer, problemsOf, waitForFunctionLong } from '../e2e/client.mjs';
 
 const ENABLED = process.env.SP_E2E === '1' && hasChrome() && existsSync(path.join(ROOT, 'public/assets'));
 const ONLY = process.env.SP_P2_REAL || '';
@@ -62,16 +62,16 @@ function viewState(c) {
 async function soloToPrep(c, diff) {
   await c.open();
   await c.enter('煌');
-  await c.click('.mode-card', 'Solo Simulation');
+  await c.click('.mode-card', '独立模拟');
   await c.click('.diff-card', diff);
-  await c.click('.create-box button', 'Start Solo Simulation');
+  await c.click('.create-box button', '开始独立模拟');
   await c.waitFor((s) => !!s.room, 'solo room');
-  if (!(await c.st()).phase) await c.click('.room-bar__right button', 'Start Simulation', { timeout: 20000 });
+  if (!(await c.st()).phase) await c.click('.room-bar__right button', '开始模拟', { timeout: 20000 });
   await c.waitFor((s) => s.phase === 'INFO_CHECK', 'briefing', 30000);
-  await c.click('.brief__foot .btn--primary', 'Ready');
+  await c.click('.brief__foot .btn--primary', '准备就绪');
   await c.waitFor((s) => s.phase === 'BAND_DRAFT', 'band draft', 30000);
   await c.click('.dband', null, { nth: 1 });
-  await c.click('.draft-detail__btns .btn--primary', 'Confirm Selection');
+  await c.click('.draft-detail__btns .btn--primary', '确认选择');
   const s = await c.waitFor((x) => x.phase === 'PREP' && !x.ready, 'boss-round prep', 60000);
   await sleep(1800); // camera flight + pieces
   return s;
@@ -177,6 +177,10 @@ function battleViewState(c) {
       penVisible: pens.filter((x) => x.root && x.root.visible !== false).length,
       penRowsDrawn: !!d && d.tiles.grid.some((row) => row.some((t) => t.r >= 14 && t.drawn)),
       field: s.match.field?.fieldId ?? null, runner: r ? { fieldId: r.fieldId, own: !!r.own, watch: !!r.watch, done: !!r.done } : null,
+      // unit-layer sprites no view owns (a stale unit of the field shown before would stay drawn)
+      orphans: d ? d.ctx.layers.units.children.filter((ch) => ch.visible !== false && ch.worldVisible !== false)
+        .filter((ch) => ![...d.views.values()].some((v) => v && v.root === ch))
+        .map((ch) => ch.getBounds()).filter((b) => b.width > 4 && b.height > 4).map((b) => `${Math.round(b.x)},${Math.round(b.y)}`) : [],
     };
   });
 }
@@ -202,6 +206,7 @@ async function untilPrep(c, pred, what, timeout = 90000) {
 const NO_PEN_R1 = 13;
 
 function assertNoPen(v, tag) {
+  assert.deepEqual(v.orphans, [], `${tag}: no stale unit sprite of another field`);
   assert.equal(v.penVisible, 0, `${tag}: no pen figure`);
   assert.equal(v.penRowsDrawn, false, `${tag}: no pen rows drawn (${v.band})`);
   assert.ok(v.band && v.band[1] <= 13, `${tag}: drawn rows ${v.band}`);
@@ -215,19 +220,19 @@ describe('user playtest #2 item 6 — 前往查看 → 返回战场 in combat (r
     try {
       await c.open();
       await c.enter('煌');
-      await c.click('.mode-card', 'Alliance Simulation');
-      await c.click('.diff-card', 'Standard Simulation');
-      await c.click('.create-box button', 'Create Alliance');
+      await c.click('.mode-card', '同盟模拟');
+      await c.click('.diff-card', '标准模拟');
+      await c.click('.create-box button', '创建同盟');
       await c.waitFor((s) => !!s.room?.code, 'room created');
-      await c.click('button', 'Add AI Teammate');
+      await c.click('button', '添加 AI 队友');
       await sleep(500);
-      await c.click('.room-bar__right button', 'Start Simulation', { timeout: 20000 });
+      await c.click('.room-bar__right button', '开始模拟', { timeout: 20000 });
       await c.waitFor((s) => s.phase === 'INFO_CHECK', 'briefing', 30000);
-      await c.click('.brief__foot .btn--primary', 'Ready');
+      await c.click('.brief__foot .btn--primary', '准备就绪');
       await c.waitFor((s) => s.phase === 'BAND_DRAFT' && s.draft?.turn === s.me || s.phase === 'PREP', 'my band pick', 60000);
       if ((await c.st()).phase === 'BAND_DRAFT') {
         await c.click('.dband:not(.is-taken)', null, { nth: 1 });
-        await c.click('.draft-detail__btns .btn--primary', 'Confirm Selection');
+        await c.click('.draft-detail__btns .btn--primary', '确认选择');
       }
       let observed = false;
       for (let tries = 0; tries < 3 && !observed; tries++) {
@@ -247,8 +252,8 @@ describe('user playtest #2 item 6 — 前往查看 → 返回战场 in combat (r
         await c.waitFor((s) => s.phase === 'COMBAT', 'combat', 60000);
         await sleep(1500);
         assertNoPen(await battleViewState(c), `R${s0.round} own battle`);
-        // own battle over while the AI's field still runs
-        const target = await c.page.waitForFunction(() => {
+        // own battle over while the AI's field still runs (sliced: longer than the browser's 90 s protocol timeout)
+        const target = await waitForFunctionLong(c.page, () => {
           const s = globalThis.__SP__.store.get();
           const r = globalThis.__SP_RUNNER__?.state?.();
           const pub = s.match.public;
@@ -260,7 +265,7 @@ describe('user playtest #2 item 6 — 前往查看 → 返回战场 in combat (r
         if (!target || ['phase', 'none', 'timeout'].includes(target)) { c.note(`R${s0.round}: no running teammate field after the own battle (${target})`); continue; }
         await c.page.waitForSelector('.chud__wait', { timeout: 5000 });
         await c.click('.team__row:not(.is-self) .team__btn', null, { nth: 0 });
-        if (!(await c.click('.team__ob', 'Go Watch', { optional: true, timeout: 3000 }))) { c.note(`R${s0.round}: no Go Watch`); continue; }
+        if (!(await c.click('.team__ob', '前往查看', { optional: true, timeout: 3000 }))) { c.note(`R${s0.round}: no 前往查看`); continue; }
         const ok = await c.page.waitForFunction((fid) => { const r = globalThis.__SP_RUNNER__?.state?.(); return !!r && r.fieldId === fid && r.watch; }, { timeout: 15000 }, target).then(() => true, () => false);
         if (!ok || (await c.st()).phase !== 'COMBAT') { c.note(`R${s0.round}: the observed battle ended meanwhile`); continue; }
         await sleep(1300);
@@ -269,7 +274,7 @@ describe('user playtest #2 item 6 — 前往查看 → 返回战场 in combat (r
         assertNoPen(w, 'observing the teammate');
         await c.shot('observe-teammate');
         if ((await c.st()).phase !== 'COMBAT') { c.note(`R${s0.round}: combat ended before 返回战场`); continue; }
-        await c.click('.team__back, .chud__back', 'Back to Battlefield', { timeout: 4000 });
+        await c.click('.team__back, .chud__back', '返回战场', { timeout: 4000 });
         await c.page.waitForFunction(() => { const r = globalThis.__SP_RUNNER__?.state?.(); return !r || (r.own && !r.watch); }, { timeout: 10000 });
         await sleep(1300); // the camera flight
         const b = await battleViewState(c);
@@ -300,7 +305,7 @@ describe('user playtest #2 item 10 — boss-round prep on the boss field (real s
     const srv = await startRealServer({ fast: { timerScale: 0.5, combatSpeed: 8, startRound: 'boss' } });
     const c = new Client(await pptr(), srv.base, 'solo', { prefix: 'fix' });
     try {
-      const s = await soloToPrep(c, 'Standard Simulation');
+      const s = await soloToPrep(c, '标准模拟');
       assert.equal(s.round, s.bossRound, 'the boss round');
       await checkBossPrep(c, 'L', 'solo');
       await c.shot('boss-prep-solo');
@@ -324,7 +329,7 @@ describe('user playtest #2 item 10 — boss-round prep on the boss field (real s
     const srv = await startRealServer({ fast: { timerScale: 0.5, combatSpeed: 8, startRound: 'hidden' } });
     const c = new Client(await pptr(), srv.base, 'hidden', { prefix: 'fix', w: 1366, h: 768 });
     try {
-      const s = await soloToPrep(c, 'Perilous Simulation');
+      const s = await soloToPrep(c, '险境模拟');
       assert.equal(s.round, 15, 'the Hidden Core round');
       await checkBossPrep(c, 'L', 'hidden');
       const placed = await placeOne(c, 'UP');
@@ -340,25 +345,25 @@ describe('user playtest #2 item 10 — boss-round prep on the boss field (real s
   });
 
   test('co-op 险境 (R14): host on the left half, guest on the mirrored right half; scouting and 返回 keep the pen hidden', { skip: only('coop'), timeout: 10 * 60 * 1000 }, async () => {
-    const srv = await startRealServer({ fast: { timerScale: 0.5, combatSpeed: 8, startRound: 'boss' } });
+    const srv = await startRealServer({ fast: { timerScale: 1, combatSpeed: 8, startRound: 'boss', items: ['chess_item_6_03_m'] } });
     const P = await pptr();
     const host = new Client(P, srv.base, 'host', { prefix: 'fix' });
     const guest = new Client(P, srv.base, 'guest', { prefix: 'fix', w: 1280, h: 720 });
     try {
       await host.open();
       await host.enter('凯尔希');
-      await host.click('.mode-card', 'Alliance Simulation');
-      await host.click('.diff-card', 'Perilous Simulation');
-      await host.click('.create-box button', 'Create Alliance');
+      await host.click('.mode-card', '同盟模拟');
+      await host.click('.diff-card', '险境模拟');
+      await host.click('.create-box button', '创建同盟');
       const room = (await host.waitFor((s) => !!s.room?.code, 'room created')).room;
       await guest.open(`?room=${room.code}`);
       await guest.enter('阿米娅');
       await guest.waitFor((s) => s.room?.code === room.code, 'guest joined');
-      await guest.click('.room-bar__right button', 'Ready');
+      await guest.click('.room-bar__right button', '准备就绪');
       await sleep(400);
-      await host.click('.room-bar__right button', 'Start Simulation', { timeout: 20000 });
+      await host.click('.room-bar__right button', '开始模拟', { timeout: 20000 });
       for (const c of [host, guest]) await c.waitFor((s) => s.phase === 'INFO_CHECK', 'briefing', 30000);
-      for (const c of [host, guest]) await c.click('.brief__foot .btn--primary', 'Ready');
+      for (const c of [host, guest]) await c.click('.brief__foot .btn--primary', '准备就绪');
       // the draft first (a client still in the briefing would count as done without picking: its turn then runs out —
       // Match.BAND_TURN_SECONDS, 30 s each since user playtest #4 item 4)
       for (const c of [host, guest]) await c.waitFor((s) => s.phase !== 'INFO_CHECK', 'band draft', 40000);
@@ -372,7 +377,7 @@ describe('user playtest #2 item 10 — boss-round prep on the boss field (real s
           if (picked.has(c.label) || s.draft?.turn !== s.me) continue;
           await c.click('.dband:not(.is-taken)', null, { nth: c === host ? 2 : 5 });
           await sleep(200);
-          await c.click('.draft-detail__btns .btn--primary', 'Confirm Selection');
+          await c.click('.draft-detail__btns .btn--primary', '确认选择');
           picked.add(c.label);
         }
         await sleep(250);
@@ -392,7 +397,7 @@ describe('user playtest #2 item 10 — boss-round prep on the boss field (real s
       await guest.shot('boss-prep-coop-R');
       // scouting the teammate's board (前往查看) and coming back: no pen with the boards, the boss field again
       await host.click('.team__row:not(.is-self) .team__btn', null, { nth: 0 });
-      assert.ok(await host.click('.team__ob', 'Go Watch', { optional: true, timeout: 3000 }), 'host: Go Watch in the boss-round prep');
+      assert.ok(await host.click('.team__ob', '前往查看', { optional: true, timeout: 3000 }), 'host: 前往查看 in the boss-round prep');
       {
         await host.page.waitForSelector('.gm__watching', { timeout: 6000 });
         await sleep(900);
@@ -407,6 +412,47 @@ describe('user playtest #2 item 10 — boss-round prep on the boss field (real s
         assert.deepEqual(back.prepField, { kind: 'bossPrep', side: 'L', mirror: false }, '返回: the own boss half again');
       }
       await penRoundTrip(guest, 'guest');
+      // Real clients open their own 教鞭 candidates together; refreshing one tab restores that same private choice.
+      const choiceOf = (c) => c.page.evaluate(() => JSON.parse(JSON.stringify(globalThis.__SP__.store.get().match.private.personalChoice)));
+      const deadline = await host.page.evaluate(() => globalThis.__SP__.store.get().match.public.deadline);
+      await Promise.all([[host, hp], [guest, gp]].map(async ([c, placed]) => {
+        const art = (await c.handPieces('item')).find((p) => p.id === 'chess_item_6_03_m');
+        assert.ok(art, `${c.label}: starter 教鞭`);
+        await c.drag(await c.piecePoint(art.uid), await c.tilePoint(placed.row, placed.col));
+        await c.page.waitForSelector('.spov[aria-label="教鞭选择"]', { timeout: 6000 });
+      }));
+      const hostChoice = await choiceOf(host), guestChoice = await choiceOf(guest);
+      assert.notEqual(hostChoice.id, guestChoice.id);
+      for (const c of [host, guest]) {
+        assert.equal((await choiceOf(c)).cards.length, 3);
+        assert.equal((await c.st()).canReady, false);
+        assert.equal(await c.page.$('.spov__order'), null);
+        assert.equal(await c.page.evaluate(() => globalThis.__SP__.store.get().match.public.deadline), deadline);
+      }
+      await host.page.reload({ waitUntil: 'networkidle0' });
+      await host.page.waitForSelector('.spov[aria-label="教鞭选择"]', { timeout: 20000 });
+      assert.deepEqual(await choiceOf(host), hostChoice, 'refresh reuses the ID and cards');
+      assert.deepEqual(await choiceOf(guest), guestChoice, 'the teammate keeps its own candidates');
+      await host.page.evaluate(async () => { await (await import('/js/ui/lang.js')).switchLang('en'); });
+      await host.page.waitForSelector('.spov[aria-label="Pointing Stick Choice"]');
+      assert.match(await host.page.$eval('.spov__title', (el) => el.textContent), /Pointing Stick · Tactical Training/);
+      assert.equal(await host.page.$eval('[data-testid="ready-why"]', (el) => el.textContent), 'Complete the Pointing Stick choice first');
+      assert.equal(await guest.page.$eval('.spov', (el) => el.getAttribute('aria-label')), '教鞭选择', 'language stays per client');
+      assert.deepEqual(await choiceOf(host), hostChoice, 'language switch does not replace the offer');
+      await host.page.evaluate(async () => { await (await import('/js/ui/lang.js')).switchLang('zh'); });
+      await host.page.waitForSelector('.spov[aria-label="教鞭选择"]');
+      const refused = await host.page.evaluate(async (id) => {
+        try { await globalThis.__SP__.net.request('g.choice', { idx: 0, choiceId: id }); return null; }
+        catch (e) { return e.code; }
+      }, guestChoice.id);
+      assert.equal(refused, 'BAD_TARGET', 'a live client cannot submit the teammate\'s ID');
+      await host.shot('dobermann-private-reconnect');
+      for (const c of [host, guest]) {
+        await c.click('.spcard.is-pickable');
+        assert.ok(await choiceOf(c), 'first tap only highlights');
+        await c.click('.spov__confirm');
+        await c.page.waitForFunction(() => globalThis.__SP__.store.get().match.private.personalChoice === null, { timeout: 6000 });
+      }
       for (const c of [host, guest]) await c.click('.readybtn');
       await checkBossBattle(host, hp, 'L', 'host');
       await checkBossBattle(guest, gp, 'R', 'guest');

@@ -220,17 +220,12 @@ describe('player reports after 0.1.0: the models follow the knock-out forms (hea
       assert.equal(state.after, state.hp, 'the 4 hits took no HP');
       const pre = out.filter((x) => x.spine && x.t < state.hit);
       assert.ok(pre.length > 0 && pre.every((x) => /^A_/.test(x.clip)), `first form: A_* (${[...new Set(pre.map((x) => x.clip))]})`);
-      const change = out.filter((x) => x.t > state.hit && x.t < state.kill && x.clip === 'A_Die_B');
-      assert.ok(change.length > 0 && change.every((x) => x.alive), `the change clip played while alive (${[...new Set(change.map((x) => x.clip))]})`);
-      // The form switches when A_Die_B starts, but the 2 s transition clip keeps playing until it finishes. Check the
-      // changed-form samples as a sequence instead of assuming the render feed has ended that clip at hit + 2.4 s.
-      const form = out.filter((x) => x.t > state.hit && x.t < state.kill && x.form === 'translator_fuchou');
-      assert.ok(form.length > 0 && form.every((x) => x.clip === 'A_Die_B' || /^B_/.test(x.clip))
-        && form.some((x) => /^B_/.test(x.clip)), `寻仇者 clips (${[...new Set(form.map((x) => x.clip))]})`);
-      const dead = out.filter((x) => x.t > state.kill && !x.alive);
-      const dieAt = dead.findIndex((x) => x.clip === 'B_Die');
-      assert.ok(dieAt >= 0 && dead.slice(0, dieAt).every((x) => x.clip === 'B_Move')
-        && dead.slice(dieAt).every((x) => x.clip === 'B_Die'), `dies on B_Die (${[...new Set(dead.map((x) => x.clip))]})`);
+      const change = out.filter((x) => x.t > state.hit + 2 * LAG && x.t < state.hit + 1.8);   // (a loaded machine: the view lags more)
+      assert.ok(change.length > 0 && change.every((x) => x.clip === 'A_Die_B' && x.alive), `the change clip (${[...new Set(change.map((x) => x.clip))]})`);
+      const form = out.filter((x) => x.t > state.hit + 2 + LAG && x.t < state.kill);
+      assert.ok(form.length > 0 && form.every((x) => /^B_/.test(x.clip) && x.form === 'translator_fuchou'), `寻仇者 clips (${[...new Set(form.map((x) => x.clip))]})`);
+      const dead = out.filter((x) => x.t > state.kill + LAG);
+      assert.ok(dead.length > 0 && dead.every((x) => !x.alive && x.clip === 'B_Die'), `dies on B_Die (${[...new Set(dead.map((x) => x.clip))]})`);
       assert.deepEqual(problems, []);
     } finally {
       await p.close();

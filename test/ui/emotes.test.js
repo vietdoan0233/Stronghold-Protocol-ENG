@@ -267,29 +267,6 @@ describe('public/js/ui/emotes.js helpers', () => {
     }
   });
 
-  test('accessible labels: the catalog\'s Chinese until the emotes table has loaded, then the table\'s (English overlay applied)', async () => {
-    const { data } = await import('../../public/js/data.js');
-    const { emoteLabel, themeName } = await import('../../public/js/ui/emoteText.js');
-    const e = EMOTE_THEMES[0].emotes[0];
-    const t = EMOTE_THEMES[0];
-    globalThis.fetch = async (url) => {
-      const u = String(url);
-      const file = u.includes('/locales/') ? `public/locales/en/${u.split('/').pop()}` : `data/${u.split('/').pop()}`;
-      try { return { ok: true, status: 200, json: async () => readJson(file) }; } catch { return { ok: false, status: 404, json: async () => ({}) }; }
-    };
-    try {
-      await data.invalidate('emotes');
-      assert.equal(emoteLabel(e), e.label, 'not loaded yet: the catalog text');
-      assert.equal(themeName(t), t.name);
-      await data.load('emotes');
-      assert.equal(emoteLabel(e), 'Happy');
-      assert.equal(themeName(t), 'Emote Set: Stronghold Protocol');
-      assert.equal(emoteLabel({ id: 'unknown', label: 'x' }), 'x', 'unknown id: the given label');
-    } finally {
-      globalThis.fetch = realFetch;
-    }
-  });
-
   test('pager helpers: clamp, swipe threshold, remembered theme', async () => {
     const { clampPage, swipeStep, themeIndex, lastThemeIndex, rememberTheme } = await import('../../public/js/ui/emotes.js');
     assert.deepEqual([clampPage(-3), clampPage(2), clampPage(99), clampPage('x'), clampPage(2.7)], [0, 2, 5, 0, 2]);

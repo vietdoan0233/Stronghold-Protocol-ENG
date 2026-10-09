@@ -17,12 +17,9 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 
 // the browser data store reads the real data files from disk
 globalThis.fetch = async (url) => {
-  const u = String(url);
-  const name = u.split('/').pop();
+  const name = String(url).split('/').pop();
   try {
-    // the English overlay tables too (as served at /locales/en/), so the store shows what the player sees
-    const file = u.includes('/locales/') ? path.join(ROOT, 'public', 'locales', 'en', name) : path.join(ROOT, 'data', name);
-    const body = readFileSync(file, 'utf8');
+    const body = readFileSync(path.join(ROOT, 'data', name), 'utf8');
     return { ok: true, status: 200, json: async () => JSON.parse(body) };
   } catch {
     return { ok: false, status: 404, json: async () => ({}) };
@@ -53,9 +50,9 @@ test('#4 the draft overlay shows each bounty card\'s battles in the official col
       const view = resolveSpCard(card, sp.family);
       const segs = parseRichText(view.desc).filter((s) => s.text);
       const styled = (cls) => segs.filter((s) => s.cls.includes(cls)).map((s) => s.text).join('|');
-      assert.ok(!styled('ba.vdown').includes('every'), `${card.id} ${view.name}: no red "every" (${view.desc})`);
-      if (card.rounds === 2) assert.ok(styled('ba.vup').includes('two battles'), `${card.id} ${view.name}: blue "two battles" (${view.desc})`);
-      else assert.match(styled('ba.vup'), /next battle/, `${card.id} ${view.name}: blue "next battle" (${view.desc})`);
+      assert.ok(!styled('ba.vdown').includes('每场'), `${card.id} ${view.name}: no red 每场 (${view.desc})`);
+      if (card.rounds === 2) assert.ok(styled('ba.vup').includes('两场作战'), `${card.id} ${view.name}: blue 两场作战 (${view.desc})`);
+      else assert.match(styled('ba.vup'), /下场(作战|战斗)/, `${card.id} ${view.name}: blue 下场 (${view.desc})`);
       seen.add(MULTI.has(card.id) ? 'multi' : card.rounds);
     }
   }

@@ -16,6 +16,36 @@ export const hasChrome = () => existsSync(CHROME);
 
 const CHROME_ARGS = ['--no-sandbox', '--no-first-run', '--autoplay-policy=no-user-gesture-required', '--disable-background-timer-throttling',
   '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows', '--mute-audio', '--force-device-scale-factor=1'];
+/** The CDP protocol timeout of every Client's browser: one DevTools call that takes longer fails (a hung page fails fast). */
+export const PROTOCOL_TIMEOUT_MS = 90000;
+
+/**
+ * `page.waitForFunction` for a wait that may outlast PROTOCOL_TIMEOUT_MS. Puppeteer awaits the whole poll inside ONE
+ * `Runtime.callFunctionOn`, so a predicate that is still false when the protocol timeout strikes rejects the wait with the
+ * bare "Waiting failed" (cause: "Runtime.callFunctionOn timed out") long before the wait's own `timeout` — e.g. an own
+ * battle at 1× that lasts longer than 90 s. This polls the same predicate in slices shorter than the protocol timeout until
+ * `timeout`: the condition and the deadline stay the same. Resolves to the predicate's JSHandle, rejects with a
+ * TimeoutError once `timeout` is over and at once with any other error.
+ * @param {{ waitForFunction: Function }} page
+ * @param {Function|string} fn
+ * @param {{ timeout?: number, polling?: number|string, slice?: number }} [opts]
+ * @param {...any} args passed to `fn` as with page.waitForFunction
+ */
+export async function waitForFunctionLong(page, fn, { timeout = 30000, polling = 250, slice = PROTOCOL_TIMEOUT_MS / 3 } = {}, ...args) {
+  const deadline = Date.now() + timeout;
+  for (;;) {
+    try {
+      return await page.waitForFunction(fn, { timeout: Math.max(1, Math.min(slice, deadline - Date.now())), polling }, ...args);
+    } catch (e) {
+      if (e?.name !== 'TimeoutError') throw e;
+      if (Date.now() >= deadline) {
+        const err = new Error(`Waiting failed: ${timeout}ms exceeded`, { cause: e });
+        err.name = 'TimeoutError';
+        throw err;
+      }
+    }
+  }
+}
 
 /** A free TCP port on 127.0.0.1. */
 export function freePort() {
@@ -30,9 +60,12 @@ export function freePort() {
  * Start the real server (`node server/index.js`, or test/e2e/fastServer.mjs with `fast` speed-ups) on a free port (or
  * `port`: e.g. the port of a server just stopped — a server restart the open clients reconnect to).
  * @param {{ port?: number, fast?: { timerScale?: number, combatSpeed?: number, startRound?: 'boss'|'hidden'|number, kit?: number, chess?: string[],
- *   items?: string[], idleBots?: boolean, kits?: string[][], botChess?: string[], autoPlace?: boolean, eliminate?: number[], stage?: string } }} [opts]
+ *   items?: string[], idleBots?: boolean, kits?: string[][], botChess?: string[], autoPlace?: boolean, eliminate?: number[], stage?: string,
+ *   finishAfter?: number, slowSpawns?: string } }} [opts]
  *   kits: per-human starter kits (seat order); botChess: the AI seats' kit; autoPlace: the kits go onto the board at the
- *   first prep; eliminate: humans (seat order) eliminated at the jump; stage: the stage of every match — fastServer.mjs hooks
+ *   first prep; eliminate: humans (seat order) eliminated at the jump; stage: the stage of every match; finishAfter: the
+ *   match ends (RESULT) once that round has settled; slowSpawns: '<humanIdx>:<factor>' — that human's normal battles
+ *   spawn at factor × the scheduled times — fastServer.mjs hooks
  * @returns {Promise<{ base: string, port: number, logs: string[], stop: (o?: { hard?: boolean }) => Promise<void> }>}
  */
 export async function startRealServer(opts = {}) {
@@ -56,6 +89,9 @@ export async function startRealServer(opts = {}) {
     if (opts.fast.autoPlace) env.SP_AUTO_PLACE = '1';
     if (opts.fast.eliminate?.length) env.SP_ELIMINATE = opts.fast.eliminate.join(',');
     if (opts.fast.stage) env.SP_STAGE = String(opts.fast.stage);
+    if (opts.fast.level) env.SP_START_LEVEL = String(opts.fast.level);
+    if (opts.fast.finishAfter) env.SP_FINISH_AFTER = String(opts.fast.finishAfter);
+    if (opts.fast.slowSpawns) env.SP_SLOW_SPAWNS = String(opts.fast.slowSpawns);
   }
   const child = spawn(process.execPath, [entry], { cwd: ROOT, env, stdio: ['ignore', 'pipe', 'pipe'] });
   const logs = [];
@@ -96,7 +132,7 @@ export class Client {
 
   async open(query = '') {
     mkdirSync(OUT, { recursive: true });
-    this.browser = await this.puppeteer.launch({ executablePath: CHROME, headless: true, args: CHROME_ARGS, protocolTimeout: 90000 });
+    this.browser = await this.puppeteer.launch({ executablePath: CHROME, headless: true, args: CHROME_ARGS, protocolTimeout: PROTOCOL_TIMEOUT_MS });
     const [first] = await this.browser.pages();
     const page = first || await this.browser.newPage();
     this.page = page;
@@ -172,15 +208,15 @@ export class Client {
     throw new Error(`${this.label}: nothing clickable for ${sel}${text ? ` "${text}"` : ''}`);
   }
 
-  /** If the Unspent Funds confirmation is open, press Ready. No dialog is a no-op. */
+  /** If the 剩余资金 confirm is up, press 准备就绪. No dialog is a no-op. */
   async confirmFundsLeft() {
     await sleep(250);
     const open = await this.page.evaluate(() => {
       const t = document.querySelector('.modal__title');
-      return !!(t && t.textContent.includes('Unspent Funds'));
+      return !!(t && t.textContent.includes('剩余资金'));
     });
     if (!open) return false;
-    return this.click('.modal__actions button', 'Ready', { timeout: 4000 });
+    return this.click('.modal__actions button', '准备就绪', { timeout: 4000 });
   }
 
   /** Centre of the nth visible, enabled (unless `any`), uncovered match (or null). */
@@ -226,7 +262,7 @@ export class Client {
     await this.page.waitForSelector('.title-login input', { timeout: 20000 });
     await this.click('.title-login input');
     await this.page.keyboard.type(name);
-    await this.click('.title-login button', 'Start');
+    await this.click('.title-login button', '开始');
     await this.page.waitForSelector('.lobby-screen', { timeout: 20000 });
   }
 

@@ -1,4 +1,5 @@
 // server/match/audit.js — rule auditor for sweeps and tests (tools/matchrun.mjs --check, test/match/fullmatch.test.js).
+// (i18n-ignore-file: developer reports in English with the game's terms, never shown to players — docs/I18N.md)
 //
 // attachAudit(m) wraps a live Match's phase transitions and a few prep handlers (instance-level wrappers; the engine
 // is untouched) and records every rule violation it observes, next to the structural invariants of invariants.js:
@@ -127,7 +128,10 @@ export function attachAudit(m, { invariants = true, limit = 200 } = {}) {
         check('shop roll', () => {
           const base = gd.baseIdOf(s.id);
           if (t > ps.shop.level) fail(`${ps.playerId}: rolled tier ${t} at shop level ${ps.shop.level}`);
-          if (!m.pool.has(base)) fail(`${ps.playerId}: rolled ${s.id} outside the match pool (banned/hidden)`);
+          // (a slotted 自选 piece comes from the player's own stock, 0.2.0 player/diy.js — once the 调度中心 is at its level)
+          const diy = ps.diyStock && ps.diyStock.has(base) ? ps.diyStock.entries.get(base) : null;
+          if (!m.pool.has(base) && !diy) fail(`${ps.playerId}: rolled ${s.id} outside the match pool (banned/hidden)`);
+          if (diy && ps.shop.level < diy.shopLevel) fail(`${ps.playerId}: rolled 自选 ${s.id} at shop level ${ps.shop.level} < ${diy.shopLevel}`);
           if (s.basePrice !== gd.chessPrice(s.id)) fail(`${ps.playerId}: ${s.id} basePrice ${s.basePrice} != ${gd.chessPrice(s.id)}`);
         });
       }
@@ -217,12 +221,23 @@ export function attachAudit(m, { invariants = true, limit = 200 } = {}) {
       const price = ps.shop.upgradePrice;
       const f0 = ps.funds;
       const fx = hasSpendEffects(m, ps);
+      const slots0 = ps.shop.slots.slice();
+      const layout0 = ps.shop.layout || { chess: slots0.length, item: 0 };
       const res = orig();
       if (res && res.ok) check('levelUp', () => {
         if (ps.shop.level !== lv + 1) fail(`${ps.playerId}: level ${lv} → ${ps.shop.level}`);
         if (f0 - ps.funds !== price && !fx && !hasSpendEffects(m, ps)) fail(`${ps.playerId}: level-up paid ${f0 - ps.funds}, price ${price}`);
         const next = gd.upgradeBase(ps.shop.level) ?? 0;
         if (ps.shop.upgradePrice !== next) fail(`${ps.playerId}: upgrade price after level-up ${ps.shop.upgradePrice}, expected ${next}`);
+        // the new level's extra slots open at once, empty (GitHub #332 / PR #333); the cards shown before stay in place
+        const { chess, item } = gd.shopSlots(ps.shop.level);
+        const want = Math.max(chess, layout0.chess) + Math.max(item, layout0.item);
+        if (ps.shop.slots.length !== want) fail(`${ps.playerId}: ${ps.shop.slots.length} shop slots after the level-up to ${ps.shop.level}, expected ${want}`);
+        const layout = ps.shop.layout || layout0;
+        slots0.forEach((s, i) => {
+          const at = i < layout0.chess ? i : layout.chess + (i - layout0.chess);
+          if (ps.shop.slots[at] !== s) fail(`${ps.playerId}: shop slot ${i} changed by the level-up`);
+        });
       });
       return res;
     });
@@ -243,7 +258,7 @@ export function attachAudit(m, { invariants = true, limit = 200 } = {}) {
         if (ps.deployCount > deployed0) fail(`${id}: a merge of ${baseId} grew the deploy count ${deployed0} → ${ps.deployCount}`);
         // a pure read of the deploy field (Match.deployMapFor, as invariants.js): the audit must not refresh the cache
         const dmap = typeof m.deployMapFor === 'function' ? m.deployMapFor(ps) : ps.deployMap();
-        const pos = placeClass(ps, gd.chess(elite.id));
+        const pos = placeClass(ps, (ps.gd || gd).chess(elite.id));
         const want = mergeTile([...tiles.keys()].map((key) => ({ key })), (r, c) => canPlace(dmap, pos, r, c));
         if (want) {
           if (loc.area !== 'board' || loc.key !== want.key) fail(`${id}: the elite of ${baseId} went to ${loc.area} ${loc.key || ''}, expected the deployed copy's tile ${want.key}`);
@@ -323,7 +338,7 @@ export function attachAudit(m, { invariants = true, limit = 200 } = {}) {
       if (m.phase !== PHASE.SP_DRAFT || !m.sp) return;
       const s = m.sp;
       if (s.idx >= s.order.length) return;
-      if (m.soloUntimed) { if (m.deadline) fail('untimed Draft is timed'); } else expectDeadline(s.idx === 0 ? gd.timer('spFirst') : gd.timer('spTurn'), `SP_DRAFT turn ${s.idx}`);
+      if (m.soloUntimed) { if (m.deadline) fail('untimed 机变 is timed'); } else expectDeadline(s.idx === 0 ? gd.timer('spFirst') : gd.timer('spTurn'), `SP_DRAFT turn ${s.idx}`);
     });
     return res;
   });
@@ -332,15 +347,15 @@ export function attachAudit(m, { invariants = true, limit = 200 } = {}) {
     if (m.phase === PHASE.SP_DRAFT && s) check('sp draft', () => {
       const alive = m.alivePlayers().map((p) => p.playerId);
       const want = m.isSolo ? 3 : 6;
-      if (s.cards.length > want) fail(`${s.cards.length} Draft cards (max ${want})`);
-      if (s.order.length !== alive.length) fail(`Draft order ${s.order.length} for ${alive.length} alive`);
+      if (s.cards.length > want) fail(`${s.cards.length} 机变 cards (max ${want})`);
+      if (s.order.length !== alive.length) fail(`机变 order ${s.order.length} for ${alive.length} alive`);
       for (const pid of alive) {
         const idx = s.picks[pid];
-        if (idx == null) fail(`${pid} ends Draft without a card`);
+        if (idx == null) fail(`${pid} ends 机变 without a card`);
         else if (s.taken[idx] !== pid) fail(`${pid} picked card ${idx} held by ${s.taken[idx]}`);
       }
       const holders = Object.values(s.taken);
-      if (new Set(holders).size !== holders.length) fail('a player took two Draft cards');
+      if (new Set(holders).size !== holders.length) fail('a player took two 机变 cards');
     });
     return orig();
   });
@@ -388,11 +403,11 @@ export function attachAudit(m, { invariants = true, limit = 200 } = {}) {
       const leakers = alive.filter((p) => counted(p.playerId) > 0).map((p) => p.playerId).sort();
       const perfect = alive.filter((p) => counted(p.playerId) === 0);
       const helpers = helperOrder(m, perfect, res).map((p) => p.playerId);
-      if (helpers.length > gd.unite.maxHelpers) fail(`${helpers.length} Unite helpers (max ${gd.unite.maxHelpers})`);
-      if (plan.helpers.some((p) => !p.alive || p.left)) fail(`Unite helper eliminated / departed: ${plan.helpers.filter((p) => !p.alive || p.left).map((p) => p.playerId)}`);
-      if (m.isSolo) fail('Unite in solo');
-      if (JSON.stringify(plan.leakers.map((p) => p.playerId).sort()) !== JSON.stringify(leakers)) fail(`Unite leakers ${plan.leakers.map((p) => p.playerId)} != ${leakers}`);
-      if (JSON.stringify(plan.helpers.map((p) => p.playerId)) !== JSON.stringify(helpers)) fail(`Unite helpers ${plan.helpers.map((p) => p.playerId)} != ${helpers}`);
+      if (helpers.length > gd.unite.maxHelpers) fail(`${helpers.length} 联防 helpers (max ${gd.unite.maxHelpers})`);
+      if (plan.helpers.some((p) => !p.alive || p.left)) fail(`联防 helper eliminated / departed: ${plan.helpers.filter((p) => !p.alive || p.left).map((p) => p.playerId)}`);
+      if (m.isSolo) fail('联防 in solo');
+      if (JSON.stringify(plan.leakers.map((p) => p.playerId).sort()) !== JSON.stringify(leakers)) fail(`联防 leakers ${plan.leakers.map((p) => p.playerId)} != ${leakers}`);
+      if (JSON.stringify(plan.helpers.map((p) => p.playerId)) !== JSON.stringify(helpers)) fail(`联防 helpers ${plan.helpers.map((p) => p.playerId)} != ${helpers}`);
     });
     const r = orig(plan);
     runInvariants();
@@ -400,7 +415,7 @@ export function attachAudit(m, { invariants = true, limit = 200 } = {}) {
   });
   wrap(m, 'settle', function (orig, plan, uniteResult) {
     check('unite trigger', () => {
-      if (expectUnite && expectUnite.round === m.round && expectUnite.expect !== !!plan) fail(`Unite ${plan ? 'ran' : 'skipped'} but ${expectUnite.expect ? '≥ 1 leaker and ≥ 1 perfect player' : 'not both a leaker and a perfect player'}`);
+      if (expectUnite && expectUnite.round === m.round && expectUnite.expect !== !!plan) fail(`联防 ${plan ? 'ran' : 'skipped'} but ${expectUnite.expect ? '≥ 1 leaker and ≥ 1 perfect player' : 'not both a leaker and a perfect player'}`);
       expectUnite = null;
     });
     const before = new Map(m.alivePlayers().map((ps) => [ps, ps.lp]));

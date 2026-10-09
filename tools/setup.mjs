@@ -8,7 +8,7 @@
 //   2. Dependencies: `npm ci` (falls back to `npm install`) when node_modules is missing or incomplete.
 //   3. Client libraries in public/vendor (tools/vendor.mjs) when any is missing.
 //   4. Game data (data/*.json, committed) present and parseable.
-//   5. Art/audio (tools/fetch-assets.mjs, ~270 MB into public/assets, resumable, mirror fallback) when public/assets
+//   5. Art/audio (tools/fetch-assets.mjs, ~550 MB into public/assets, resumable, mirror fallback) when public/assets
 //      is missing or data/assets.json lists files that are not on disk. A failure is a warning: the game still runs
 //      with fallback visuals and the next run resumes.
 //   6. Optional: official board/UI art from a locally installed Arknights client (Windows native install, CrossOver
@@ -19,6 +19,9 @@
 // Options:
 //   --check          report only, change nothing (exit 1 when something essential is missing)
 //   --no-assets      skip the art/audio download
+//   --asset-source=M direct (default) or mirror (opt-in; no public-IP lookup)
+//                    SP_ASSET_SOURCE sets the default; SP_GITHUB_PROXY sets the HTTPS prefix (https://gh-proxy.com/)
+//                    An empty SP_GITHUB_PROXY disables the proxy, including in mirror mode.
 //   --no-local       skip the local-client detection and extraction
 //   --local          extract from the local client without asking (re-extracts when already done)
 //   --game <dir>     AssetBundle root of the local client (…/StreamingAssets/AB/Windows or PlayCover …/Documents/Bundles)
@@ -35,16 +38,17 @@ import path from 'node:path';
 import readline from 'node:readline';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { validateSource } from './assets/network.mjs';
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const MIN_NODE = 22;
 export const IS_WIN = process.platform === 'win32';
 export const IS_MAC = process.platform === 'darwin';
-const NODE_URL = 'https://nodejs.org/en/download';
+const NODE_URL = 'https://nodejs.org/zh-cn/download';
 
 /** Data files the server expects (server/data.js DATA_FILES) + the emote catalogue used by the client. */
 export const DATA_FILES = ['config', 'chess', 'bonds', 'garrisons', 'items', 'bands', 'effects', 'choices',
-  'enemies', 'factions', 'waves', 'stages', 'bosses', 'tokens', 'assets', 'emotes'];
+  'enemies', 'factions', 'waves', 'stages', 'bosses', 'tokens', 'assets', 'backups', 'emotes'];
 /** Runtime packages that must be installed (package.json dependencies). */
 export const RUNTIME_PACKAGES = ['ws', 'pixi.js', 'pixi-spine', 'preact', 'htm'];
 /** Vendor files the client cannot run without (tools/vendor.mjs; three.js is optional there). */
@@ -72,6 +76,9 @@ export const nodeMajor = () => Number(process.versions.node.split('.')[0]);
 const exists = (p) => { try { fs.accessSync(p); return true; } catch { return false; } };
 const readJson = (p) => { try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return null; } };
 const mb = (n) => `${(n / 1048576).toFixed(0)} MB`;
+/** The art download when data/assets.json gives no size (missing, unreadable or without stats.bytes): the 0.2.2
+ * manifest's stats.bytes, 548 MB (both voice dubs; 463 MB before the JP one), as README and docs/DEPLOY.md quote it. */
+const ART_DOWNLOAD_FALLBACK = '550 MB';
 /** Terminal display width (CJK / full-width characters take two columns). */
 export const displayWidth = (s) => [...String(s)].reduce((n, ch) => n + (ch.codePointAt(0) >= 0x2e80 ? 2 : 1), 0);
 export const padDisplay = (s, w) => s + ' '.repeat(Math.max(0, w - displayWidth(s)));
@@ -114,11 +121,11 @@ async function ask(question, def, timeoutMs = 60000) {
   const hint = def ? '[Y/n]' : '[y/N]';
   try {
     return await new Promise((resolve) => {
-      const t = setTimeout(() => { process.stdout.write(c.dim(`\n  (No input for ${timeoutMs / 1000}s; using the default.)\n`)); resolve(def); }, timeoutMs);
+      const t = setTimeout(() => { process.stdout.write(c.dim(`\n  (${timeoutMs / 1000} 秒无输入，按默认处理)\n`)); resolve(def); }, timeoutMs);
       rl.question(`  ${question} ${hint} `, (a) => {
         clearTimeout(t);
         const s = String(a || '').trim().toLowerCase();
-        resolve(s === '' ? def : /^(y|yes|1)$/.test(s));
+        resolve(s === '' ? def : /^(y|yes|是|好|1)$/.test(s));
       });
     });
   } finally {
@@ -194,20 +201,32 @@ export function checkAssets() {
  * the 玩法说明 pages are not in the list: step 5 downloads them from the public mirror with the other assets (GitHub
  * issue #42). Shown by setup and doctor.
  */
-export const LOCAL_ART_FALLBACK = 'The board uses 2D; some official UI icons and the Hot / Blazing Originium Slug models use replacements';
+export const LOCAL_ART_FALLBACK = '3D 棋盘改用 2D，部分官方界面图标、灼热/炽焰源石虫模型和多数自选召唤物模型用替代样式';
 /** Where a machine without the client gets the local art (docs/DEPLOY.md §6「本地客户端素材」); shown by doctor (setup's row,
  * printed on every start by scripts/launch.mjs, only points to that section). */
-export const LOCAL_ART_COPY_HINT = 'If another compatible installation has these assets, copy public/assets/local and data/local-assets.json together';
+export const LOCAL_ART_COPY_HINT = '没有客户端的服务器可以从同一版本的整合包（完整包）复制 public/assets/local 和 data/local-assets.json';
 
 /**
  * Local-client art (optional): manifest entry count, whether the 3D board atlas is on disk and whether the extraction
- * has the enemy models only the client has (`spine/enemy/*` groups, extract.py ENEMY_SPINES — added after 0.1.0).
+ * has the enemy and token models only the client has (`spine/enemy/*` groups, extract.py ENEMY_SPINES — added after
+ * 0.1.0; `spine/token/*` groups, TOKEN_SPINES — added in 0.2.0).
  */
 export function checkLocal() {
   const m = readJson(LOCAL_MANIFEST);
   const count = m && m.groups ? Object.values(m.groups).reduce((n, g) => n + Object.keys(g || {}).length, 0) : 0;
-  const enemySpines = !!(m && m.groups && Object.keys(m.groups).some((g) => g.startsWith('spine/enemy/')));
-  return { manifest: !!m, count, board3d: exists(LOCAL_BOARD_ATLAS), tiles: exists(LOCAL_BOARD_TILES), enemySpines, dirPresent: exists(path.join(ROOT, 'public', 'assets', 'local')) };
+  const has = (prefix) => !!(m && m.groups && Object.keys(m.groups).some((g) => g.startsWith(prefix)));
+  return {
+    manifest: !!m, count, board3d: exists(LOCAL_BOARD_ATLAS), tiles: exists(LOCAL_BOARD_TILES), enemySpines: has('spine/enemy/'),
+    tokenSpines: has('spine/token/'), dirPresent: exists(path.join(ROOT, 'public', 'assets', 'local')),
+  };
+}
+
+/** What an extraction made by an older extract.py lacks (setup's 本地客户端美术 row; re-extract with --local). */
+export function localGaps(local) {
+  const gaps = [];
+  if (local && !local.enemySpines) gaps.push('灼热/炽焰源石虫模型');
+  if (local && !local.tokenSpines) gaps.push('自选召唤物模型');
+  return gaps.length ? `，缺少新版的${gaps.join('和')}` : '';
 }
 
 /**
@@ -216,7 +235,7 @@ export function checkLocal() {
  */
 function cropBoardTiles(log) {
   const r = capture(process.execPath, [path.join(ROOT, 'tools', 'crop-board-atlas.mjs')], { timeout: 120000 });
-  if (!r.ok) log(c.warn(`  Failed to crop board tiles (node tools/crop-board-atlas.mjs): ${r.out.split(/\r?\n/).slice(-3).join(' ')}`));
+  if (!r.ok) log(c.warn(`  棋盘贴图裁切失败（node tools/crop-board-atlas.mjs）：${r.out.split(/\r?\n/).slice(-3).join(' ')}`));
   return r.ok && exists(LOCAL_BOARD_TILES);
 }
 
@@ -310,15 +329,15 @@ const PY_ENV = { PYTHONUTF8: '1', PYTHONIOENCODING: 'utf-8', PYTHONDONTWRITEBYTE
 function ensureVenv(py, log) {
   const vpy = venvPython();
   if (!exists(vpy)) {
-    log(`  Creating Python virtual environment ${path.relative(ROOT, VENV_DIR)} …`);
+    log(`  创建 Python 虚拟环境 ${path.relative(ROOT, VENV_DIR)} …`);
     const r = run(py.cmd, [...py.args, '-m', 'venv', VENV_DIR], { env: PY_ENV });
-    if (!r.ok || !exists(vpy)) return { ok: false, why: 'python -m venv failed (on Debian/Ubuntu, install it with `sudo apt install python3-venv`)' };
+    if (!r.ok || !exists(vpy)) return { ok: false, why: 'python -m venv 失败（Debian/Ubuntu 需要 `sudo apt install python3-venv`）' };
   }
   if (capture(vpy, ['-c', 'import UnityPy, lz4, PIL'], { env: PY_ENV }).ok) return { ok: true, python: vpy };
-  log('  Installing UnityPy / lz4 / Pillow (about 1–3 minutes the first time) …');
+  log('  安装 UnityPy / lz4 / Pillow（首次约 1–3 分钟）…');
   const r = run(vpy, ['-m', 'pip', 'install', '-r', EXTRACT_REQ], { env: PY_ENV });
   if (!r.ok || !capture(vpy, ['-c', 'import UnityPy, lz4, PIL'], { env: PY_ENV }).ok) {
-    return { ok: false, why: 'pip failed to install the dependencies. If your Python version is too new for prebuilt packages, install Python 3.12, delete .venv-extract, and try again.' };
+    return { ok: false, why: 'pip 安装依赖失败（若 Python 版本过新导致没有预编译包，请安装 Python 3.12 后删除 .venv-extract 重试）' };
   }
   return { ok: true, python: vpy };
 }
@@ -328,11 +347,13 @@ function ensureVenv(py, log) {
 // ---------------------------------------------------------------------------------------------------
 
 function parseArgs(argv) {
-  const o = { check: false, assets: true, local: 'ask', game: null, yes: false, quiet: false, help: false };
+  const o = { check: false, assets: true, local: 'ask', game: null, yes: false, quiet: false, help: false, source: process.env.SP_ASSET_SOURCE || 'direct' };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--check') o.check = true;
     else if (a === '--no-assets') o.assets = false;
+    else if (a === '--asset-source') o.source = argv[++i];
+    else if (a.startsWith('--asset-source=')) o.source = a.slice('--asset-source='.length);
     else if (a === '--no-local') o.local = 'no';
     else if (a === '--local') o.local = 'force';
     else if (a === '--game') { o.game = argv[++i] || null; if (o.local !== 'no') o.local = 'force'; }
@@ -340,8 +361,9 @@ function parseArgs(argv) {
     else if (a === '-y' || a === '--yes') o.yes = true;
     else if (a === '--quiet' || a === '-q') o.quiet = true;
     else if (a === '-h' || a === '--help') o.help = true;
-    else throw new Error(`Unknown option: ${a} (run with --help for usage)`);
+    else throw new Error(`未知参数 / unknown option: ${a}（--help 查看用法）`);
   }
+  if (!o.help) validateSource(o.source);
   return o;
 }
 
@@ -362,112 +384,113 @@ async function main() {
   const add = (state, label, detail = '') => summary.push({ state, label, detail });
   let fatal = false;
 
-  say(c.bold('\nStronghold Protocol: Alliance · Setup') + c.dim(`  (${ROOT})`));
+  say(c.bold('\n卫戍协议：盟约 · setup') + c.dim(`  (${ROOT})`));
 
   // 1. Node
   const node = checkNode();
   if (!node.ok) {
-    log(`${mark.err} Node.js ${node.version} is too old. Version ${MIN_NODE} or later is required (22 / 24 LTS).`);
-    log(`  Download: ${NODE_URL}` + (IS_WIN ? '   or run in a terminal: winget install OpenJS.NodeJS.LTS' : IS_MAC ? '   or: brew install node@22' : ''));
+    log(`${mark.err} Node.js ${node.version} 太旧：需要 ${MIN_NODE} 或更高（22 / 24 LTS）。`);
+    log(`  下载：${NODE_URL}` + (IS_WIN ? '   或在终端运行：winget install OpenJS.NodeJS.LTS' : IS_MAC ? '   或：brew install node@22' : ''));
     return 1;
   }
-  add('ok', 'Node.js', `v${node.version}${node.recommended ? '' : ' (supported; 22 / 24 LTS recommended)'}`);
+  add('ok', 'Node.js', `v${node.version}${node.recommended ? '' : '（可用；推荐 22 / 24 LTS）'}`);
 
   // 2. npm dependencies
   let deps = checkDeps();
   if (!deps.ok && !opts.check) {
-    log(`\n${c.cyan('▶')} Installing dependencies (npm ci) …`);
+    log(`\n${c.cyan('▶')} 安装依赖（npm ci）…`);
     const npm = npmCommand();
     let r = run(npm.cmd, [...npm.pre, 'ci', '--no-audit', '--no-fund'], { shell: npm.shell });
     if (!r.ok) {
-      log(c.warn('  npm ci failed; retrying with npm install …'));
+      log(c.warn('  npm ci 失败，改用 npm install …'));
       r = run(npm.cmd, [...npm.pre, 'install', '--no-audit', '--no-fund'], { shell: npm.shell });
     }
     deps = checkDeps();
   }
-  if (deps.ok) add('ok', 'Dependencies (node_modules)');
-  else { add('err', 'Dependencies (node_modules)', `Missing ${deps.missing.join(', ')} → run npm install`); fatal = true; }
+  if (deps.ok) add('ok', '依赖 node_modules');
+  else { add('err', '依赖 node_modules', `缺少 ${deps.missing.join(', ')} → 运行 npm install`); fatal = true; }
 
   // 3. vendor
   let vendor = checkVendor();
   if (!vendor.ok && deps.ok && !opts.check) {
-    log(`\n${c.cyan('▶')} Copying client libraries to public/vendor …`);
+    log(`\n${c.cyan('▶')} 复制前端库到 public/vendor …`);
     run(process.execPath, [path.join(ROOT, 'tools', 'vendor.mjs')]);
     vendor = checkVendor();
   }
-  if (vendor.ok) add('ok', 'Client libraries (public/vendor)', vendor.optionalMissing.length ? '(three.js missing: using the 2D board)' : '');
-  else { add('err', 'Client libraries (public/vendor)', `Missing ${vendor.missing.join(', ')} → run node tools/vendor.mjs`); fatal = true; }
+  if (vendor.ok) add('ok', '前端库 public/vendor', vendor.optionalMissing.length ? '（three.js 缺失：3D 棋盘回退为 2D）' : '');
+  else { add('err', '前端库 public/vendor', `缺少 ${vendor.missing.join(', ')} → 运行 node tools/vendor.mjs`); fatal = true; }
 
   // 4. data
   const data = checkData();
-  if (data.ok) add('ok', 'Game data (data/*.json)');
+  if (data.ok) add('ok', '游戏数据 data/*.json');
   else {
-    add('err', 'Game data (data/*.json)', [data.missing.length && `missing ${data.missing.join(', ')}`, data.broken.length && `invalid JSON: ${data.broken.join(', ')}`].filter(Boolean).join('; ') + ' → restore data/ or run node tools/build-data.mjs');
+    add('err', '游戏数据 data/*.json', [data.missing.length && `缺少 ${data.missing.join(', ')}`, data.broken.length && `无法解析 ${data.broken.join(', ')}`].filter(Boolean).join('；') + ' → git checkout -- data/ 或 node tools/build-data.mjs');
     if (data.missing.some((n) => n !== 'assets' && n !== 'emotes') || data.broken.length > 0) fatal = true;
   }
 
   // 5. assets
   let assets = checkAssets();
-  if (!opts.assets) add(assets.ok ? 'ok' : 'skip', 'Art and audio (public/assets)', assets.ok ? `${assets.total} files` : 'skipped (--no-assets)');
+  if (!opts.assets) add(assets.ok ? 'ok' : 'skip', '美术/音频 public/assets', assets.ok ? `${assets.total} 个文件` : '已跳过（--no-assets）');
   else if (!assets.ok && deps.ok && !opts.check) {
-    const what = !assets.present ? `first download: about ${assets.bytes ? mb(assets.bytes) : '250 MB'}; interrupt any time and resume by running setup again`
-      : `downloading ${assets.missing} missing files`;
-    log(`\n${c.cyan('▶')} Downloading art and audio (${what}) …`);
-    const r = run(process.execPath, [path.join(ROOT, 'tools', 'fetch-assets.mjs')]);
+    const what = !assets.present ? `首次下载约 ${assets.bytes ? mb(assets.bytes) : ART_DOWNLOAD_FALLBACK}，可随时中断，重新运行会续传`
+      : `补全缺失的 ${assets.missing} 个文件`;
+    log(`\n${c.cyan('▶')} 下载美术与音频素材（${what}）…`);
+    const r = run(process.execPath, [path.join(ROOT, 'tools', 'fetch-assets.mjs'), `--asset-source=${opts.source}`]);
     assets = checkAssets();
-    if (!r.ok && !assets.ok) log(c.warn('  Asset download is incomplete (network issue?). The game can still run with placeholders. Run setup again later to resume.'));
+    if (!r.ok && !assets.ok) log(c.warn('  素材下载未完成（网络问题？）。游戏仍可运行（使用占位图），稍后重新运行 setup 即可续传。'));
   }
   if (opts.assets) {
-    if (assets.ok) add('ok', 'Art and audio (public/assets)', `${assets.total} files`);
-    else if (!assets.present) add('warn', 'Art and audio (public/assets)', 'not downloaded (the game will use placeholders) → node tools/fetch-assets.mjs');
-    else add('warn', 'Art and audio (public/assets)', `${assets.missing}/${assets.total} files missing → run setup again to resume`);
+    if (assets.ok) add('ok', '美术/音频 public/assets', `${assets.total} 个文件`);
+    else if (!assets.present) add('warn', '美术/音频 public/assets', '未下载（游戏会用占位图）→ node tools/fetch-assets.mjs');
+    else add('warn', '美术/音频 public/assets', `缺 ${assets.missing}/${assets.total} 个文件 → 重新运行 setup 续传`);
   }
 
   // 6. local client (optional)
   const local = checkLocal();
   const state = loadState();
-  if (opts.local === 'no') add(local.manifest ? 'ok' : 'skip', 'Local client assets (optional)', local.manifest ? `${local.count} extracted` : 'skipped (--no-local)');
+  if (opts.local === 'no') add(local.manifest ? 'ok' : 'skip', '本地客户端美术（可选）', local.manifest ? `已提取 ${local.count} 项` : '已跳过（--no-local）');
   else {
     const client = findClient(opts.game);
     const already = local.manifest && local.dirPresent;
     if (!client) {
       if (already && local.board3d && !local.tiles && !opts.check) cropBoardTiles(log);
-      add(already ? 'ok' : 'skip', 'Local client assets (optional)', already ? `${local.count} extracted` : `${opts.game ? `Could not find ${opts.game}` : 'No Arknights client detected'}: ${LOCAL_ART_FALLBACK} (see docs/DEPLOY.md §6).`);
+      add(already ? 'ok' : 'skip', '本地客户端美术（可选）', already ? `已提取 ${local.count} 项`
+        : `${opts.game ? `找不到 ${opts.game}` : '未检测到本机明日方舟客户端'}：${LOCAL_ART_FALLBACK}（见 docs/DEPLOY.md 第 6 节）`);
     } else if (!client.autochess) {
-      add(already ? 'ok' : 'warn', 'Local client assets (optional)', `${client.kind} client is missing Stronghold Protocol assets. Download all resources in-game: ${client.path}`);
+      add(already ? 'ok' : 'warn', '本地客户端美术（可选）', `${client.kind} 客户端缺少卫戍协议资源（请在游戏内下载全部资源）：${client.path}`);
     } else if (already && opts.local !== 'force') {
       if (local.board3d && !local.tiles && !opts.check) cropBoardTiles(log);
-      add('ok', 'Local client assets (optional)', `${local.count} extracted${local.board3d ? '; 3D board available' : ''}${local.enemySpines ? '' : '; newer Hot / Blazing Originium Slug models are missing'} (re-extract with --local)`);
+      add('ok', '本地客户端美术（可选）', `已提取 ${local.count} 项${local.board3d ? '，3D 棋盘可用' : ''}${localGaps(local)}（重新提取：--local）`);
     } else if (opts.check) {
-      add('skip', 'Local client assets (optional)', `Detected ${client.kind} client. Run node tools/setup.mjs --local to extract assets.`);
+      add('skip', '本地客户端美术（可选）', `检测到 ${client.kind} 客户端，可运行 node tools/setup.mjs --local 提取`);
     } else {
       const py = findPython();
       if (!py) {
-        add('skip', 'Local client assets (optional)', `Detected ${client.kind} client, but Python 3.8+ was not found (${IS_WIN ? 'winget install Python.Python.3.12' : 'https://www.python.org/downloads/'})`);
+        add('skip', '本地客户端美术（可选）', `检测到 ${client.kind} 客户端，但没有 Python 3.8+（${IS_WIN ? 'winget install Python.Python.3.12' : 'https://www.python.org/downloads/'}）`);
       } else {
         let go = opts.local === 'force' || opts.yes;
         if (go || !state.localDeclined) {
-          log(`\n${c.cyan('▶')} Detected a local Arknights client (${client.kind}):\n  ${c.dim(client.path)}`);
-          log('  Extract the official 3D board, selected UI icons, and client-only enemy models (local use only; usually 1–5 minutes; about 40 MB of Python dependencies installed in the project’s .venv-extract). Emotes and tutorial pages download during normal setup.');
+          log(`\n${c.cyan('▶')} 检测到本机明日方舟客户端（${client.kind}）：\n  ${c.dim(client.path)}`);
+          log('  可以从中提取官方 3D 棋盘贴图、界面图标等（仅本机使用；通常 1–5 分钟，Python 依赖约 40 MB，装在项目内的 .venv-extract）。');
         }
         let unattended = false;
         if (!go && !state.localDeclined) {
-          const answer = await ask('Extract these assets now?', true);
+          const answer = await ask('现在提取吗？', true);
           if (answer === null) unattended = true; // no terminal (service, pipe): don't install Python packages unasked
-          else if (!answer) { saveState({ localDeclined: true }); log(c.dim('  Choice saved. You will not be asked again; run node tools/setup.mjs --local if needed.')); }
+          else if (!answer) { saveState({ localDeclined: true }); log(c.dim('  已记住选择，之后不再询问；需要时运行 node tools/setup.mjs --local')); }
           go = answer === true;
         }
-        if (!go) add('skip', 'Local client assets (optional)', unattended ? 'No terminal available; skipped without prompting. Run node tools/setup.mjs --local if needed.' : 'skipped. Run node tools/setup.mjs --local if needed.');
+        if (!go) add('skip', '本地客户端美术（可选）', unattended ? '无终端，未询问、未提取（需要时运行 node tools/setup.mjs --local）' : '已跳过（需要时运行 node tools/setup.mjs --local）');
         else {
           const venv = ensureVenv(py, log);
-          if (!venv.ok) add('warn', 'Local client assets (optional)', venv.why);
+          if (!venv.ok) add('warn', '本地客户端美术（可选）', venv.why);
           else {
-            log(`  ${c.cyan('▶')} Extracting (python tools/local-extract/extract.py --game …)`);
+            log(`  ${c.cyan('▶')} 提取中（python tools/local-extract/extract.py --game …）`);
             const r = run(venv.python, [EXTRACT_PY, '--game', client.path], { env: PY_ENV });
             if (r.ok) cropBoardTiles(log);
             const after = checkLocal();
-            if (r.ok && after.manifest) { add('ok', 'Local client assets (optional)', `${after.count} extracted${after.board3d ? '; 3D board available' : ''}`); saveState({ localDeclined: false, localExtractedFrom: client.path }); }
-            else add('warn', 'Local client assets (optional)', `Extraction failed (exit code ${r.code}); ${LOCAL_ART_FALLBACK}. Try again later with node tools/setup.mjs --local.`);
+            if (r.ok && after.manifest) { add('ok', '本地客户端美术（可选）', `提取 ${after.count} 项${after.board3d ? '，3D 棋盘可用' : ''}`); saveState({ localDeclined: false, localExtractedFrom: client.path }); }
+            else add('warn', '本地客户端美术（可选）', `提取未成功（退出码 ${r.code}）：游戏照常运行，${LOCAL_ART_FALLBACK}；可稍后重试 node tools/setup.mjs --local`);
           }
         }
       }
@@ -475,16 +498,16 @@ async function main() {
   }
 
   // summary
-  log(c.bold('\n── Setup summary ──────────────────────────────'));
+  log(c.bold('\n── 准备情况 ──────────────────────────────'));
   const width = Math.max(...summary.map((s) => displayWidth(s.label))) + 2;
   for (const s of summary) log(`${mark[s.state]} ${padDisplay(s.label, width)}${s.detail ? c.dim(s.detail) : ''}`);
   if (fatal) {
-    log(c.err('\nSetup is incomplete. Fix the items marked ✘ above. Run node tools/doctor.mjs for more detailed diagnostics.'));
+    log(c.err('\n还不能启动：请先解决上面标 ✘ 的问题（node tools/doctor.mjs 可做更详细的诊断）。'));
     return 1;
   }
   if (!opts.quiet) {
-    log(`\n${c.ok('Ready to start:')} npm start   ${c.dim('(on Windows, double-click scripts\\start-windows.bat)')}`);
-    log(c.dim('Open http://localhost:3000 in a browser. Friends on your local network can use a LAN address printed above.'));
+    log(`\n${c.ok('可以开始了：')} npm start   ${c.dim('（Windows 可直接双击 scripts\\start-windows.bat）')}`);
+    log(c.dim('浏览器打开 http://localhost:3000 ；同一局域网的朋友用终端里打印的 LAN 地址。'));
   }
   return 0;
 }
@@ -495,7 +518,7 @@ function isMain() {
 
 if (isMain()) {
   main().then((code) => { process.exitCode = code; }, (e) => {
-    console.error(`${mark.err} Setup failed: ${e?.stack || e}`);
+    console.error(`${mark.err} setup 出错：${e?.stack || e}`);
     process.exitCode = 1;
   });
 }

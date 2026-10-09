@@ -1,7 +1,8 @@
 // test/render/fieldview.browser.test.js — field-view features in headless Chrome through the dev demo
 // (public/dev/render-demo.html): the enemy preview pen (research 09 §2.2 / 08 §4.2) on the 3D and the 2D board and
 // the 0.25 s pan to it and back, the Final Assault prep on the player's half of the boss field (research 09 §1.2:
-// drop targets / directions stay in board space, the right half mirrored) with the round's leader on its spawn tile and
+// drop targets / directions stay in board space, the right half mirrored; a dragged unit stands on its target's
+// boss-field tile) with the round's leader on its spawn tile and
 // its red hit tiles beside a range preview (community report #12), damage numbers that never touch, the
 // automatic rebuild of a 3D board whose WebGL context was lost, and frame rates on a 4× throttled CPU.
 // Screenshots → test/e2e/out/pen-*.png, fa-prep-*.png, fa-leader-*.png, dmgnum-*.png; perf → test/e2e/out/fieldview-perf.json.
@@ -51,19 +52,11 @@ describe('field view features in headless Chrome', { skip }, () => {
     return { page, problems };
   }
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
-  const webglRenderer = (page) => page.evaluate(() => {
-    const canvas = document.createElement('canvas');
-    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
-    const ext = gl?.getExtension('WEBGL_debug_renderer_info');
-    return ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : null;
-  });
-  const softwareWebgl = (renderer) => !!renderer && /Microsoft Basic Render Driver|SwiftShader|llvmpipe|Software Rasterizer/i.test(renderer);
 
   for (const board of ['3d', '2d']) {
-    test(`enemy preview pen (${board}): R13 official preview idles in the pen, facing left, no bars; 0.25 s pan there and back`, async (t) => {
-      if (board === '3d' && !hasArt) { t.skip('requires local-client board art'); return; }
+    test(`enemy preview pen (${board}): R13 official preview idles in the pen, facing left, no bars; 0.25 s pan there and back`, async () => {
+      if (board === '3d' && !hasArt) return;
       const { page, problems } = await open(`scene=prep&pen=late-m01-r13&board=${board}`);
-      const renderer = board === '2d' ? await webglRenderer(page) : null;
       await wait(2500);
       await page.screenshot({ path: path.join(OUT, `pen-prep-${board}.png`) });
       const r = await page.evaluate(async () => {
@@ -105,8 +98,7 @@ describe('field view features in headless Chrome', { skip }, () => {
       assert.ok(r.left, 'every pen enemy faces left');
       assert.equal(r.bars, false, 'no HP / SP bars in the pen');
       assert.ok(r.upperOk, 'upper-gate enemies in rows 17–18');
-      const panLimit = softwareWebgl(renderer) ? 1500 : 450;
-      assert.ok(r.panMs != null && r.panMs < panLimit, `pan to the pen ≈ 0.25 s${softwareWebgl(renderer) ? ' (software-rendered WebGL, allowing RAF pacing)' : ''} (${r.panMs} ms)`);
+      assert.ok(r.panMs != null && r.panMs < 450, `pan to the pen ≈ 0.25 s (${r.panMs} ms)`);
       assert.ok(r.inPenView >= 40, `the pen view shows the pen (${r.inPenView} on screen)`);
       assert.ok(r.backSame, 'setCamera(prevKind) returns to the exact camera used before the pen');
       await page.evaluate(() => window.__demo.view.setCamera('pen', { instant: true }));
@@ -203,6 +195,9 @@ describe('field view features in headless Chrome', { skip }, () => {
       await page.mouse.move(cx, cy);
       await page.mouse.down();
       for (let i = 1; i <= 12; i++) await page.mouse.move(cx + (target.x - cx) * i / 12, cy + (target.y - cy) * i / 12);
+      // over the legal target the dragged unit stands on it (the official deploy drag): on that board tile's boss-field
+      // tile, as the drop will place it — row − 7, the column mirrored on the right half
+      const stood = await page.evaluate((uid) => { const v = window.__demo.view.debug.views.get('p:' + uid); return { x: v.x, y: v.y, lift: v.lift }; }, info.hand.uid);
       await page.mouse.up();
       await wait(400);
       const drops = await page.evaluate(() => window.__drops);
@@ -231,6 +226,7 @@ describe('field view features in headless Chrome', { skip }, () => {
       await page.close();
       assert.deepEqual(problems, []);
       assert.deepEqual(drops[0], { area: 'board', row: target.row, col: target.col }, `drop target in board space: ${JSON.stringify(drops)}`);
+      assert.deepEqual(stood, { x: side === 'R' ? 20 - target.col : target.col, y: target.row - 7, lift: 0.3 }, 'while dragged over it: standing on the target\'s boss-field tile');
       assert.deepEqual(dirs, { a: side === 'R' ? 'LEFT' : 'RIGHT', u: 'UP' });
       assert.deepEqual(past, { field: true, wallBelow: null, below: null, wallAbove: true, pen: null, pad: true });
     });
@@ -316,8 +312,8 @@ describe('field view features in headless Chrome', { skip }, () => {
     assert.ok(r.bad <= r.frames * 0.03, `${r.bad}/${r.frames} frames with touching numbers`);
   });
 
-  test('lost WebGL context: the 2D board takes over, then the 3D board rebuilds itself', async (t) => {
-    if (!hasArt) { t.skip('requires local-client board art'); return; }
+  test('lost WebGL context: the 2D board takes over, then the 3D board rebuilds itself', async () => {
+    if (!hasArt) return;
     const { page, problems } = await open('scene=normal-m03&t=20', 1280, 720);
     await wait(1800);
     const r = await page.evaluate(async () => {
@@ -346,17 +342,8 @@ describe('field view features in headless Chrome', { skip }, () => {
     ['late-r13', 'scene=late-m01-r13&t=50'], ['late-r12', 'scene=late-m03-r12&t=40'], ['unite', 'scene=unite-m01&t=25'], ['boss', 'scene=boss-m02&t=30'], ['prep-pen', 'scene=prep&pen=late-m01-r13'],
   ];
   for (const board of ['3d', '2d']) {
-    test(`4× throttled CPU at 1920×1080 (${board}): typical late-round / 联防 / boss / pen scenes hold ≥ 50 fps`, async (t) => {
-      if (board === '3d' && !hasArt) { t.skip('requires local-client board art'); return; }
-      if (board === '2d') {
-        const probe = await open(`${PERF[0][1]}&board=2d`, 1920, 1080);
-        const renderer = await webglRenderer(probe.page);
-        await probe.page.close();
-        if (softwareWebgl(renderer)) {
-          t.skip(`requires hardware-accelerated WebGL for a meaningful FPS measurement; Chrome reports ${renderer}`);
-          return;
-        }
-      }
+    test(`4× throttled CPU at 1920×1080 (${board}): typical late-round / 联防 / boss / pen scenes hold ≥ 50 fps`, async () => {
+      if (board === '3d' && !hasArt) return;
       const worst = [];
       for (const [name, q] of PERF) {
         const { page, problems } = await open(`${q}&board=${board}`, 1920, 1080);

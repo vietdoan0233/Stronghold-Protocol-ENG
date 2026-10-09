@@ -12,7 +12,7 @@
 // onto a unit, ready (mouse / keyboard) → 机变 picks → combat rendered by the Pixi engine with real Spine units (client-
 // side combat: no view switcher); once a human's own battle is over, a teammate row → 前往查看 shows that teammate's
 // running battle and 返回战场 goes back (research 09 §3.1) → … until combat of round SP_REAL_ROUNDS (default 4).
-// Solo: 独立模拟 (标准), free band pick, two rounds with shopping and deployment, then abandon the simulation back to the lobby.
+// Solo: 独立模拟 (标准), free band pick, two rounds with shopping and deployment, then 放弃模拟 back to the lobby.
 // Every page must finish with zero console errors, page errors, failed requests or HTTP errors.
 // Screenshots: test/e2e/out/real-*.png.
 
@@ -130,7 +130,7 @@ class Client {
     await this.page.waitForSelector('.title-login input', { timeout: 20000 });
     await this.click('.title-login input'); // fresh profile per client: the field starts empty
     await this.page.keyboard.type(name);
-    await this.click('.title-login button', 'Start');
+    await this.click('.title-login button', '开始');
   }
 
   // ---- field view helpers (render engine debug hooks) ------------------------------------------------------------
@@ -207,21 +207,6 @@ class Client {
     return s.phase === 'PREP' && !s.ready && s.alive;
   }
 
-  async confirmReadyPrompt() {
-    // Wait until Ready either takes effect or the Funds confirmation appears. The dialog is mounted
-    // asynchronously, so checking immediately after a mouse/key event can race its render.
-    await this.page.waitForFunction(() => {
-      if (document.querySelector('.modal__box[role="dialog"]')) return true;
-      const s = globalThis.__SP__?.store.get();
-      const phase = s?.match?.public?.phase;
-      return !!s?.match?.private?.ready || (!!phase && phase !== 'PREP');
-    }, { timeout: 5000 }).catch(() => {});
-    if (await this.exists('.modal__box[role="dialog"]')) {
-      // Ready asks for confirmation when Funds remain, since the Rest Phase will clear them.
-      await this.click('.modal__actions .btn--primary', 'Ready');
-    }
-  }
-
   // ---- prep actions ---------------------------------------------------------------------------------------------------
 
   async takeReward() {
@@ -293,7 +278,7 @@ class Client {
       await this.click('.gtop__iconbtn');
       await this.page.waitForFunction(() => document.querySelector('.gm')?.dataset.camera !== 'pen', { timeout: 4000 });
     }
-    await this.click('.gtop__iconbtn[aria-label="Match Info"]');
+    await this.click('.gtop__iconbtn[aria-label="本局信息"]');
     await this.page.waitForSelector('.edrawer', { timeout: 5000 });
     await this.click('.edrawer .tabs__tab:nth-child(2)');
     await sleep(250);
@@ -397,7 +382,7 @@ class Client {
     await this.click('.toolbtn--ice');
     await this.waitFor((x) => x.frozen !== s.frozen || x.phase !== 'PREP', 'freeze', 6000);
     assert.ok(await this.exists('.shopbar.is-frozen'), 'the frozen shop is tinted');
-    await this.click('.toolbtn--ice', 'Unfreeze');
+    await this.click('.toolbtn--ice', '解冻');
     await this.waitFor((x) => x.frozen === s.frozen || x.phase !== 'PREP', 'unfreeze', 6000);
     this.note('freeze toggled twice');
     return true;
@@ -428,8 +413,18 @@ class Client {
   async ready() {
     if (!(await this.isEditable())) return;
     await this.click('.readybtn');
-    await this.confirmReadyPrompt();
+    await this.confirmFundsLeft();
     await this.waitFor((s) => s.ready || s.phase !== 'PREP', 'ready', 8000);
+  }
+
+  /** 准备 with funds left asks first (剩余资金, DESIGN §23.11): confirm it, as a player who means to start the fight does. */
+  async confirmFundsLeft() {
+    await sleep(250);
+    const asked = await this.page.evaluate(() => {
+      const t = document.querySelector('.modal__title');
+      return !!(t && t.textContent.includes('剩余资金'));
+    });
+    if (asked) await this.click('.modal__actions button', '准备就绪', { timeout: 4000 });
   }
 }
 
@@ -464,24 +459,24 @@ describe('real server + real browsers', { skip: !ENABLED && 'set SP_REAL_E2E=1 (
       // ---- lobby & room --------------------------------------------------------------------------------------------
       await host.open();
       await host.enter('凯尔希');
-      await host.click('.mode-card', 'Alliance Simulation');
-      await host.click('.diff-card', 'Perilous Simulation');
-      await host.click('.create-box button', 'Create Alliance');
+      await host.click('.mode-card', '同盟模拟');
+      await host.click('.diff-card', '险境模拟');
+      await host.click('.create-box button', '创建同盟');
       const room = (await host.waitFor((s) => !!s.room?.code, 'room created')).room;
-      await host.click('button', 'Add AI Teammate');
+      await host.click('button', '添加 AI 队友');
       await guest.open(`?room=${room.code}`);
       await guest.enter('阿米娅');
       await guest.waitFor((s) => s.room?.code === room.code, 'guest joined via invite link');
-      await guest.click('.room-bar__right button', 'Ready');
+      await guest.click('.room-bar__right button', '准备就绪');
       await host.shot('room');
-      await host.click('.room-bar__right button', 'Start Simulation', { timeout: 20000 });
+      await host.click('.room-bar__right button', '开始模拟', { timeout: 20000 });
 
       // ---- briefing ---------------------------------------------------------------------------------------------------
       for (const c of both) await c.waitFor((s) => s.phase === 'INFO_CHECK', 'briefing', 30000);
       await sleep(800);
       await host.shot('briefing');
       await guest.shot('briefing-720');
-      for (const c of both) await c.click('.brief__foot .btn--primary', 'Ready');
+      for (const c of both) await c.click('.brief__foot .btn--primary', '准备就绪');
 
       // ---- band draft -------------------------------------------------------------------------------------------------
       for (const c of both) await c.waitFor((s) => s.phase === 'BAND_DRAFT' || s.phase === 'BATTLE_CHECK' || s.phase === 'PREP', 'band draft', 40000);
@@ -496,13 +491,13 @@ describe('real server + real browsers', { skip: !ENABLED && 'set SP_REAL_E2E=1 (
           if (s.phase !== 'BAND_DRAFT' || picked.has(c.label) || s.draft?.turn !== s.me) continue;
           if (!shotDraft) { await sleep(600); await c.shot('draft'); shotDraft = true; }
           if (c === guest && !guestSkipped) {
-            await c.click('.draft-detail__btns .btn', 'Skip');
+            await c.click('.draft-detail__btns .btn', '跳过');
             guestSkipped = true;
             c.note('skipped once');
             continue;
           }
           await c.click('.dband:not(.is-taken)', null, { nth: c === host ? 3 : 7 });
-          await c.click('.draft-detail__btns .btn--primary', 'Confirm Selection');
+          await c.click('.draft-detail__btns .btn--primary', '确认选择');
           picked.add(c.label);
           c.note('band picked');
         }
@@ -551,11 +546,7 @@ describe('real server + real browsers', { skip: !ENABLED && 'set SP_REAL_E2E=1 (
             await c.deployFromHand(2);
             const s2 = await c.st();
             if (s2.temp > 0) c.note(`temp not empty (${s2.temp}) — ready blocked`);
-            if (c === guest) {
-              await c.page.keyboard.press('Space');
-              await c.confirmReadyPrompt();
-              await c.waitFor((x) => x.ready || x.phase !== 'PREP', 'ready (Space)', 8000);
-            } else await c.ready();
+            if (c === guest) { await c.page.keyboard.press('Space'); await c.confirmFundsLeft(); await c.waitFor((x) => x.ready || x.phase !== 'PREP', 'ready (Space)', 8000); } else await c.ready();
           }
         } else if (hs.phase === 'SP_DRAFT') {
           for (const c of both) {
@@ -608,14 +599,14 @@ describe('real server + real browsers', { skip: !ENABLED && 'set SP_REAL_E2E=1 (
               });
               if (!other || other.nth < 0) continue;
               await c.click('.team__row:not(.is-self) .team__btn', null, { nth: other.nth });
-              if (!(await c.click('.team__ob', 'Go Watch', { optional: true, timeout: 3000 }))) continue;
+              if (!(await c.click('.team__ob', '前往查看', { optional: true, timeout: 3000 }))) continue;
               const ok = await c.page.waitForFunction((fid) => { const s = globalThis.__SP_RUNNER__?.state(); return !!s && s.fieldId === fid && s.watch; }, { timeout: 15000 }, other.fieldId).then(() => true, () => false);
               if (!ok) continue;
               await sleep(1200);
               const other2 = await c.viewStats();
               assert.ok(other2 && other2.units > 0, 'the observed field renders units');
               await c.shot(`combat-observe-r${hs.round}`);
-              await c.click('.team__back, .chud__back', 'Back to Battlefield', { optional: true, timeout: 3000 });
+              await c.click('.team__back, .chud__back', '返回战场', { optional: true, timeout: 3000 });
               did.watched = true;
               c.note(`前往查看 ${other.fieldId} (${other2.units} views) and 返回战场`);
             }
@@ -645,23 +636,23 @@ describe('real server + real browsers', { skip: !ENABLED && 'set SP_REAL_E2E=1 (
     }
   });
 
-  test('solo: Solo Simulation through two rounds, then abandon back to the lobby', { timeout: 10 * 60 * 1000 }, async () => {
+  test('solo: 独立模拟 through two rounds, then 放弃模拟 back to the lobby', { timeout: 10 * 60 * 1000 }, async () => {
     const solo = new Client(puppeteer, base, 'solo');
     try {
       await solo.open();
       await solo.enter('杜宾');
-      await solo.click('.mode-card', 'Solo Simulation');
-      await solo.click('.diff-card', 'Standard Simulation');
-      await solo.click('.create-box button', 'Start Solo Simulation');
+      await solo.click('.mode-card', '独立模拟');
+      await solo.click('.diff-card', '标准模拟');
+      await solo.click('.create-box button', '开始独立模拟');
       await solo.waitFor((s) => !!s.room, 'solo room');
-      if (!(await solo.st()).phase) await solo.click('.room-bar__right button', 'Start Simulation', { timeout: 20000 });
+      if (!(await solo.st()).phase) await solo.click('.room-bar__right button', '开始模拟', { timeout: 20000 });
       await solo.waitFor((s) => s.phase === 'INFO_CHECK', 'briefing', 30000);
-      await solo.click('.brief__foot .btn--primary', 'Ready');
+      await solo.click('.brief__foot .btn--primary', '准备就绪');
       await solo.waitFor((s) => s.phase === 'BAND_DRAFT', 'band draft', 30000);
       await sleep(600);
       await solo.shot('solo-draft');
       await solo.click('.dband', null, { nth: 1 });
-      await solo.click('.draft-detail__btns .btn--primary', 'Confirm Selection');
+      await solo.click('.draft-detail__btns .btn--primary', '确认选择');
       for (let round = 1; round <= 2; round++) {
         await solo.waitFor((s) => s.phase === 'PREP' && s.round === round && !s.ready, `prep ${round}`, 60000);
         await sleep(700);
@@ -678,9 +669,9 @@ describe('real server + real browsers', { skip: !ENABLED && 'set SP_REAL_E2E=1 (
         await sleep(1500);
         await solo.shot(`solo-combat-r${round}`);
       }
-      // leave for good: exit → Abandon Simulation → lobby
+      // leave for good: exit → 放弃模拟 → lobby
       await solo.click('.gtop__exit');
-      await solo.click('.modal__actions .btn', 'Abandon Simulation');
+      await solo.click('.modal__actions .btn', '放弃模拟');
       await solo.waitFor((s) => !s.room && !s.phase, 'back in the lobby', 20000);
       await solo.page.waitForSelector('.lobby-screen', { timeout: 10000 });
       await assertClean([solo]);

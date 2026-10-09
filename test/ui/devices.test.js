@@ -194,8 +194,8 @@ describe('ui/device.js installDeviceSupport', () => {
 describe('hud.js checkButtons', () => {
   test('prep: mint 🔍 (本局信息) + amber 🔍▶▶; pen: 🔍◀◀ + grey 🔍; outside prep: grey 🔍', () => {
     assert.deepEqual(checkButtons({ pen: false, penAvail: true, infoOpen: false }), {
-      left: { sprite: 'btn_check_player_normal', back: false, label: 'Match Info', tip: 'Match Info (strategies / disabled alliances / operators)' },
-      right: { sprite: 'btn_check_enemy', grey: false, label: 'Enemy Intel', tip: 'View the enemies about to attack' },
+      left: { sprite: 'btn_check_player_normal', back: false, label: '本局信息', tip: '本局信息（策略 / 禁用盟约 / 干员）' },
+      right: { sprite: 'btn_check_enemy', grey: false, label: '敌方情报', tip: '查看即将迎击的敌方单位' },
     });
     const pen = checkButtons({ pen: true, penAvail: true, infoOpen: false });
     assert.equal(pen.left.sprite, 'btn_check_player_back');

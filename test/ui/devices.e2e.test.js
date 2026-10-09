@@ -288,7 +288,7 @@ describe('multi-device (Chrome device emulation)', { skip: !ENABLED && 'set SP_E
       };
       await tapText('.title-login input');
       await page.keyboard.type('凯尔希');
-      await tapText('.title-login button', 'Start');
+      await tapText('.title-login button', '开始');
       await page.waitForSelector('.lobby-screen', { timeout: 15000 }).catch(async (err) => {
         await page.screenshot({ path: path.join(OUT, `device-${dev}-lobby-FAILED.png`) });
         throw err;
@@ -296,8 +296,8 @@ describe('multi-device (Chrome device emulation)', { skip: !ENABLED && 'set SP_E
       await sleep(400);
       await page.screenshot({ path: path.join(OUT, `device-${dev}-lobby.png`) });
       assert.deepEqual(await layoutProblems(page), [], `${dev} lobby`);
-      await tapText('.mode-card', 'Alliance Simulation');
-      await tapText('.create-box button', 'Create Alliance');
+      await tapText('.mode-card', '同盟模拟');
+      await tapText('.create-box button', '创建同盟');
       await page.waitForSelector('.room-bar__right', { timeout: 15000 });
       await sleep(500);
       await page.screenshot({ path: path.join(OUT, `device-${dev}-room.png`) });
@@ -323,7 +323,7 @@ describe('multi-device (Chrome device emulation)', { skip: !ENABLED && 'set SP_E
     await page.screenshot({ path: path.join(OUT, 'device-iphone14-notch.png') });
     // review regression: a top inset moves the in-match toasts under the top bar once (not twice: margin + top)
     await page.addStyleTag({ content: ':root { --sa-t: 20px !important; }' });
-    await page.evaluate(() => import('/js/ui/toasts.js').then((m) => m.toast('Reserve is full', 'warn')));
+    await page.evaluate(() => import('/js/ui/toasts.js').then((m) => m.toast('整备区已满', 'warn')));
     await page.waitForSelector('.toast');
     const t = await page.evaluate(() => ({
       host: document.querySelector('.toast-host').getBoundingClientRect().top,
@@ -397,15 +397,9 @@ describe('multi-device (Chrome device emulation)', { skip: !ENABLED && 'set SP_E
     const nogl = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--no-sandbox', '--disable-webgl', '--disable-webgl2', '--disable-3d-apis'] });
     try {
       const { page, problems } = await open('ipad', 'phase=PREP', { b: nogl });
-      // Start observing before the view becomes available: the fallback notice is a transient 5-second toast, so
-      // waiting for __SP_VIEW__ first can miss it if the browser is under load when it reports the view to Node.
-      const fallbackNotice = page.waitForFunction(
-        () => [...document.querySelectorAll('.toast__text')].some((el) => el.textContent.includes('simplified view')),
-        { timeout: 30000 },
-      );
       await page.waitForFunction(() => globalThis.__SP_VIEW__?.kind === 'fallback', { timeout: 20000 });
-      await fallbackNotice;
-      assert.match(await page.$eval('.toast-host', (el) => el.textContent), /simplified view/);
+      await page.waitForSelector('.toast', { timeout: 5000 });
+      assert.match(await page.$eval('.toast-host', (el) => el.textContent), /简化视图/);
       await page.click('.enemybtn');
       await page.waitForSelector('.ff-pen__enemy', { timeout: 3000 });
       await page.screenshot({ path: path.join(OUT, 'device-ipad-nowebgl-pen.png') });
@@ -420,7 +414,7 @@ describe('multi-device (Chrome device emulation)', { skip: !ENABLED && 'set SP_E
       emo: document.querySelector('.ewheel__btn')?.classList.contains('has-sprite'),
       label: document.querySelector('.ewheel__label')?.textContent,
     }));
-    assert.deepEqual(st, { chk: false, emo: false, label: 'Chat' }, 'CSS look-alikes');
+    assert.deepEqual(st, { chk: false, emo: false, label: '交流' }, 'CSS look-alikes');
     await page.screenshot({ path: path.join(OUT, 'device-iphone14-noart.png') });
     assert.deepEqual(await layoutProblems(page), []);
     assert.deepEqual(problems, []);

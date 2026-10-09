@@ -20,16 +20,16 @@ const GUMMY = 'chess_char_1_10_a';
 async function soloToPrep(c) {
   await c.open();
   await c.enter('煌');
-  await c.click('.mode-card', 'Solo Simulation');
-  await c.click('.diff-card', 'Perilous Simulation');
-  await c.click('.create-box button', 'Start Solo Simulation');
+  await c.click('.mode-card', '独立模拟');
+  await c.click('.diff-card', '险境');
+  await c.click('.create-box button', '开始独立模拟');
   await c.waitFor((s) => !!s.room, 'solo room');
-  if (!(await c.st()).phase) await c.click('.room-bar__right button', 'Start Simulation', { timeout: 20000 });
+  if (!(await c.st()).phase) await c.click('.room-bar__right button', '开始模拟', { timeout: 20000 });
   await c.waitFor((s) => s.phase === 'INFO_CHECK', 'briefing', 30000);
-  await c.click('.brief__foot .btn--primary', 'Ready');
+  await c.click('.brief__foot .btn--primary', '准备就绪');
   await c.waitFor((s) => s.phase === 'BAND_DRAFT', 'band draft', 30000);
   await c.click('.dband', null, { nth: 1 });
-  await c.click('.draft-detail__btns .btn--primary', 'Confirm Selection');
+  await c.click('.draft-detail__btns .btn--primary', '确认选择');
   await c.waitFor((x) => x.phase === 'PREP' && !x.ready, 'prep', 60000);
   await sleep(1800);
 }
@@ -71,9 +71,9 @@ describe('user playtest #6 follow-up: a merge\'s elite takes the deployed copy\'
           hint: hint ? hint.textContent.trim() : null, hintVisible: !!(hint && hint.getBoundingClientRect().height > 0) };
       });
       assert.ok(armed.merge, 'the armed card is a merge (可晋升)');
-      assert.equal(armed.title, 'The Elite will appear at its original spot in the combat area');
+      assert.equal(armed.title, '精锐干员将出现在作战区原位置');
       // touch never shows a title: the detail card the first tap opened carries the same line (QA 6b)
-      assert.equal(armed.hint, 'Promotable: The Elite will appear at its original spot in the combat area');
+      assert.equal(armed.hint, '可晋升：精锐干员将出现在作战区原位置');
       assert.ok(armed.hintVisible, 'the line is laid out in the detail card');
       assert.deepEqual(armed.tiles, [[tile.row, tile.col]], 'the merge highlight lights the deployed copy\'s tile');
       await c.shot('elite-armed');

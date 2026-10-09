@@ -29,7 +29,6 @@ const { DATA } = await import('../match/harness.js');
 const { GameData } = await import('../../server/match/gamedata.js');
 const { generateDraft, cardView } = await import('../../server/match/choices.js');
 const { createRng } = await import('../../server/sim/rng.js');
-const { L } = await import('../../server/display.js');
 const { data } = await import('../../public/js/data.js');
 
 /** Every vnode of a preact tree (htm output), depth first. */
@@ -70,8 +69,8 @@ test('机密商店 overlay: the same item twice is two cards — own keys, own s
   assert.equal(cards.length, 6);
   assert.deepEqual(cards.map((c) => c.key), [0, 1, 2, 3, 4, 5], 'keyed by index, never by item id');
   const name = (c) => [...walk(c)].find((n) => hasClass(n, 'spcard__name')).props.children;
-  assert.equal(name(cards[a]), L(DATA.items[twin].name));
-  assert.equal(name(cards[b]), L(DATA.items[twin].name));
+  assert.equal(name(cards[a]), DATA.items[twin].name);
+  assert.equal(name(cards[b]), DATA.items[twin].name);
   assert.equal(sp.cards[a].id, sp.cards[b].id);
 
   // the teammate takes the first twin: only that card shows the taker; the second twin is still mine to pick

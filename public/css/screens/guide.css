@@ -80,8 +80,7 @@
   flex: none; padding: .02rem .12rem; font-size: .14rem; font-weight: 700; letter-spacing: .1em;
   color: var(--mint-400); border: 1px solid var(--mint-800); background: var(--mint-a10);
 }
-/* English page titles are much longer than the Chinese ones ("Support Operators and Custom Squads"): up to two lines instead of one ellipsised line */
-.guide__ptitle { min-width: 0; font-size: .2rem; font-weight: 700; letter-spacing: .03em; line-height: 1.12; color: var(--text-hi); overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.guide__ptitle { font-size: .22rem; font-weight: 700; letter-spacing: .06em; color: var(--text-hi); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .guide__dots { display: flex; align-items: center; gap: .05rem; }
 .guide__dot {
   width: .2rem; height: .08rem; padding: 0; border: 0; background: var(--line-2);

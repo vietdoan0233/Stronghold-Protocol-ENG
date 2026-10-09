@@ -117,7 +117,7 @@ test('hand and temp full at prep end: the new hammer is destroyed, the equipped 
   assert.equal(copies(ps, GOLDEN), 0);
   assert.equal(copies(ps, HAMMER), 1);
   const toasts = h.sent.filter(([, msg]) => msg.t === 'm.toast').map(([, msg]) => msg.text);
-  assert.equal(toasts.filter((t) => t === 'Reserve is full; the gear you gained was destroyed').length, 2);
+  assert.equal(toasts.filter((t) => t === '整备区已满，获得的装备已销毁').length, 2);
   const input = FakeBattle.instances.at(-1).opts.players[0];
   assert.ok(input.units.find((u) => u.uid === carrier.uid).items.includes(HAMMER));
   h.toPrep(2);

@@ -232,22 +232,22 @@ describe('§20.15 screenStrip: the game screen\'s state → whose bonds (every w
 });
 
 describe('§20.15 the ‹ › pill of a shared field watched with 前往查看 (ui/combatHud.js)', () => {
-  const layers = [{ key: 'L', label: '华法琳', self: false, watch: true }, { key: 'ALL', label: 'Panorama', self: false, watch: false }, { key: 'R', label: '阿米娅', self: false, watch: true }];
+  const layers = [{ key: 'L', label: '华法琳', self: false, watch: true }, { key: 'ALL', label: '全景', self: false, watch: false }, { key: 'R', label: '阿米娅', self: false, watch: true }];
   test('observing + halves: the ‹ › pill (the picked player\'s half) with 返回战场 — no separate observing pill', () => {
     const v = CombatHud({ pub: {}, myId: ME, watching: 'u', hud: null, myDone: false, client: { observing: { name: '阿米娅' }, onBack() {}, layers, layer: 'R', onLayer() {} } });
     const pill = [...walk(v)].find((x) => hasClass(x, 'chud__layers'));
     assert.ok(pill && hasClass(pill, 'is-observing'));
     assert.match(textOf(pill), /阿米娅/);
-    assert.match(textOf(pill), /Back to Battlefield/);
+    assert.match(textOf(pill), /返回战场/);
     assert.ok(![...walk(v)].some((x) => hasClass(x, 'chud__observe')));
   });
   test('observing a normal field: the "👁 name" pill + 返回战场; a helper\'s own pill has no 返回战场', () => {
     const v = CombatHud({ pub: {}, myId: ME, watching: 'n:p2', hud: null, myDone: true, client: { observing: { name: '阿米娅' }, onBack() {}, layers: [], layer: 'ALL' } });
     const pill = [...walk(v)].find((x) => hasClass(x, 'chud__observe'));
-    assert.ok(pill && /阿米娅/.test(textOf(pill)) && /Back to Battlefield/.test(textOf(pill)));
+    assert.ok(pill && /阿米娅/.test(textOf(pill)) && /返回战场/.test(textOf(pill)));
     const own = CombatHud({ pub: {}, myId: ME, watching: null, hud: null, myDone: false, client: { observing: null, onBack() {}, layers, layer: 'ALL', onLayer() {} } });
     const p2 = [...walk(own)].find((x) => hasClass(x, 'chud__layers'));
-    assert.ok(p2 && !hasClass(p2, 'is-observing') && !/Back to Battlefield/.test(textOf(p2)));
+    assert.ok(p2 && !hasClass(p2, 'is-observing') && !/返回战场/.test(textOf(p2)));
   });
 });
 
@@ -281,15 +281,44 @@ describe('§20.15 the bonds: views + live layers', () => {
     assert.deepEqual(mate.bonds.map((b) => [b.bondId, b.layers]), [['sargonShip', 44], ['kjeragShip', 7]], 'THEIR bonds, THEIR live count');
     assert.deepEqual(playerBonds({ pub, priv: PRIV, myId: ME, ownerId: 'p3', live }).map((b) => b.layers), [120]);
   });
-  test('ownerBoard: the teammate\'s operators on the field on screen feed the popup\'s member list (no hand)', () => {
+  test('ownerBoard: the teammate\'s operators on the field on screen feed the popup\'s member list; a scout\'s bench goes to hand / temp', () => {
     const field = { fieldId: 'n:p2', prep: true, units: [
-      { id: 1, kind: 'op', side: 'ally', ownerId: 'p2', defId: 'chess_char_1_19_a' },
-      { id: 2, kind: 'token', side: 'ally', ownerId: 'p2', defId: 'tok' },
+      { id: 1, kind: 'op', side: 'ally', ownerId: 'p2', defId: 'chess_char_1_19_a', area: 'board' },
+      { id: 2, kind: 'token', side: 'ally', ownerId: 'p2', defId: 'tok', area: 'board' },
       { id: 3, kind: 'op', side: 'ally', ownerId: 'p3', defId: 'chess_other' },
       { id: 4, kind: 'enemy', side: 'enemy', ownerId: null, defId: 'enemy_1' },
+      { id: 5, kind: 'op', side: 'ally', ownerId: 'p2', defId: 'chess_char_1_03_a', area: 'hand' },
+      { id: 6, kind: 'op', side: 'ally', ownerId: 'p2', defId: 'chess_char_2_04_a', area: 'temp' },
+      { id: 7, kind: 'item', side: 'ally', ownerId: 'p2', defId: 'chess_item_1_01_e_a', area: 'hand' },
     ] };
-    assert.deepEqual(ownerBoard(field, 'p2'), { board: [{ kind: 'chess', id: 'chess_char_1_19_a' }], hand: [], temp: [] });
+    assert.deepEqual(ownerBoard(field, 'p2'), {
+      board: [{ kind: 'chess', id: 'chess_char_1_19_a' }], hand: [{ kind: 'chess', id: 'chess_char_1_03_a' }], temp: [{ kind: 'chess', id: 'chess_char_2_04_a' }],
+    });
+    // a unit without an area (a battle's, an older server's prep scout) is on the board
+    assert.deepEqual(ownerBoard({ units: [{ kind: 'op', ownerId: 'p2', defId: 'chess_char_1_19_a' }] }, 'p2').board, [{ kind: 'chess', id: 'chess_char_1_19_a' }]);
     assert.equal(ownerBoard(null, 'p2'), null);
+  });
+  test('GitHub #385: a scouted bench counts in the popup\'s 成员 header as in the player\'s own (hand for 远见 / 奇迹 / 投资人, temp never)', () => {
+    // 远见 (BOARD_AND_DECK, countsHand: the server's 在场 is 2 — 赫默 on the board, 初雪 in the hand; 伊内丝 waits in temp)
+    // 炎 (BOARD: 在场 1 — 小满; 琳琅诗怀雅 in the hand, 烛煌 in temp)
+    const u = (id, defId, area) => ({ id, kind: 'op', side: 'ally', ownerId: 'p2', defId, area });
+    const field = { fieldId: 'n:p2', prep: true, units: [
+      u(1, 'chess_char_2_02_a', 'board'), u(2, 'chess_char_2_04_a', 'board'),
+      u(3, 'chess_char_3_14_a', 'hand'), u(4, 'chess_char_3_04_a', 'hand'),
+      u(5, 'chess_char_4_04_a', 'temp'), u(6, 'chess_char_5_03_a', 'temp'),
+    ] };
+    const head = (bondId) => {
+      const v = BondPopup({ bondId, entry: bond(bondId, 0, 0, 0), priv: ownerBoard(field, 'p2'), owner: '阿米娅', onClose() {} });
+      const h4 = [...walk(v)].find((x) => x.type === 'h4' && /成员/.test(textOf(x)));
+      const members = [...walk(v)].filter((x) => hasClass(x, 'bpop__member'));
+      return { head: textOf(h4).replace(/\s+/g, ''), on: members.filter((x) => hasClass(x, 'is-on')).length, owned: members.filter((x) => hasClass(x, 'is-owned')).length };
+    };
+    const visi = head('visiShip');
+    assert.match(visi.head, /^成员2\//, '远见: the board member and the hand member (含整备区), not the temp one');
+    assert.deepEqual([visi.on, visi.owned], [1, 2], 'only 赫默 is 在场; 初雪 and 伊内丝 are owned');
+    const yan = head('yanShip');
+    assert.match(yan.head, /^成员1\//, '炎: the board member only');
+    assert.deepEqual([yan.on, yan.owned], [1, 2]);
   });
   test('ownerBoard: under client-side combat the battle on screen\'s operators join (the runner\'s meta predates their deploy)', () => {
     const meta = { fieldId: 'b1', local: true, units: [{ id: 90, kind: 'enemy', side: 'enemy', ownerId: null, defId: 'boss' }] };
@@ -313,7 +342,7 @@ describe('§20.15 the strip and the popup say whose bonds they show', () => {
     const root = [...walk(other)].find((v) => hasClass(v, 'bstrip'));
     assert.ok(root && hasClass(root, 'is-other'));
     assert.equal(root.props['data-owner'], '阿米娅');
-    assert.equal(root.props['aria-label'], '阿米娅\'s Alliances');
+    assert.equal(root.props['aria-label'], '阿米娅 的盟约');
     const tag = [...walk(other)].find((v) => hasClass(v, 'bstrip__owner'));
     assert.ok(tag, 'the owner tag');
     assert.match(textOf(tag), /阿米娅/);
@@ -325,9 +354,9 @@ describe('§20.15 the strip and the popup say whose bonds they show', () => {
   });
   test('a teammate without bonds: "name 尚未激活盟约" with the tag', () => {
     const v = BondStrip({ bonds: [], owner: 'AI·煌', onOpen() {} });
-    assert.match(textOf(v), /AI·煌 has no active alliances yet/);
+    assert.match(textOf(v), /AI·煌 尚未激活盟约/);
     assert.ok([...walk(v)].some((x) => hasClass(x, 'bstrip__owner')));
-    assert.match(textOf(BondStrip({ bonds: [], onOpen() {} })), /Deploy operators to activate alliances/);
+    assert.match(textOf(BondStrip({ bonds: [], onOpen() {} })), /部署干员以激活盟约/);
   });
   test('the popup of a teammate\'s bond: "👁 name 的盟约", their count / layers, members from their board', () => {
     const id = ids[0];
@@ -336,8 +365,8 @@ describe('§20.15 the strip and the popup say whose bonds they show', () => {
     const v = BondPopup({ bondId: id, entry: bond(id, 2, 333, 1), priv: { board: [{ kind: 'chess', id: member }], hand: [], temp: [] }, owner: '阿米娅', onClose() {} });
     const root = [...walk(v)].find((x) => hasClass(x, 'bpop'));
     assert.ok(hasClass(root, 'is-other') && root.props['data-owner'] === '阿米娅');
-    assert.match(root.props['aria-label'], /^阿米娅's Alliances: /);
-    assert.match(textOf([...walk(v)].find((x) => hasClass(x, 'bpop__owner'))), /阿米娅.*'s alliances/);
+    assert.match(root.props['aria-label'], /^阿米娅 的盟约：/);
+    assert.match(textOf([...walk(v)].find((x) => hasClass(x, 'bpop__owner'))), /阿米娅.*的盟约/);
     assert.match(textOf([...walk(v)].find((x) => hasClass(x, 'bpop__facts'))), /333/);
     const on = [...walk(v)].filter((x) => hasClass(x, 'bpop__member') && hasClass(x, 'is-on'));
     assert.equal(on.length, 1, 'the teammate\'s operator on the field is the one member in play');
@@ -357,8 +386,8 @@ test('§20.15 wiring: the game screen feeds the strip, the popup and the detail 
   assert.match(src, /onOpen=\$\{\(id\) => openBond\(id, strip\.ownerId, 'strip'\)\}/, 'the strip opens its owner\'s bond');
   assert.match(src, /const detailOwner = detailBondOwner\(detailTarget, \{ pub, myId, stripOwnerId: strip\.ownerId \}\)/);
   assert.match(src, /onBond=\$\{\(id\) => openBond\(id, detailOwner, 'detail'\)\}/, 'a card\'s chip opens the same owner\'s bond as its chips show');
-  assert.match(src, /onMember=\$\{\(id, items\) => setDetail\(\{ kind: 'chess', id, owner: bondPop\.ownerId, items: items \|\| null \}\)\}/,
-    'a member card keeps the popup\'s player (and a 变形同构体 row\'s items)');
+  assert.match(src, /onMember=\$\{\(id, items, standInFor, diy\) => setDetail\(\{ kind: 'chess', id, owner: bondPop\.ownerId, items: items \|\| null, standInFor: standInFor \|\| null, diy: diy \|\| null \}\)\}/,
+    'a member card keeps the popup\'s player (and a 变形同构体 row\'s items, a 补位 row\'s standInFor, a teammate\'s 自选 row\'s pick)');
   assert.match(src, /openId=\$\{bondPop && bondPop\.ownerId === strip\.ownerId \? bondPop\.bondId : null\}/, 'the strip marks only its own owner\'s popup');
   assert.match(src, /setBondOpen\(\(b\) => \(b && b\.from === 'strip' \? null : b\)\)/, 'a strip popup closes when the strip changes hands');
   assert.ok(!/stripBonds\.find\(\(b\) => b\.bondId === bondOpen\)/.test(src), 'no popup entry read from the strip regardless of its owner');
@@ -405,7 +434,7 @@ describe('§20.15 the popup of a card\'s bond chip: the UNIT owner\'s bond (a sh
     assert.deepEqual([v.entry.bondId, v.entry.count, v.entry.active, v.entry.layers], ['sargonShip', 2, true, 55], 'the partner\'s count / tier, their live layers');
     assert.notEqual(v.priv, PRIV, 'not the viewer\'s pieces');
     assert.deepEqual(v.priv.board.map((x) => x.id).sort(), ['chess_char_1_09_a', 'chess_char_1_12_a'], 'the partner\'s operators on the field on screen');
-    assert.deepEqual([v.priv.hand, v.priv.temp], [[], []], 'their hand is never sent');
+    assert.deepEqual([v.priv.hand, v.priv.temp], [[], []], 'a battle field sends no bench');
   });
   test('popupView: your own bond (m.private entry with thresholds, your pieces, no name); a bond not listed → no entry; nothing open → null', () => {
     const own = popupView({ open: { id: 'yanShip', ownerId: ME, from: 'detail' }, pub, priv: PRIV, myId: ME, field: b1, live: null });

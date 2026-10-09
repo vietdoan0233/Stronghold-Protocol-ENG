@@ -21,16 +21,16 @@ const ENABLED = process.env.SP_E2E === '1' && hasChrome() && existsSync(path.joi
 async function soloToPrep(c, bandName) {
   await c.open();
   await c.enter('煌');
-  await c.click('.mode-card', 'Solo Simulation');
-  await c.click('.diff-card', 'Perilous Simulation');
-  await c.click('.create-box button', 'Start Solo Simulation');
+  await c.click('.mode-card', '独立模拟');
+  await c.click('.diff-card', '险境');
+  await c.click('.create-box button', '开始独立模拟');
   await c.waitFor((s) => !!s.room, 'solo room');
-  if (!(await c.st()).phase) await c.click('.room-bar__right button', 'Start Simulation', { timeout: 20000 });
+  if (!(await c.st()).phase) await c.click('.room-bar__right button', '开始模拟', { timeout: 20000 });
   await c.waitFor((s) => s.phase === 'INFO_CHECK', 'briefing', 30000);
-  await c.click('.brief__foot .btn--primary', 'Ready');
+  await c.click('.brief__foot .btn--primary', '准备就绪');
   await c.waitFor((s) => s.phase === 'BAND_DRAFT', 'band draft', 30000);
   await c.click('.dband', bandName);
-  await c.click('.draft-detail__btns .btn--primary', 'Confirm Selection');
+  await c.click('.draft-detail__btns .btn--primary', '确认选择');
   await c.waitFor((x) => x.phase === 'PREP' && !x.ready, 'prep', 60000);
   await sleep(1800);
 }
@@ -68,7 +68,7 @@ describe('player report #6: 凯瑟琳\'s three free items after a level-up (real
     const srv = await startRealServer({ fast: { timerScale: 0.5, combatSpeed: 4, startRound: 2 } });
     const c = new Client(puppeteer, srv.base, 'cathy', { prefix: 'fb1-offer' });
     try {
-      await soloToPrep(c, 'Catherine');
+      await soloToPrep(c, '凯瑟琳');
       assert.equal((await privOf(c)).bandId, 'band_cathy', 'strategy 凯瑟琳');
       // LEVEL: first tap arms 确认升级, the second upgrades
       await c.click('.lvcard');
@@ -84,8 +84,8 @@ describe('player report #6: 凯瑟琳\'s three free items after a level-up (real
       await c.shot('desktop');
       const dom = await offerDom(c);
       assert.ok(dom, 'the offer is in the bar');
-      assert.equal(dom.title, 'Targeted Delivery', `the header names the strategy (${dom.title} / ${dom.micro})`);
-      assert.match(dom.sub, /Pick 1 piece of gear for free/);
+      assert.equal(dom.title, '定向投放', `the header names the strategy (${dom.title} / ${dom.micro})`);
+      assert.match(dom.sub, /免费选择 1 件/);
       assert.deepEqual(dom.cards.map((x) => x.name), names, 'the item names');
       for (const card of dom.cards) {
         assert.ok(card.item, `${card.name}: drawn as an item card`);
@@ -123,7 +123,7 @@ describe('player report #6: 凯瑟琳\'s three free items after a level-up (real
         detail: document.querySelector('.dpanel')?.textContent || '',
       }));
       assert.equal(armed.armed, want, 'the tapped card is armed');
-      assert.match(armed.strip || '', /Confirm Selection/);
+      assert.match(armed.strip || '', /确认选择/);
       assert.ok(armed.detail.includes(want), 'the detail card shows the item');
       await c.shot('armed');
       await c.click('.shopbar__reward .scard.is-armed');
@@ -149,7 +149,7 @@ describe('player report #6: 凯瑟琳\'s three free items after a level-up (real
     const levelUp = async () => { await c.click('.lvcard'); await sleep(250); await c.click('.lvcard'); };
     const offerOf = () => c.page.evaluate(() => globalThis.__SP__.store.get().match.private?.shop?.rewardOffer || null);
     try {
-      await soloToPrep(c, 'Catherine');
+      await soloToPrep(c, '凯瑟琳');
       await levelUp();
       await c.page.waitForFunction(() => !!document.querySelector('.shopbar__reward .scard'), { timeout: 8000 });
       await c.click('.rwtag__later');
@@ -158,13 +158,13 @@ describe('player report #6: 凯瑟琳\'s three free items after a level-up (real
       await c.page.waitForFunction(() => globalThis.__SP__.store.get().match.private?.shop?.rewardOffer?.queued === 1, { timeout: 8000 });
       await sleep(400);
       const pill = await c.page.evaluate(() => document.querySelector('.rewardpill')?.textContent.replace(/\s+/g, '') || '');
-      assert.match(pill, /TargetedDeliveryPending/);
+      assert.match(pill, /定向投放待选择/);
       assert.match(pill, /\+1/, `the pill counts the offer behind (${pill})`);
       await c.shot('pill');
       await c.click('.rewardpill');
       await c.page.waitForFunction(() => !!document.querySelector('.shopbar__reward .scard'), { timeout: 8000 });
       await sleep(300);
-      assert.equal(await c.page.evaluate(() => document.querySelector('.rwtag__more')?.textContent.trim() || null), '1 more after this');
+      assert.equal(await c.page.evaluate(() => document.querySelector('.rwtag__more')?.textContent.trim() || null), '之后还有 1 项');
       await c.shot('offer');
       // the narrowest phone: the header strip still holds every line and the 稍后 button inside the screen
       const browserUa = await c.browser.userAgent();
@@ -191,7 +191,7 @@ describe('player report #6: 凯瑟琳\'s three free items after a level-up (real
       await c.page.waitForFunction((ids) => { const o = globalThis.__SP__.store.get().match.private?.shop?.rewardOffer; return !!o && o.queued === 0 && o.slots.map((x) => x.id).join() !== ids; }, { timeout: 8000 }, first.slots.map((x) => x.id).join());
       await sleep(300);
       assert.equal(await c.exists('.rwtag__more'), false, 'nothing behind the second offer');
-      assert.equal(await c.page.evaluate(() => document.querySelector('.rwtag__title')?.textContent.trim()), 'Targeted Delivery');
+      assert.equal(await c.page.evaluate(() => document.querySelector('.rwtag__title')?.textContent.trim()), '定向投放');
       await c.shot('second');
       assert.deepEqual(problemsOf([c]), []);
     } finally {

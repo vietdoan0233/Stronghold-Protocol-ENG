@@ -52,7 +52,7 @@ describe('6: the enemy pen only with the pen camera', () => {
 
   test('the 🔍◀◀ back button of the pen view is the one labelled 返回战场', () => {
     const b = checkButtons({ pen: true, penAvail: true, infoOpen: false });
-    assert.equal(b.left.tip, 'Back to Battlefield');
+    assert.equal(b.left.tip, '返回战场');
     assert.equal(b.left.back, true);
   });
 });
@@ -117,6 +117,17 @@ describe('8: the detail card never covers the selected unit\'s underframe', () =
     assert.match(dev, /\.gm__hud > \.uframe \{ margin-left: calc\(-1 \* var\(--sa-l\)\); margin-top: calc\(-1 \* var\(--sa-t\)\); \}/);
     const panels = readFileSync(new URL('../../public/css/screens/game-panels.css', import.meta.url), 'utf8');
     assert.match(panels, /\.uframe__label\s*\{[^}]*white-space:\s*nowrap\s*;/, 'shortcut labels stay on one line');
+  });
+
+  // a finger's tap near a disc: the browser's touch adjustment moved it onto the nearest element that responds to clicks
+  // (the canvas's pointer listeners do not count), so with PR #149's 收起 toggle pushing the discs over the back row a tap
+  // on the row-12 unit at 844×390 opened the bond popup (test/render/models.browser.test.js #4.1 touch)
+  test('the field canvas is a click target of its own, so a tap on the board stays on the tile under the finger', async () => {
+    const { readFileSync } = await import('node:fs');
+    const app = readFileSync(new URL('../../public/js/render/app.js', import.meta.url), 'utf8');
+    assert.match(app, /\n {2}canvas\.addEventListener\('click', onTapTarget\);\n/, 'registered with the other canvas listeners');
+    assert.match(app, /\n +canvas\.removeEventListener\('click', onTapTarget\);\n/, 'dropped on destroy');
+    assert.match(app, /const onTapTarget = \(\) => \{\};/, 'a no-op: the press itself stays with the pointer events');
   });
 
   test('underframeRect covers the diamond and its buttons', () => {
@@ -256,7 +267,7 @@ describe('§16: chessLoadout (m.private.loadout → skill / module shown)', () =
     const g = chessLoadout(gold, lo, get);
     assert.equal(g.skill.skillId, 'sk_0');
     assert.equal(g.module.none, true);
-    assert.equal(g.module.name, 'No module equipped');
+    assert.equal(g.module.name, '未装备模组');
     assert.equal(g.defaultModule, false);
     const y = chessLoadout(gold, { c_a: { skill: 2, module: 'uniequip_y' } }, get);
     assert.deepEqual([y.module.id, y.module.name, y.module.typeName, y.defaultSkill], ['uniequip_y', '模组Y', 'XYZ-Y', true]);

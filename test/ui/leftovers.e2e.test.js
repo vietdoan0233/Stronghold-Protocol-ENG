@@ -10,7 +10,8 @@
 //   4. solo battle: the pause button sends g.pause {on}, m.public.paused shows the overlay and freezes the countdown,
 //      Space resumes; no pause control in co-op or in prep.
 // Real server (test/e2e/fastServer.mjs, real clicks and canvas drags):
-//   1+4. a solo run: equip two items on an operator, drop a third → dialog → 取消 (nothing sent) → pick the OLDER item →
+//   1+4. a solo run: equip two items on an operator, drop a third → dialog → 取消 (nothing sent, the item drawn back on its
+//        bench slot) → pick the OLDER item →
 //        the real engine destroys exactly that one; then ready → the real local battle → pause (the battle clock and the
 //        countdown stand still) → 继续作战;
 //   3. the server restarts while the briefing is on screen → 「服务器会话已重置，上一局模拟已结束」 and the lobby.
@@ -29,17 +30,6 @@ const ITEMS = (() => {
   const list = Array.isArray(raw) ? raw : Object.values(raw.items || raw);
   return new Map(list.filter((x) => x && x.id).map((x) => [x.id, x]));
 })();
-const EN_ITEM_STRINGS = JSON.parse(readFileSync(path.join(ROOT, 'public/locales/en/items.json'), 'utf8')).strings;
-const itemUiName = (id) => {
-  const name = ITEMS.get(id)?.name;
-  return EN_ITEM_STRINGS[name] || name;
-};
-/** In-process server for graceful-stop coverage: Windows child.kill('SIGTERM') is an abrupt termination. */
-async function startInProcessServer(port) {
-  const { startServer } = await import('../../server/index.js');
-  const server = await startServer({ port, host: '127.0.0.1', quiet: true });
-  return { port: server.port, base: server.url, logs: [], stop: () => server.close() };
-}
 const attaches = (id) => !String(ITEMS.get(id)?.kind || '').startsWith('consume_on_equip');
 /** Three distinct plain equipment items (attach, mergeable pairs never complete: all different). */
 const KIT_ITEMS = [...ITEMS.values()].filter((i) => i.itemType === 'EQUIP' && !i.isGolden && attaches(i.id) && i.tier === 1).map((i) => i.id).sort().slice(0, 3);
@@ -73,10 +63,7 @@ describe('client leftovers — mock harness', { skip: !ENABLED && 'set SP_E2E=1 
   }
   const mockPriv = (page) => page.evaluate(() => JSON.parse(JSON.stringify(globalThis.__MOCK__.S().priv)));
   const mockReqs = (page, t) => page.evaluate((t) => globalThis.__MOCK__.S().requests.filter((r) => r[0] === t), t);
-  const center = async (page, sel) => {
-    await page.waitForSelector(sel, { visible: true, timeout: 5000 });
-    return page.$eval(sel, (el) => { const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
-  };
+  const center = (page, sel) => page.$eval(sel, (el) => { const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
   const drag = async (page, from, to) => {
     await page.mouse.move(from.x, from.y);
     await page.mouse.down();
@@ -109,11 +96,11 @@ describe('client leftovers — mock harness', { skip: !ENABLED && 'set SP_E2E=1 
       lead: document.querySelector('.eqr__lead')?.textContent || '',
     }));
     assert.deepEqual(dlg.opts.map((o) => o.uid), target.items.map((x) => x.uid), 'both equipped items, oldest first');
-    assert.deepEqual(dlg.opts.map((o) => o.name), target.items.map((x) => itemUiName(x.id)));
+    assert.deepEqual(dlg.opts.map((o) => o.name), target.items.map((x) => ITEMS.get(x.id).name));
     assert.ok(dlg.opts.every((o) => o.icon && o.desc > 0 && o.checked === 'false'), 'icons + effects, nothing preselected');
-    assert.equal(dlg.incoming, itemUiName(item.id));
-    assert.equal(dlg.okDisabled, true, 'Confirm Replacement (确认替换) needs a pick');
-    assert.match(dlg.lead, /the gear you replace will be destroyed/);
+    assert.equal(dlg.incoming, ITEMS.get(item.id).name);
+    assert.equal(dlg.okDisabled, true, '确认替换 needs a pick');
+    assert.match(dlg.lead, /被替换的装备将被销毁/);
     assert.equal(await page.$('.uframe__btn--destroy'), null, 'no 销毁 anywhere for equipped items');
     await page.screenshot({ path: path.join(OUT, 'leftover-replace-mock.png') });
 
@@ -167,10 +154,10 @@ describe('client leftovers — mock harness', { skip: !ENABLED && 'set SP_E2E=1 
     await page.waitForSelector('.otwarn[data-state="pending"]', { timeout: 3000 });
     const pend = await page.$eval('.otwarn', (el) => el.textContent);
     assert.match(pend, /DOT/);
-    assert.match(pend, /Team LP starts draining in \d+\s*s/);
-    const secs = Number(pend.match(/draining in\s*(\d+)/)[1]);
-    assert.ok(secs > 0 && secs <= 18, `drain in ${secs} s`);
-    assert.equal(await page.$eval('.gtop__right .countdown', (el) => el.getAttribute('aria-label')), '0 seconds left');
+    assert.match(pend, /\d+\s*秒后全队生命值开始流失/);
+    const secs = Number(pend.match(/(\d+)\s*秒后/)[1]);
+    assert.ok(secs > 10 && secs <= 18, `drain in ${secs} s`);
+    assert.equal(await page.$eval('.gtop__right .countdown', (el) => el.getAttribute('aria-label')), '剩余0秒');
     await page.screenshot({ path: path.join(OUT, 'leftover-fa-overtime.png') });
     assert.deepEqual(problems, []);
     await page.close();
@@ -179,7 +166,7 @@ describe('client leftovers — mock harness', { skip: !ENABLED && 'set SP_E2E=1 
     ({ page, problems } = await open('phase=FINAL_ASSAULT&variant=drain'));
     await page.waitForSelector('.otwarn[data-state="drain"]', { timeout: 3000 });
     const d1 = await page.$eval('.otwarn', (el) => el.textContent);
-    assert.match(d1, /Overtime · LP −1\/s/);
+    assert.match(d1, /超时 · 生命值 −1\/秒/);
     assert.ok(await page.$('.gtop__center .lp--danger'), 'the team LP tower turns red');
     const lost = async () => Number((await page.$eval('.otwarn__lost b', (el) => el.textContent)) || 0);
     const l1 = await lost();
@@ -244,16 +231,16 @@ describe('client leftovers — real server', { skip: !ENABLED && 'set SP_E2E=1 (
     try {
       await c.open();
       await c.enter('替换');
-      await c.click('.mode-card', 'Solo Simulation');
-      await c.click('.diff-card', 'Standard Simulation');
-      await c.click('.create-box button', 'Start Solo Simulation');
+      await c.click('.mode-card', '独立模拟');
+      await c.click('.diff-card', '标准模拟');
+      await c.click('.create-box button', '开始独立模拟');
       await c.waitFor((s) => !!s.room, 'solo room');
-      if (!(await c.st()).phase) await c.click('.room-bar__right button', 'Start Simulation', { timeout: 20000 });
+      if (!(await c.st()).phase) await c.click('.room-bar__right button', '开始模拟', { timeout: 20000 });
       await c.waitFor((s) => s.phase === 'INFO_CHECK', 'briefing', 30000);
-      await c.click('.brief__foot .btn--primary', 'Ready');
+      await c.click('.brief__foot .btn--primary', '准备就绪');
       await c.waitFor((s) => s.phase === 'BAND_DRAFT', 'band draft', 30000);
       await c.click('.dband', null, { nth: 1 });
-      await c.click('.draft-detail__btns .btn--primary', 'Confirm Selection');
+      await c.click('.draft-detail__btns .btn--primary', '确认选择');
       await c.waitFor((s) => s.phase === 'PREP' && !s.ready && s.hand >= 4, 'prep with the starter kit', 60000);
       await sleep(1800);
       await c.hookRequests();
@@ -289,12 +276,13 @@ describe('client leftovers — real server', { skip: !ENABLED && 'set SP_E2E=1 (
       const equipped = await itemsOf();
       assert.deepEqual(equipped.map((x) => x.id), KIT_ITEMS.slice(0, 2));
       const third = await handItem(KIT_ITEMS[2]);
+      const benchSlot = await c.piecePoint(third.uid, 0.5); // where the view draws it in the hand
 
       // the third: dialog → 取消 → nothing sent / changed
       await dropItem(third);
       await c.page.waitForSelector('.eqr .eqr__opt', { timeout: 4000 });
       assert.deepEqual(await c.page.$$eval('.eqr__opt', (els) => els.map((el) => Number(el.dataset.uid))), equipped.map((x) => x.uid));
-      assert.deepEqual(await c.page.$$eval('.eqr__opt .eqr__name', (els) => els.map((el) => el.textContent)), equipped.map((x) => itemUiName(x.id)));
+      assert.deepEqual(await c.page.$$eval('.eqr__opt .eqr__name', (els) => els.map((el) => el.textContent)), equipped.map((x) => ITEMS.get(x.id).name));
       await c.shot('replace-real');
       const sentBefore = (await c.requests('g.equip')).length;
       await c.click('.eqr__cancel');
@@ -303,6 +291,15 @@ describe('client leftovers — real server', { skip: !ENABLED && 'set SP_E2E=1 (
       assert.equal((await c.requests('g.equip')).length, sentBefore, '取消: no g.equip');
       assert.deepEqual(await itemsOf(), equipped, '取消: unchanged');
       assert.ok(await handItem(KIT_ITEMS[2]), '取消: the item stays in the hand');
+      // ... and is drawn back on its bench slot before it is picked up again. The view keeps a dropped piece on the drop
+      // tile for 1.3 s (render/app/tune.js DROP_PENDING_MS), then flies it back in a frame-timed tween: with few frames
+      // (software-rendered headless Chrome on a loaded machine) the drag aimed where it stood a moment before grabbed the
+      // operator under it, whose direction wheel then swallowed the retry (the 0.2.0 candidate's full pass).
+      const back = await c.page.waitForFunction((uid, x, y) => {
+        const r = globalThis.__SP_VIEW__?.pieceScreenRect(uid);
+        return !!r && Math.abs(r.left + r.width / 2 - x) < 2 && Math.abs(r.top + r.height / 2 - y) < 2;
+      }, { timeout: 15000, polling: 100 }, third.uid, benchSlot.x, benchSlot.y).then(() => true, () => false);
+      assert.ok(back, '取消: the item is drawn back on its bench slot');
 
       // again → pick the OLDER item (not the server's default either way: explicit replaceUid) → 确认替换
       await dropItem(third);
@@ -337,7 +334,7 @@ describe('client leftovers — real server', { skip: !ENABLED && 'set SP_E2E=1 (
       assert.equal(await c.page.$eval('.gtop__right .countdown', (el) => el.getAttribute('aria-label')), cd1, 'the countdown stands still');
       assert.deepEqual((await c.requests('g.pause')).map((r) => r[1]), [{ on: true }]);
       await c.shot('pause-real');
-      await c.click('.pauseov .btn--primary', 'Resume Combat');
+      await c.click('.pauseov .btn--primary', '继续作战');
       await c.page.waitForFunction(() => globalThis.__SP__.store.get().match.public?.paused === false, { timeout: 5000 });
       await c.page.waitForFunction(() => !document.querySelector('.pauseov'), { timeout: 3000 });
       await sleep(1200);
@@ -361,11 +358,11 @@ describe('client leftovers — real server', { skip: !ENABLED && 'set SP_E2E=1 (
     try {
       await c.open();
       await c.enter('重启');
-      await c.click('.mode-card', 'Solo Simulation');
-      await c.click('.diff-card', 'Standard Simulation');
-      await c.click('.create-box button', 'Start Solo Simulation');
+      await c.click('.mode-card', '独立模拟');
+      await c.click('.diff-card', '标准模拟');
+      await c.click('.create-box button', '开始独立模拟');
       await c.waitFor((s) => !!s.room, 'solo room');
-      if (!(await c.st()).phase) await c.click('.room-bar__right button', 'Start Simulation', { timeout: 20000 });
+      if (!(await c.st()).phase) await c.click('.room-bar__right button', '开始模拟', { timeout: 20000 });
       await c.waitFor((s) => s.phase === 'INFO_CHECK', 'briefing', 30000);
       const before = await c.st();
       await sleep(600);
@@ -376,8 +373,8 @@ describe('client leftovers — real server', { skip: !ENABLED && 'set SP_E2E=1 (
       // a crash / kill: no room.closed reaches the client — only the new session's welcome tells
       await srv.stop({ hard: true });
       await sleep(800);
-      srv = await startInProcessServer(port);
-      await c.page.waitForFunction(() => [...document.querySelectorAll('.toast')].some((t) => t.textContent.includes('The server session was reset; the previous simulation has ended')), { timeout: 30000 });
+      srv = await startRealServer({ port });
+      await c.page.waitForFunction(() => [...document.querySelectorAll('.toast')].some((t) => t.textContent.includes('服务器会话已重置，上一局模拟已结束')), { timeout: 30000 });
       await c.page.waitForSelector('.lobby-screen', { timeout: 10000 });
       const s = await c.st();
       assert.notEqual(s.me, before.me, 'a new server session');
@@ -390,19 +387,19 @@ describe('client leftovers — real server', { skip: !ENABLED && 'set SP_E2E=1 (
       assert.equal(restoring, false);
       await c.shot('restart');
       // the lobby works on the new server: a new solo run starts
-      await c.click('.mode-card', 'Solo Simulation');
-      await c.click('.diff-card', 'Standard Simulation');
-      await c.click('.create-box button', 'Start Solo Simulation');
+      await c.click('.mode-card', '独立模拟');
+      await c.click('.diff-card', '标准模拟');
+      await c.click('.create-box button', '开始独立模拟');
       await c.waitFor((x) => !!x.room, 'a new solo room on the restarted server');
-      if (!(await c.st()).phase) await c.click('.room-bar__right button', 'Start Simulation', { timeout: 20000 });
+      if (!(await c.st()).phase) await c.click('.room-bar__right button', '开始模拟', { timeout: 20000 });
       await c.waitFor((x) => x.phase === 'INFO_CHECK', 'briefing on the restarted server', 30000);
       // a graceful stop (Ctrl+C / SIGTERM): room.closed 'shutdown' says so first, the same clean way back — and only once
-      const resetToast = () => c.page.evaluate(() => [...document.querySelectorAll('.toast')].some((t) => t.textContent.includes('The server session was reset')));
-      await c.page.waitForFunction(() => ![...document.querySelectorAll('.toast')].some((t) => t.textContent.includes('The server session was reset')), { timeout: 20000 });
+      const resetToast = () => c.page.evaluate(() => [...document.querySelectorAll('.toast')].some((t) => t.textContent.includes('服务器会话已重置')));
+      await c.page.waitForFunction(() => ![...document.querySelectorAll('.toast')].some((t) => t.textContent.includes('服务器会话已重置')), { timeout: 20000 });
       await srv.stop();
-      await c.page.waitForFunction(() => [...document.querySelectorAll('.toast')].some((t) => t.textContent.includes('The server is under maintenance')), { timeout: 15000 });
+      await c.page.waitForFunction(() => [...document.querySelectorAll('.toast')].some((t) => t.textContent.includes('服务器维护中')), { timeout: 15000 });
       await c.page.waitForSelector('.lobby-screen', { timeout: 10000 });
-      srv = await startInProcessServer(port);
+      srv = await startRealServer({ port });
       await c.waitFor((x) => x.room == null && x.phase == null, 'lobby after the graceful restart', 30000);
       await c.page.waitForFunction(() => globalThis.__SP__.net.status === 'online', { timeout: 30000 });
       await sleep(800);

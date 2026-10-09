@@ -27,13 +27,12 @@
 import { html, HexBadge, Icon } from './components.js';
 import { GIcon } from './gameComponents.js';
 import { useTileScreen } from './facingWheel.js';
+import { hotkeyLabelOf } from './settings.js';
 import { localAsset } from '../data.js';
 import { GEO } from '../../../shared/constants.js';
+import { t, tParts } from '../../../shared/i18n.js';
 
 const cx = (...p) => p.flat().filter(Boolean).join(' ');
-
-/** "3 Funds" / "1 Fund": an amount of the shop's currency for a tooltip. */
-const fundsText = (n) => `${n} ${n === 1 ? 'Fund' : 'Funds'}`;
 
 /** Runner glyph of 撤退 (a figure leaving through a door; original shape). */
 function RetreatGlyph() {
@@ -59,24 +58,24 @@ export function PlateIcon({ sprite, glyph, tone }) {
 /**
  * Client-px rect the underframe of a tile covers: the diamond plus its buttons (plates, labels, the +N price) — the
  * geometry of the css below (.uframe__btn--retreat / --sell: .56rem plates at 25 % / 75 % across, 25 % down, shifted
- * −80 % / −20 % horizontally and −90 % vertically). The button's width is set by its label, not just its plate: keep
- * the longest current label ("Retreat [Q]") in the collision rect so the left-docked detail card clears the button.
- * Used for the detail panel placement.
+ * −80 % / −20 % horizontally and −90 % vertically). Used for the detail panel placement.
  * @param {{ x: number, y: number, s: number }|null} g view.tileScreen(row, col)
  * @param {number} [rem] root font size (px)
+ * @param {{ wideLabels?: boolean }} [opts] wideLabels: the English labels are longer than a plate, so the buttons' box
+ *   is their label's width (the Chinese layout keeps the plate)
  * @returns {{ left: number, right: number, top: number, bottom: number }|null}
  */
-export function underframeRect(g, rem = 100) {
+export function underframeRect(g, rem = 100, { wideLabels = false } = {}) {
   if (!g || !Number.isFinite(g.x) || !Number.isFinite(g.y)) return null;
   const s = g.s > 0 ? g.s : 64;
   const half = s * 1.05;
   const P = rem * 0.56;                 // plate
-  const buttonW = Math.max(P, rem * 1.25); // longest current label plus its letter spacing and padding
   const H = P + rem * 0.26;             // plate + label
+  const W = wideLabels ? Math.max(P, rem * 1.25) : P; // button box: the plate, or the longest English label with its padding
   const q = half / 2;                   // 25 % / 75 % of the diamond box, from its centre
   const btnTop = g.y - q - 0.9 * H;
-  const left = Math.min(g.x - half, g.x - q - 0.8 * buttonW);
-  const right = Math.max(g.x + half, g.x + q + 0.8 * buttonW + rem * 0.14);
+  const left = Math.min(g.x - half, g.x - q - 0.8 * W);
+  const right = Math.max(g.x + half, g.x + q - 0.2 * W + W + rem * 0.14);
   return { left, right, top: Math.min(g.y - half, btnTop - rem * 0.08), bottom: g.y + half };
 }
 
@@ -90,26 +89,27 @@ export function Underframe({ view, uid = null, row, col, actions, name = '', bus
   const s = g.s > 0 ? g.s : 64;
   const half = s * 1.05;
   const stop = (e) => e.stopPropagation();
+  const keys = { retreat: hotkeyLabelOf('retreat'), sell: hotkeyLabelOf('sell') }; // the player's keys (设置 → 快捷键)
   return html`<div class="uframe" data-uid=${uid} style=${`left:${g.x}px;top:${g.y}px;width:${half * 2}px;height:${half * 2}px`} role="group"
-      aria-label=${`${name || 'Unit'} actions`}>
+      aria-label=${t('{name} 操作', { name: name || t('单位') })}>
     <svg class="uframe__dia" viewBox="-110 -110 220 220" aria-hidden="true">
       <path class="uframe__outer" d="M0 -100 L100 0 L0 100 L-100 0 Z" />
       <path class="uframe__corner" d="M-100 0 L-86 -14 M-100 0 L-86 14 M100 0 L86 -14 M100 0 L86 14 M0 -100 L-14 -86 M0 -100 L14 -86 M0 100 L-14 86 M0 100 L14 86" />
     </svg>
     ${actions.retreat ? html`<button type="button" class="uframe__btn uframe__btn--retreat" disabled=${busy} onPointerDown=${stop}
-        onClick=${(e) => { stop(e); onRetreat?.(); }} title=${actions.sell != null ? 'Retreat to the Reserve (Q)' : 'Retreat to the Reserve'} aria-label="Retreat" aria-keyshortcuts=${actions.sell != null ? 'Q' : undefined}>
-      <${RetreatGlyph} /><span class="uframe__label">${actions.sell != null ? 'Retreat [Q]' : 'Retreat'}</span>
+        onClick=${(e) => { stop(e); onRetreat?.(); }} title=${actions.sell != null ? t('撤退至整备区（{key}）', { key: keys.retreat }) : t('撤退至整备区')} aria-label=${t('撤退')} aria-keyshortcuts=${actions.sell != null ? keys.retreat : undefined}>
+      <${RetreatGlyph} /><span class="uframe__label">${actions.sell != null ? t('撤退[{key}]', { key: keys.retreat }) : t('撤退')}</span>
     </button>` : null}
     ${actions.sell != null ? html`<button type="button" class="uframe__btn uframe__btn--sell" disabled=${busy} onPointerDown=${stop}
-        onClick=${(e) => { stop(e); onSell?.(); }} title=${`Sell (+${fundsText(actions.sell)} Funds, X)`} aria-label=${`Sell for ${fundsText(actions.sell)} Funds`} aria-keyshortcuts="X">
+        onClick=${(e) => { stop(e); onSell?.(); }} title=${t('出售（+{sell} 资金，{key}）', { sell: actions.sell, key: keys.sell })} aria-label=${t('出售，获得 {sell} 资金', { sell: actions.sell })} aria-keyshortcuts=${keys.sell}>
       <${PlateIcon} sprite="icon_sell" glyph="sell" tone="sell" />
-      <span class="uframe__label">Sell [X]</span>
+      <span class="uframe__label">${t('出售[{key}]', { key: keys.sell })}</span>
       <${HexBadge} value=${`+${actions.sell}`} tone="gold" size="sm" class="uframe__price" />
     </button>` : null}
     ${actions.destroy ? html`<button type="button" class=${cx('uframe__btn', 'uframe__btn--destroy')} disabled=${busy} onPointerDown=${stop}
-        onClick=${(e) => { stop(e); onDestroy?.(); }} title="Destroy Item" aria-label="Destroy">
+        onClick=${(e) => { stop(e); onDestroy?.(); }} title=${t('销毁道具')} aria-label=${t('销毁')}>
       <${PlateIcon} sprite="icon_destory" glyph="trash" tone="destroy" />
-      <span class="uframe__label">Destroy</span>
+      <span class="uframe__label">${t('销毁')}</span>
     </button>` : null}
   </div>`;
 }
@@ -141,7 +141,7 @@ export function tempRowFrame(a, b, { labelW = 0, gap = 8, vw = Infinity } = {}) 
 }
 
 /**
- * What the temp row's label says will happen to its pieces (server/match/PlayerState.js tempDue): a piece is resolved
+ * What the temp row's label says will happen to its pieces (server/match/player/basics.js tempDue): a piece is resolved
  * at the end of the first prep in which the player can act on it. Not ready (or outside PREP): at the end of this / the
  * coming prep, and 准备就绪 waits for the row to be cleared. Ready in PREP: Ready is refused while the row holds pieces,
  * so whatever lies there arrived after it — kept through the NEXT prep (cancelling Ready makes it due at this one).
@@ -149,8 +149,8 @@ export function tempRowFrame(a, b, { labelW = 0, gap = 8, vw = Infinity } = {}) 
  */
 export function tempRowRule(ready) {
   return ready
-    ? 'Units that arrive after you ready up are kept until the next Rest Phase, then destroyed if still here (if you Cancel Ready, they are destroyed at the end of this Rest Phase).'
-    : 'You can ready up only after placing units in the Reserve or on the battlefield, or equipping or using them; anything still here when the Rest Phase ends will be destroyed.';
+    ? t('已准备就绪后进入的单位保留到下个休整期，届时仍在此处的将被销毁（取消准备则在本休整期结束时销毁）')
+    : t('放入整备区或战场、配发或使用后才能准备；休整期结束时仍在此处的将被销毁');
 }
 
 /**
@@ -169,11 +169,12 @@ export function TempRowNotice({ view, count, items = 0, label = true, ready = fa
   const pts = f.quad.map((p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
   const pad = rem * 0.1;
   const style = f.side === 'left' ? `left:${(f.left - pad).toFixed(1)}px;top:${f.y.toFixed(1)}px` : `left:${(f.right + pad).toFixed(1)}px;top:${f.y.toFixed(1)}px`;
-  const what = items > 0 && items === count ? (count === 1 ? 'item' : 'items') : (count === 1 ? 'unit' : 'units');
   return html`<div class="tempnote" aria-hidden="false" data-testid="temp-notice">
     <svg class="tempnote__frame" aria-hidden="true"><polygon points=${pts} /></svg>
     ${label ? html`<div class=${`tempnote__label is-${f.side}`} style=${style} role="status">
-      <b class="tempnote__title"><${Icon} name="warn" /><span class="num">${count}</span> ${what} waiting in the Temporary Reserve</b>
+      <b class="tempnote__title"><${Icon} name="warn" />${items > 0 && items === count
+        ? tParts('临时整备区 {n} 件道具待处理', { n: html`<span class="num">${count}</span>`, count })
+        : tParts('临时整备区 {n} 个单位待处理', { n: html`<span class="num">${count}</span>`, count })}</b>
       <span class="tempnote__rule">${tempRowRule(ready)}</span>
     </div>` : null}
   </div>`;

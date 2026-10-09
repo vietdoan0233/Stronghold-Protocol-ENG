@@ -72,11 +72,11 @@ test('a real 标准 match: 奥术 operators are buyable, three on the board neve
   const off = modeOffBonds(getMode(m.modeId));
   // without the mode's off set the chip would read the new entry as an ordinary inactive bond (在场 3/3，未激活)
   const bare = chipOf(BondChips({ bondIds: DATA.chess[members[0]].bonds, bonds: priv.bonds }), 'arcaneShip');
-  assert.match(bare.props.title, /3\/3 on the field, inactive/);
+  assert.match(bare.props.title, /在场 3\/3，未激活/);
   const chip = chipOf(BondChips({ bondIds: DATA.chess[members[0]].bonds, bonds: priv.bonds, off }), 'arcaneShip');
   assert.ok(hasClass(chip, 'is-off') && !hasClass(chip, 'is-active'));
-  assert.equal(chip.props.title, '奥术: disabled this match (this alliance will not activate)');
-  assert.match(textOf(chip), /Disabled/);
+  assert.equal(chip.props.title, '奥术：本局禁用（该盟约不会激活）');
+  assert.match(textOf(chip), /本局禁用/);
   assert.ok(![...walk(chip)].some((v) => hasClass(v, 'dbond__count')), 'no member count');
   // the operator's enabled bond (精准) keeps its normal chip
   const preci = chipOf(BondChips({ bondIds: DATA.chess[members[0]].bonds, bonds: priv.bonds, off }), 'preciShip');
@@ -91,7 +91,7 @@ test('shop / reward card: a mode-disabled bond tag is struck through with the �
   const on = tags(modeOffBonds(getMode('mode_single_funny')));
   assert.equal(on.length, 2);
   assert.ok(hasClass(on[0], 'is-off'), '奥术 struck');
-  assert.equal(on[0].props.title, '奥术: disabled this match (this alliance will not activate)');
+  assert.equal(on[0].props.title, '奥术：本局禁用（该盟约不会激活）');
   assert.ok(!hasClass(on[1], 'is-off'), '精准 enabled');
   assert.ok(tags(modeOffBonds(getMode('mode_single_normal'))).every((v) => !hasClass(v, 'is-off')), '险境: nothing off');
   assert.ok(tags(null).every((v) => !hasClass(v, 'is-off')), 'no set: as before');
@@ -100,17 +100,17 @@ test('shop / reward card: a mode-disabled bond tag is struck through with the �
 test('bond popup: 本局禁用 instead of 未激活, a note, and no misleading member count or 当前效果 numbers', () => {
   const pop = BondPopup({ bondId: 'arcaneShip', entry: null, priv: { board: [], hand: [] }, onClose() {}, off: true });
   const text = textOf(pop);
-  assert.match(text, /Disabled/);
-  assert.match(text, /This alliance never activates in this mode/);
-  assert.doesNotMatch(text, /On Field/);
+  assert.match(text, /本局禁用/);
+  assert.match(text, /本模式下该盟约不会激活/);
+  assert.doesNotMatch(text, /在场/);
   // the 当前效果 block ("提升20% … 68%") would promise an effect the mode never gives; the bond text (盟约效果) stays
-  assert.doesNotMatch(text, /Current Effect/);
+  assert.doesNotMatch(text, /当前效果/);
   assert.ok(![...walk(pop)].some((v) => hasClass(v, 'bpop__sec--now')), 'no current-effect section');
-  assert.match(text, /Alliance Effect/);
+  assert.match(text, /盟约效果/);
   const plain = textOf(BondPopup({ bondId: 'arcaneShip', entry: null, priv: { board: [], hand: [] }, onClose() {} }));
-  assert.match(plain, /Inactive/);
-  assert.match(plain, /On Field/);
-  assert.match(plain, /Current Effect/, 'an enabled bond keeps its current-effect block');
+  assert.match(plain, /未激活/);
+  assert.match(plain, /在场/);
+  assert.match(plain, /当前效果/, 'an enabled bond keeps its current-effect block');
 });
 
 test('the game screen hands the mode-disabled set to the shop bar, the detail card and the bond popup', () => {
@@ -121,12 +121,12 @@ test('the game screen hands the mode-disabled set to the shop bar, the detail ca
   assert.match(src, /<\$\{BondPopup\}[\s\S]*?off=\$\{offBonds\.has\(bondPop\.bondId\)\}/);
 });
 
-test('hidden-stack alliances show activation and tiers without a stack badge or stack count', () => {
+test('hidden-layer bonds show activation and tiers without a stack badge or layer count', () => {
   for (const bondId of ['maniShip', 'emptyShip', 'soloShip', 'suntShip']) {
     const entry = { bondId, active: true, count: 2, tier: 1, layers: 99 };
     const pop = BondPopup({ bondId, entry, priv: { board: [], hand: [] }, onClose() {} });
-    assert.match(textOf(pop), /Stack count not shown/);
-    assert.doesNotMatch(textOf(pop), /99|99 stacks?/);
+    assert.match(textOf(pop), /层数不显示/);
+    assert.doesNotMatch(textOf(pop), /99|99 层/);
     const strip = BondStrip({ bonds: [entry], onOpen() {} });
     const disc = [...walk(strip)].find((v) => v.props?.name === DATA.bonds[bondId].name);
     assert.ok(disc);

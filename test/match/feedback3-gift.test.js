@@ -7,7 +7,6 @@
 //     delivered anyway (afterElimination); a failed grant keeps the gift for the next round start; a receiver
 //     eliminated meanwhile is replaced by the living teammate with the most members of the bonds [ASSUMED].
 import { test } from 'node:test';
-import { L } from '../../server/display.js';
 import assert from 'node:assert/strict';
 import { makeMatch, give, giveItem, DATA, legalTileFor } from './harness.js';
 import { FakeBattle } from './fakeBattle.js';
@@ -90,7 +89,7 @@ test('信标: the gift still arrives when its sender is eliminated before the ne
   assert.deepEqual(ofBase(m, p1, cid).map((p) => p.id), [gid], 'the teammate got the elite anyway');
   assert.equal(gifts(p0).length, 0, 'delivered, then removed');
   const line = h.allTo('p_1', 'm.ticker').find((t) => t.type === 'CHAR_GIFT');
-  assert.ok(line && line.text.includes('P0') && line.text.includes(L(DATA.chess[gid].name)), `CHAR_GIFT names the sender: ${line && line.text}`);
+  assert.ok(line && line.text.includes('P0') && line.text.includes(DATA.chess[gid].name), `CHAR_GIFT names the sender: ${line && line.text}`);
   h.invariants();
 });
 

@@ -22,16 +22,16 @@ const DRONE = 'token_10000_silent_healrb', DEVICE = 'token_10041_cathy_catsld';
 async function soloToPrep(c) {
   await c.open();
   await c.enter('煌');
-  await c.click('.mode-card', 'Solo Simulation');
-  await c.click('.diff-card', 'Perilous Simulation');
-  await c.click('.create-box button', 'Start Solo Simulation');
+  await c.click('.mode-card', '独立模拟');
+  await c.click('.diff-card', '险境');
+  await c.click('.create-box button', '开始独立模拟');
   await c.waitFor((s) => !!s.room, 'solo room');
-  if (!(await c.st()).phase) await c.click('.room-bar__right button', 'Start Simulation', { timeout: 20000 });
+  if (!(await c.st()).phase) await c.click('.room-bar__right button', '开始模拟', { timeout: 20000 });
   await c.waitFor((s) => s.phase === 'INFO_CHECK', 'briefing', 30000);
-  await c.click('.brief__foot .btn--primary', 'Ready');
+  await c.click('.brief__foot .btn--primary', '准备就绪');
   await c.waitFor((s) => s.phase === 'BAND_DRAFT', 'band draft', 30000);
   await c.click('.dband', null, { nth: 1 });
-  await c.click('.draft-detail__btns .btn--primary', 'Confirm Selection');
+  await c.click('.draft-detail__btns .btn--primary', '确认选择');
   await c.waitFor((x) => x.phase === 'PREP' && !x.ready, 'prep', 60000);
   await sleep(1800);
 }

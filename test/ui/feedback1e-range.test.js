@@ -81,7 +81,7 @@ test('cardRangeGrid: the live range first, else the loadout record\'s attack ran
   assert.ok(whole.length >= FIELD_WIDE_CELLS);
   const v = RangeGrid({ grid: whole });
   assert.ok(hasClass(v, 'rgrid-all'));
-  assert.equal(v.props.children, 'Entire Field');
+  assert.equal(v.props.children, '全场');
   assert.ok(!hasClass(RangeGrid({ grid: c.rangeGrid }), 'rgrid-all'));
 });
 
@@ -96,7 +96,7 @@ test('a whole-field skill (纯烬艾雅法拉 S3 "攻击范围扩大至整个战
   const live = { ...unitStatsEntry(u, u._s), src: 'battle' };
   assert.ok(live.range.length >= FIELD_WIDE_CELLS);
   const stats = ChessDetail({ chess: data.lookup('chess', id), piece: null, editable: false, bonds: [], loadout: null, live }).find((b) => b.key === 'stats');
-  assert.ok([...walk(stats)].some((n) => hasClass(n, 'rgrid-all')), 'Entire Field');
+  assert.ok([...walk(stats)].some((n) => hasClass(n, 'rgrid-all')), '全场');
 });
 
 test('the game screen hands the card the live entry it already reads (battle runner / m.unitStats)', () => {

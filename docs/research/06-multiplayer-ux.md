@@ -95,7 +95,7 @@ Rich-text tags such as `<@ba.vup>…</>` are stripped. Rules this doc shares wit
 | 搜寻队友 (精确/快速) | Matchmaking (Precise / Quick) | co-op sub-entry |
 | 同盟密钥 | Alliance Key (room code) | — |
 | 入门协议 | Tutorial Protocol | `mode_training_1`, `modeType: LOCAL`. It runs with 3 NPC teammates (`trainingNpcList`). |
-| 标准/险境/绝境/终极 模拟 | Standard / Perilous / Dire / Ultimate | `FUNNY/NORMAL/HARD/ABYSS`; colors `f6a329 / e85a1a / e73118 / ff0024` |
+| 标准/险境/绝境/终极 模拟 | Standard / Perilous / Desperate / Ultimate | `FUNNY/NORMAL/HARD/ABYSS`; colors `f6a329 / e85a1a / e73118 / ff0024` |
 | 确认本局信息 | Briefing | `INFO_CHECK` |
 | 选择策略 / 策略 | Strategy (commander) | `BAND_CHECK`, `bandDataListDict` |
 | 协议启动 | Protocol start | `BATTLE_CHECK` |
@@ -358,7 +358,7 @@ Visual [SHOT]: the banner is a dark strip with orange chevrons and orange-skull 
 - A **normal** unit uses 1 copy and an **elite** uses 3.
 - **Counted:** units on every player's battlefield, bench and temp bench, from any source (buy, reward, strategy effect, 拟态/copy effects).
 - **Not counted:** cards currently displayed in any shop.
-- When owned copies ≥ the cap, a refresh can't roll that name. Some effects fail when the cap is hit (杜遥夜's search; possibly 拟态物质 or 煌's sell effect).
+- When owned copies ≥ the cap, a refresh can't roll that name. Some effects fail when the cap is hit (杜遥夜's search; possibly 拟态物质 or 煌's sell effect). [0.2.0: the remake's 拟态物质 gives nothing when 2 copies are owned and none is left — GitHub #207; its 否则 same-bond operator is only for fewer than 2 owned.]
 - Selling (1 fund per bench unit) returns copies. A player's **defeat or quit returns all their copies immediately**.
 - The server must own the pool (authoritative) and update it in real time for everyone.
 

@@ -74,22 +74,33 @@ test('present data/local-assets.json is served as-is', async () => {
 test('docs and messages say what falls back without the local art and how a server without the client gets it (GitHub issue #42)', async () => {
   const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
   const { LOCAL_ART_FALLBACK, LOCAL_ART_COPY_HINT } = await import('../tools/setup.mjs');
-  const setup = read('tools/setup.mjs');
-  const doctor = read('tools/doctor.mjs');
-  assert.match(LOCAL_ART_FALLBACK, /^The board uses 2D; some official UI icons and the Hot \/ Blazing Originium Slug models use replacements$/);
-  assert.ok(!/emotes|How to Play/i.test(LOCAL_ART_FALLBACK), 'emotes and How to Play pages are downloaded, not local-only');
-  assert.match(LOCAL_ART_COPY_HINT, /^If another compatible installation has these assets, copy public\/assets\/local and data\/local-assets\.json together$/);
+  for (const f of ['README.md', 'docs/DEPLOY.md', 'tools/setup.mjs', 'tools/doctor.mjs']) {
+    assert.ok(!/不影响游戏|其他功能不受影响|游戏不受影响/.test(read(f)), `${f}: never "the local art does not matter"`);
+  }
+  for (const re of [/3D 棋盘/, /界面图标/, /源石虫/]) assert.match(LOCAL_ART_FALLBACK, re);
+  assert.ok(!/表情|玩法说明/.test(LOCAL_ART_FALLBACK), 'the emotes and the 玩法说明 pages are downloaded, not local-only');
+  assert.match(LOCAL_ART_COPY_HINT, /同一版本的整合包/);
   // setup's row is printed on every start (scripts/launch.mjs): it names the fallbacks and points to DEPLOY §6; doctor adds the hint
-  const noClientRow = setup.split('\n').find((l) => l.includes("'No Arknights client detected'") && l.includes('LOCAL_ART_FALLBACK'));
-  assert.ok(noClientRow && noClientRow.includes('LOCAL_ART_FALLBACK') && noClientRow.includes('docs/DEPLOY.md §6') && !noClientRow.includes('LOCAL_ART_COPY_HINT'), noClientRow);
-  assert.ok(doctor.includes('Not extracted: ${LOCAL_ART_FALLBACK} (see docs/DEPLOY.md §6). ${LOCAL_ART_COPY_HINT}.'), 'doctor output points to the English fallback and copy hint');
+  const noClientRow = read('tools/setup.mjs').split('\n').find((l) => l.includes("'未检测到本机明日方舟客户端'"));
+  assert.ok(noClientRow && noClientRow.includes('LOCAL_ART_FALLBACK') && noClientRow.includes('DEPLOY.md 第 6 节') && !noClientRow.includes('LOCAL_ART_COPY_HINT'), noClientRow);
+  assert.match(read('tools/doctor.mjs'), /未提取：\$\{LOCAL_ART_FALLBACK\}（\$\{LOCAL_ART_COPY_HINT\}）/);
   const deploy = read('docs/DEPLOY.md');
-  const s6 = deploy.slice(deploy.indexOf('## 6. Optional local-client art'));
-  assert.ok(deploy.includes('## 6. Optional local-client art') && s6.length > 200, 'DEPLOY §6');
-  for (const re of [/compatible PC client/i, /official 3D board textures/i, /selected UI icons/i, /enemy models/i,
-    /36 battle emotes and 19 How to Play pages from the public mirror/i, /2D renderer/i, /selected art uses replacements/i,
-    /public\/assets\/local\//, /data\/local-assets\.json/]) assert.match(s6, re);
+  const s6 = deploy.slice(deploy.indexOf('## 6. 本地客户端素材'));
+  assert.ok(deploy.includes('## 6. 本地客户端素材') && s6.length > 200, 'DEPLOY §6');
+  for (const re of [/同一版本/, /public\/assets\/local\//, /data\/local-assets\.json/, /3D 棋盘/, /源石虫/, /表情/, /玩法说明/]) assert.match(s6, re);
+  // 0.2.0: the summon models of the local client (extract.py TOKEN_SPINES) — named in the fallbacks, DEPLOY §6 and README,
+  // and an extraction made before them is reported by setup as lacking them (re-extract with --local)
+  assert.match(LOCAL_ART_FALLBACK, /召唤物/);
+  assert.match(s6, /召唤物/);
+  assert.match(s6, /--only spine\/token/);
+  const { localGaps } = await import('../tools/setup.mjs');
+  assert.equal(localGaps({ enemySpines: true, tokenSpines: true }), '');
+  assert.equal(localGaps({ enemySpines: true, tokenSpines: false }), '，缺少新版的自选召唤物模型');
+  assert.equal(localGaps({ enemySpines: false, tokenSpines: false }), '，缺少新版的灼热/炽焰源石虫模型和自选召唤物模型');
+  assert.match(read('tools/setup.mjs'), /\$\{localGaps\(local\)\}（重新提取：--local）/);
   const readme = read('README.md');
-  assert.match(readme, /Without a client, the 2D board is used automatically and nothing else is affected\./);
-  assert.match(read('docs/PLAYING.md'), /tutorial pages, downloaded during normal setup/i);
+  assert.match(readme, /召唤物/);
+  assert.match(readme, /表情和「玩法说明」的教程图随上面的素材一起从公开镜像下载/);
+  assert.match(readme, /\*\*同一版本\*\*的整合包/);
+  assert.ok(!/需本地提取/.test(read('docs/PLAYING.md')), 'PLAYING: the 玩法说明 pages come with the download');
 });

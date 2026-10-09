@@ -1,7 +1,7 @@
 // Real-server browser E2E (DESIGN §16): scouting a teammate's board in prep (前往查看) shows THAT player's operator
 // loadout in the detail card — not the viewer's, not the defaults. The guest picks S1 骑枪刺击 + 不装备 for 野鬃 in the
 // room's 干员调配 and places the elite; the host (no loadout: default S2 + the default module) opens the guest's board
-// and right-clicks the unit: the card must show the Loadout tag and No module equipped, with base ATK.
+// and right-clicks the unit: the card must read S1 (已调配) and 未装备模组, with the no-module ATK.
 // Unit/integration counterpart: test/match/teammate-loadout.test.js.
 //
 //   SP_E2E=1 node --test test/ui/teammate-loadout.e2e.test.js
@@ -29,14 +29,11 @@ const readCard = (c, timeout = 2500) => c.page.waitForSelector('.dpanel .dskill_
 }))).catch(() => null);
 
 describe('DESIGN §16 — a teammate\'s unit shows its owner\'s loadout (real server)', { skip: !ENABLED && 'set SP_E2E=1 (Chrome + public/assets)' }, () => {
-  test('Go Watch in prep: the guest\'s Wild Mane (S1 + No Module) shows that loadout on the host\'s card', { timeout: 6 * 60 * 1000 }, async () => {
+  test('前往查看 in prep: the guest\'s 野鬃 (S1 + 不装备) reads S1 已调配 / 未装备模组 on the host\'s card', { timeout: 6 * 60 * 1000 }, async () => {
     const chess = JSON.parse(readFileSync(path.join(ROOT, 'data/chess.json'), 'utf8'));
-    const en = JSON.parse(readFileSync(path.join(ROOT, 'public/locales/en/chess.json'), 'utf8')).strings;
     const rec = (Array.isArray(chess) ? chess : Object.values(chess.chess || chess)).find((x) => x && x.chessId === ELITE);
     const s1 = rec.skills.find((s) => s.index === 0);
     const sDef = rec.skills.find((s) => s.isDefault);
-    const s1Name = en[s1.name] || s1.name;
-    const sDefName = en[sDef.name] || sDef.name;
     assert.notEqual(sDef.index, 0, 'S1 is not the default skill');
     assert.notEqual(rec.stats.atk, rec.statsBase.atk, 'the default module changes ATK');
 
@@ -47,9 +44,9 @@ describe('DESIGN §16 — a teammate\'s unit shows its owner\'s loadout (real se
     try {
       await host.open();
       await host.enter('凯尔希');
-      await host.click('.mode-card', 'Alliance Simulation');
-      await host.click('.diff-card', 'Standard Simulation');
-      await host.click('.create-box button', 'Create Alliance');
+      await host.click('.mode-card', '同盟模拟');
+      await host.click('.diff-card', '标准模拟');
+      await host.click('.create-box button', '创建同盟');
       const room = (await host.waitFor((s) => !!s.room?.code, 'room created')).room;
       await guest.open(`?room=${room.code}`);
       await guest.enter('阿米娅');
@@ -59,17 +56,17 @@ describe('DESIGN §16 — a teammate\'s unit shows its owner\'s loadout (real se
       await guest.click('[data-testid="loadout-open"]');
       await guest.page.waitForSelector('.lo .lo-card', { visible: true, timeout: 15000 });
       await guest.click('.lo-search input');
-      await guest.page.keyboard.type('Wild Mane'); // 野鬃 (the page shows the English overlay names)
+      await guest.page.keyboard.type('野鬃');
       await guest.page.waitForFunction(() => document.querySelectorAll('.lo-card').length === 1, { timeout: 5000 });
-      await guest.click('.lo-card');
-      await guest.click('.lo-detail .lo-skill[data-skill="0"]');
-      // The module options live inside the detail panel's own scrollport. Client.click only clicks options whose
-      // center is in the viewport, so scroll the English "No Module" radio into view first.
-      const noModule = '.lo-detail .lo-mod--none[data-module="none"]';
-      await guest.page.waitForSelector(noModule, { visible: true, timeout: 5000 });
-      await guest.page.$eval(noModule, (el) => el.scrollIntoView({ block: 'center', inline: 'nearest' }));
-      await guest.click(noModule, 'No Module');
-      await guest.page.waitForFunction(() => /Synced/.test(document.querySelector('.lo-sync')?.textContent || ''), { timeout: 8000 });
+      await guest.click('.lo-card__pick');
+      // the row's quick choices (0.2.2: the roster is one list, a row per operator with its skills and the elite's
+      // modules; the detail's own module cards sit below the fold) — the row and the detail agree on S1 + 不装备
+      await guest.click('.lo-card .lo-q--skill[data-skill="0"]');
+      await guest.click('.lo-card .lo-q--mod[data-module="none"]');
+      await guest.page.waitForFunction(() => document.querySelector('.lo-card .lo-q--skill[data-skill="0"]')?.getAttribute('aria-pressed') === 'true'
+        && document.querySelector('.lo-card .lo-q--mod[data-module="none"]')?.getAttribute('aria-pressed') === 'true'
+        && document.querySelector('.lo-detail .lo-skill.is-on[data-skill="0"]') && document.querySelector('.lo-detail .lo-mod.is-on[data-module="none"]'), { timeout: 3000 });
+      await guest.page.waitForFunction(() => /已同步/.test(document.querySelector('.lo-sync')?.textContent || ''), { timeout: 8000 });
       await guest.page.keyboard.press('Escape');
       await guest.page.waitForFunction(() => !document.querySelector('.lo'), { timeout: 3000 });
 
@@ -80,16 +77,16 @@ describe('DESIGN §16 — a teammate\'s unit shows its owner\'s loadout (real se
       });
       for (let i = 0; i < 5 && !(await guestReady()); i++) {
         await sleep(500);
-        await guest.click('.room-bar__right button', 'Ready', { optional: true, timeout: 3000 });
+        await guest.click('.room-bar__right button', '准备就绪', { optional: true, timeout: 3000 });
         await sleep(500);
       }
       assert.ok(await guestReady(), 'guest ready');
-      await host.click('.room-bar__right button', 'Start Simulation', { timeout: 20000 });
+      await host.click('.room-bar__right button', '开始模拟', { timeout: 20000 });
       for (const c of [host, guest]) await c.waitFor((s) => s.phase === 'INFO_CHECK', 'briefing', 30000);
       const loOf = (c) => c.page.evaluate(() => globalThis.__SP__.store.get().match.private?.loadout ?? null);
       assert.deepEqual(await loOf(guest), { [BASE]: { skill: 0, module: 'none' } }, 'the guest\'s match loadout');
       assert.deepEqual(await loOf(host), {}, 'the host fights with the defaults');
-      for (const c of [host, guest]) await c.click('.brief__foot .btn--primary', 'Ready');
+      for (const c of [host, guest]) await c.click('.brief__foot .btn--primary', '准备就绪');
       // the draft first (a client still in the briefing would count as done without picking: its turn then runs out —
       // Match.BAND_TURN_SECONDS, 30 s each since user playtest #4 item 4)
       for (const c of [host, guest]) await c.waitFor((s) => s.phase !== 'INFO_CHECK', 'band draft', 40000);
@@ -102,7 +99,7 @@ describe('DESIGN §16 — a teammate\'s unit shows its owner\'s loadout (real se
           if (picked.has(c.label) || s.draft?.turn !== s.me) continue;
           await c.click('.dband:not(.is-taken)', null, { nth: c === host ? 2 : 5 });
           await sleep(200);
-          await c.click('.draft-detail__btns .btn--primary', 'Confirm Selection');
+          await c.click('.draft-detail__btns .btn--primary', '确认选择');
           picked.add(c.label);
         }
         await sleep(250);
@@ -122,7 +119,7 @@ describe('DESIGN §16 — a teammate\'s unit shows its owner\'s loadout (real se
 
       // the host scouts the guest (前往查看) — the scouting m.field carries the guest's loadout
       await host.click('.team__row:not(.is-self) .team__btn', null, { nth: 0 });
-      assert.ok(await host.click('.team__ob', 'Go Watch', { optional: true, timeout: 3000 }), 'host: Go Watch in prep');
+      assert.ok(await host.click('.team__ob', '前往查看', { optional: true, timeout: 3000 }), 'host: 前往查看 in prep');
       await host.page.waitForSelector('.gm__watching', { timeout: 6000 });
       const unit = await host.page.waitForFunction((uid) => {
         const f = globalThis.__SP__.store.get().match.field;
@@ -149,10 +146,10 @@ describe('DESIGN §16 — a teammate\'s unit shows its owner\'s loadout (real se
       }
       assert.ok(card, 'the detail card opens for the teammate\'s elite');
       await host.shot('scout-card');
-      assert.ok(card.skill.includes(s1Name) && card.tag, `teammate card: ${s1Name} has a Loadout tag (${JSON.stringify(card)})`);
-      assert.ok(!card.skill.includes(sDefName), 'not the default skill');
-      assert.ok(card.none && card.module.includes('No module equipped'), `teammate card: No module equipped (${JSON.stringify(card)})`);
-      assert.equal(card.stats.ATK, String(rec.statsBase.atk), `teammate card ATK without the module (${JSON.stringify(card.stats)})`);
+      assert.ok(card.skill.includes(s1.name) && card.tag, `teammate card: ${s1.name} 已调配 (${JSON.stringify(card)})`);
+      assert.ok(!card.skill.includes(sDef.name), 'not the default skill');
+      assert.ok(card.none && card.module.includes('未装备模组'), `teammate card: 未装备模组 (${JSON.stringify(card)})`);
+      assert.equal(card.stats['攻击'], String(rec.statsBase.atk), `teammate card ATK without the module (${JSON.stringify(card.stats)})`);
       assert.deepEqual(problemsOf([host, guest]), []);
     } finally {
       for (const c of [host, guest]) if (c.problems.length) console.log(c.label, c.problems.slice(0, 20).join('\n'));

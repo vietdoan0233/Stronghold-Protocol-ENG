@@ -1,0 +1,946 @@
+{
+ "note": "Fork UI English that differs from upstream public/i18n/en.json. Not applied: upstream values follow I18N.md glossary. Review and copy any value into public/i18n/en.json.",
+ "differs": [
+  {
+   "zh": "机变阶段",
+   "upstream": "Improv Phase",
+   "fork": "Draft Phase",
+   "files": [
+    "public/dev/uikit.html",
+    "public/js/ui/choiceOverlay.js",
+    "public/js/ui/gameLogic.js"
+   ]
+  },
+  {
+   "zh": "调度中心",
+   "upstream": "Dispatch Center",
+   "fork": " }, { id: ",
+   "files": [
+    "public/dev/uikit.html"
+   ]
+  },
+  {
+   "zh": "自己",
+   "upstream": "Self",
+   "fork": " }, { id: ",
+   "files": [
+    "public/dev/uikit.html"
+   ]
+  },
+  {
+   "zh": "表情",
+   "upstream": "Emote",
+   "fork": "Emotes",
+   "files": [
+    "public/dev/uikit.html"
+   ]
+  },
+  {
+   "zh": "无人在家",
+   "upstream": "Nobody Home",
+   "fork": "Nobody Here",
+   "files": [
+    "public/js/battle/observe.js"
+   ]
+  },
+  {
+   "zh": "查看禁用盟约与干员",
+   "upstream": "View disabled Alliances & Operators",
+   "fork": "Disabled Alliances & Operators",
+   "files": [
+    "public/js/screens/bandDraft.js"
+   ]
+  },
+  {
+   "zh": "策略",
+   "upstream": "Strategy",
+   "fork": "Strategies",
+   "files": [
+    "public/js/screens/bandDraft.js"
+   ]
+  },
+  {
+   "zh": "初始生命值",
+   "upstream": "Initial LP",
+   "fork": "Starting LP",
+   "files": [
+    "public/js/screens/bandDraft.js"
+   ]
+  },
+  {
+   "zh": "选择一个策略查看详情",
+   "upstream": "Select a Strategy to view details",
+   "fork": "Select a strategy to see its details",
+   "files": [
+    "public/js/screens/bandDraft.js"
+   ]
+  },
+  {
+   "zh": "战场固定",
+   "upstream": "Fixed Battlefield",
+   "fork": "Fixed battlefield",
+   "files": [
+    "public/js/screens/briefing.js",
+    "public/js/screens/lobby.js"
+   ]
+  },
+  {
+   "zh": "ENEMY LEADER // 敌方领袖",
+   "upstream": "ENEMY LEADER // Enemy Leader",
+   "fork": "ENEMY LEADER",
+   "files": [
+    "public/js/screens/briefing.js",
+    "public/js/ui/enemyDrawer.js"
+   ]
+  },
+  {
+   "zh": "特训敌人",
+   "upstream": "Tactical Training Enemies",
+   "fork": "Special Training Enemies",
+   "files": [
+    "public/js/screens/briefing.js"
+   ]
+  },
+  {
+   "zh": "本局没有特训敌人",
+   "upstream": "No Tactical Training Enemies this match",
+   "fork": "No Special Training enemies this match",
+   "files": [
+    "public/js/screens/briefing.js"
+   ]
+  },
+  {
+   "zh": "整备区已满",
+   "upstream": "Bench is full",
+   "fork": "Reserve is full",
+   "files": [
+    "public/js/screens/game.js",
+    "public/js/ui/gameLogic.js"
+   ]
+  },
+  {
+   "zh": "特性",
+   "upstream": "Trait",
+   "fork": "<div class=\"lo-minfo__row\"><span class=\"lo-minfo__k\">Trait</span><${RichText} class=\"lo-minfo__v\" text=${traitBase.descRaw || traitBase.desc} /></div>",
+   "files": [
+    "public/js/screens/loadout.js"
+   ]
+  },
+  {
+   "zh": "技能等级",
+   "upstream": "Skill Level",
+   "fork": "Skill level",
+   "files": [
+    "public/js/screens/loadout.js"
+   ]
+  },
+  {
+   "zh": "选择技能",
+   "upstream": "Choose Skill",
+   "fork": "Select skill",
+   "files": [
+    "public/js/screens/loadout.js"
+   ]
+  },
+  {
+   "zh": "选择模组",
+   "upstream": "Choose Module",
+   "fork": "Select module",
+   "files": [
+    "public/js/screens/loadout.js"
+   ]
+  },
+  {
+   "zh": "不装备",
+   "upstream": "None",
+   "fork": "No Module",
+   "files": [
+    "public/js/screens/loadout.js"
+   ]
+  },
+  {
+   "zh": "仅看已调整",
+   "upstream": "Customized Only",
+   "fork": "Adjusted Only",
+   "files": [
+    "public/js/screens/loadout.js"
+   ]
+  },
+  {
+   "zh": "复制失败，请在文本框中手动全选复制",
+   "upstream": "Copy failed, please select all in the text box and copy manually",
+   "fork": ", ok ? ",
+   "files": [
+    "public/js/screens/loadout.js"
+   ]
+  },
+  {
+   "zh": "干员列表",
+   "upstream": "Operator List",
+   "fork": "Operator list",
+   "files": [
+    "public/js/screens/loadout.js"
+   ]
+  },
+  {
+   "zh": "没有符合条件的干员",
+   "upstream": "No Operators match the filters",
+   "fork": "No matching operators",
+   "files": [
+    "public/js/screens/loadout.js"
+   ]
+  },
+  {
+   "zh": "覆盖",
+   "upstream": "overwrite",
+   "fork": "replace",
+   "files": [
+    "public/js/screens/loadout.js"
+   ]
+  },
+  {
+   "zh": "模拟方式",
+   "upstream": "Mode",
+   "fork": "Simulation Type",
+   "files": [
+    "public/js/screens/lobby.js"
+   ]
+  },
+  {
+   "zh": "模拟难度",
+   "upstream": "Difficulty",
+   "fork": "Simulation Difficulty",
+   "files": [
+    "public/js/screens/lobby.js",
+    "public/js/screens/room.js"
+   ]
+  },
+  {
+   "zh": "等待博士加入",
+   "upstream": "Waiting for a Doctor",
+   "fork": "Waiting for a Doctor to join",
+   "files": [
+    "public/js/screens/room.js"
+   ]
+  },
+  {
+   "zh": "移除该 AI 队友",
+   "upstream": "Remove this AI Teammate",
+   "fork": "Remove this AI teammate",
+   "files": [
+    "public/js/screens/room.js"
+   ]
+  },
+  {
+   "zh": "移出该博士",
+   "upstream": "Remove this Doctor",
+   "fork": "Remove this player",
+   "files": [
+    "public/js/screens/room.js"
+   ]
+  },
+  {
+   "zh": "由创建者选择",
+   "upstream": "Chosen by the Host",
+   "fork": "Set by the Host",
+   "files": [
+    "public/js/screens/room.js"
+   ]
+  },
+  {
+   "zh": "离开同盟",
+   "upstream": "Leave Alliance",
+   "fork": " />\n        <//>\n        <div class=",
+   "files": [
+    "public/js/screens/room.js"
+   ]
+  },
+  {
+   "zh": "当前延迟",
+   "upstream": "Current Ping",
+   "fork": "Latency",
+   "files": [
+    "public/js/screens/room.js"
+   ]
+  },
+  {
+   "zh": "仍有博士未准备就绪",
+   "upstream": "Some Doctors are not ready yet",
+   "fork": "Not all Doctors are ready yet",
+   "files": [
+    "public/js/screens/room.js"
+   ]
+  },
+  {
+   "zh": "调配资金与干员，与同伴协同布防，抵御多波次进攻，直至击败敌方领袖。",
+   "upstream": "Allocate Funds and Operators, coordinate defenses with your allies, hold off wave after wave, and defeat the Enemy Leader.",
+   "fork": "Allocate Funds and Operators, set up your defenses together with your teammates and withstand wave after wave of attacks until the Enemy Leader is defeated.",
+   "files": [
+    "public/js/screens/title.js"
+   ]
+  },
+  {
+   "zh": "收到同盟邀请",
+   "upstream": "Alliance invite received",
+   "fork": "Invited to alliance",
+   "files": [
+    "public/js/screens/title.js"
+   ]
+  },
+  {
+   "zh": "非官方同人复刻 · 游戏素材版权归 上海鹰角网络 / Yostar 所有",
+   "upstream": "Unofficial fan remake · Game assets © Hypergryph / Yostar",
+   "fork": "Unofficial fan remake · Game assets © Shanghai Hypergryph Network / Yostar",
+   "files": [
+    "public/js/screens/title.js"
+   ]
+  },
+  {
+   "zh": "CORE BOND // 核心盟约",
+   "upstream": "CORE BOND // Core Alliance",
+   "fork": "CORE ALLIANCE",
+   "files": [
+    "public/js/ui/bondStrip.js"
+   ]
+  },
+  {
+   "zh": "ADD-ON BOND // 附加盟约",
+   "upstream": "ADD-ON BOND // Add-on Alliance",
+   "fork": "ADD-ON ALLIANCE",
+   "files": [
+    "public/js/ui/bondStrip.js"
+   ]
+  },
+  {
+   "zh": "（含整备区）",
+   "upstream": "(incl. Bench)",
+   "fork": " (incl. Reserve)",
+   "files": [
+    "public/js/ui/bondStrip.js"
+   ]
+  },
+  {
+   "zh": "机变",
+   "upstream": "Improv",
+   "fork": "Draft",
+   "files": [
+    "public/js/ui/choiceOverlay.js"
+   ]
+  },
+  {
+   "zh": "CONTINGENCY // 机变阶段",
+   "upstream": "CONTINGENCY // Improv Phase",
+   "fork": "DRAFT PHASE",
+   "files": [
+    "public/js/ui/choiceOverlay.js"
+   ]
+  },
+  {
+   "zh": "你",
+   "upstream": "You",
+   "fork": "you",
+   "files": [
+    "public/js/ui/choiceOverlay.js"
+   ]
+  },
+  {
+   "zh": "队友作战进度",
+   "upstream": "Teammate battle progress",
+   "fork": "Teammates' combat progress",
+   "files": [
+    "public/js/ui/combatHud.js"
+   ]
+  },
+  {
+   "zh": "作战结束，等待队友完成作战",
+   "upstream": "Battle over. Waiting for teammates to finish",
+   "fork": "Combat over, waiting for teammates to finish",
+   "files": [
+    "public/js/ui/combatHud.js"
+   ]
+  },
+  {
+   "zh": "返回战场",
+   "upstream": "Return to Battlefield",
+   "fork": "Back to Battlefield",
+   "files": [
+    "public/js/ui/combatHud.js",
+    "public/js/ui/teamPanel.js"
+   ]
+  },
+  {
+   "zh": "右侧战场",
+   "upstream": "Right battlefield",
+   "fork": "Right half",
+   "files": [
+    "public/js/ui/combatHud.js"
+   ]
+  },
+  {
+   "zh": "近卫",
+   "upstream": "Guard",
+   "fork": "${n} ${n === 1 ? 'Fund' : 'Funds'}",
+   "files": [
+    "public/js/ui/detailPanel.js"
+   ]
+  },
+  {
+   "zh": "重装",
+   "upstream": "Defender",
+   "fork": ", WARRIOR: ",
+   "files": [
+    "public/js/ui/detailPanel.js"
+   ]
+  },
+  {
+   "zh": "狙击",
+   "upstream": "Sniper",
+   "fork": ", TANK: ",
+   "files": [
+    "public/js/ui/detailPanel.js"
+   ]
+  },
+  {
+   "zh": "术师",
+   "upstream": "Caster",
+   "fork": ", SNIPER: ",
+   "files": [
+    "public/js/ui/detailPanel.js"
+   ]
+  },
+  {
+   "zh": "医疗",
+   "upstream": "Medic",
+   "fork": ", CASTER: ",
+   "files": [
+    "public/js/ui/detailPanel.js"
+   ]
+  },
+  {
+   "zh": "辅助",
+   "upstream": "Supporter",
+   "fork": ", MEDIC: ",
+   "files": [
+    "public/js/ui/detailPanel.js"
+   ]
+  },
+  {
+   "zh": "特种",
+   "upstream": "Specialist",
+   "fork": ", SUPPORT: ",
+   "files": [
+    "public/js/ui/detailPanel.js"
+   ]
+  },
+  {
+   "zh": "召唤物",
+   "upstream": "Summon",
+   "fork": ", SPECIAL: ",
+   "files": [
+    "public/js/ui/detailPanel.js"
+   ]
+  },
+  {
+   "zh": "自动回复",
+   "upstream": "Auto Recovery",
+   "fork": ", TOKEN: ",
+   "files": [
+    "public/js/ui/detailPanel.js"
+   ]
+  },
+  {
+   "zh": "攻击回复",
+   "upstream": "Offensive Recovery",
+   "fork": "Auto Recovery",
+   "files": [
+    "public/js/ui/detailPanel.js"
+   ]
+  },
+  {
+   "zh": "受击回复",
+   "upstream": "Defensive Recovery",
+   "fork": ", INCREASE_WHEN_TAKEN_DAMAGE: ",
+   "files": [
+    "public/js/ui/detailPanel.js"
+   ]
+  },
+  {
+   "zh": "搭配以下装备时，携带者视为对应盟约的成员：",
+   "upstream": "When equipped with one of the following, the wearer counts as a member of that Alliance:",
+   "fork": "When paired with the gear below, the carrier counts as a member of the matching alliance:",
+   "files": [
+    "public/js/ui/detailPanel.js"
+   ]
+  },
+  {
+   "zh": "暂未生效：需与上表中的一件装备一同携带",
+   "upstream": "Not active yet: carry it together with one of the items above",
+   "fork": "Not active yet: carry it together with one of the gear pieces above",
+   "files": [
+    "public/js/ui/detailPanel.js"
+   ]
+  },
+  {
+   "zh": "（变形同构体）",
+   "upstream": " (Damazti Isomorph)",
+   "fork": " (Polymorphic Isomorph)",
+   "files": [
+    "public/js/ui/detailPanel.js"
+   ]
+  },
+  {
+   "zh": "特质",
+   "upstream": "Attribute",
+   "fork": "Garrison Trait",
+   "files": [
+    "public/js/ui/detailPanel.js"
+   ]
+  },
+  {
+   "zh": "再部署",
+   "upstream": "Redeploy Time",
+   "fork": "Redeploy",
+   "files": [
+    "public/js/ui/detailPanel.js"
+   ]
+  },
+  {
+   "zh": "拖拽装备至该干员以配发（最多 2 件）",
+   "upstream": "Drag Equipment onto this Operator to equip it (up to 2)",
+   "fork": "Drag gear onto this operator to equip it (up to 2)",
+   "files": [
+    "public/js/ui/detailPanel.js"
+   ]
+  },
+  {
+   "zh": "装备",
+   "upstream": "Equipment",
+   "fork": "Gear",
+   "files": [
+    "public/js/ui/detailPanel.js",
+    "public/js/ui/equipReplace.js"
+   ]
+  },
+  {
+   "zh": "本局没有禁用盟约",
+   "upstream": "No Alliances banned this match",
+   "fork": "No alliances disabled this match",
+   "files": [
+    "public/js/ui/enemyDrawer.js"
+   ]
+  },
+  {
+   "zh": "该干员",
+   "upstream": "This Operator",
+   "fork": "This operator",
+   "files": [
+    "public/js/ui/equipReplace.js"
+   ]
+  },
+  {
+   "zh": "将被销毁",
+   "upstream": "Will be destroyed",
+   "fork": "Will Be Destroyed",
+   "files": [
+    "public/js/ui/equipReplace.js"
+   ]
+  },
+  {
+   "zh": "被替换的装备将被销毁",
+   "upstream": "The replaced Equipment will be destroyed",
+   "fork": "the gear you replace will be destroyed",
+   "files": [
+    "public/js/ui/equipReplace.js"
+   ]
+  },
+  {
+   "zh": "点击选择要替换的装备",
+   "upstream": "Tap to choose the Equipment to replace",
+   "fork": "Select the gear to replace.",
+   "files": [
+    "public/js/ui/equipReplace.js"
+   ]
+  },
+  {
+   "zh": "点击取消",
+   "upstream": "Tap to cancel",
+   "fork": "Click to Cancel",
+   "files": [
+    "public/js/ui/facingWheel.js"
+   ]
+  },
+  {
+   "zh": "作战开始",
+   "upstream": "Battle Start",
+   "fork": "Combat Start",
+   "files": [
+    "public/js/ui/gameLogic.js"
+   ]
+  },
+  {
+   "zh": "作战结束",
+   "upstream": "Battle over",
+   "fork": "Combat Over",
+   "files": [
+    "public/js/ui/gameLogic.js"
+   ]
+  },
+  {
+   "zh": "装备补给",
+   "upstream": "Equipment Supply",
+   "fork": "Gear Supply",
+   "files": [
+    "public/js/ui/gameLogic.js"
+   ]
+  },
+  {
+   "zh": "免费选择 1 件",
+   "upstream": "Choose 1 Item for free",
+   "fork": "Pick 1 piece of gear for free",
+   "files": [
+    "public/js/ui/gameLogic.js"
+   ]
+  },
+  {
+   "zh": "免费选择 1 名",
+   "upstream": "Choose 1 Operator for free",
+   "fork": "Pick 1 operator for free",
+   "files": [
+    "public/js/ui/gameLogic.js"
+   ]
+  },
+  {
+   "zh": "无法放置在该位置",
+   "upstream": "Cannot place here",
+   "fork": "t place it there\");\n    if (src.area === ",
+   "files": [
+    "public/js/ui/gameLogic.js"
+   ]
+  },
+  {
+   "zh": "该位置已有单位",
+   "upstream": "This tile is already occupied",
+   "fork": "That tile is already occupied",
+   "files": [
+    "public/js/ui/gameLogic.js"
+   ]
+  },
+  {
+   "zh": "未装备模组",
+   "upstream": "No Module",
+   "fork": "No module equipped",
+   "files": [
+    "public/js/ui/gameLogic.js"
+   ]
+  },
+  {
+   "zh": "TIPS // 模拟要点",
+   "upstream": "TIPS // SIMULATION TIPS",
+   "fork": "SIMULATION TIPS",
+   "files": [
+    "public/js/ui/guide.js"
+   ]
+  },
+  {
+   "zh": "继续作战",
+   "upstream": "Resume Battle",
+   "fork": "Resume Combat",
+   "files": [
+    "public/js/ui/hud.js"
+   ]
+  },
+  {
+   "zh": "离开 / 暂离",
+   "upstream": "Leave / Step Away",
+   "fork": "Leave / Step Out",
+   "files": [
+    "public/js/ui/hud.js"
+   ]
+  },
+  {
+   "zh": "攻击速度",
+   "upstream": "ASPD",
+   "fork": "ATK Speed",
+   "files": [
+    "public/js/ui/loadoutModel.js"
+   ]
+  },
+  {
+   "zh": "离开观战",
+   "upstream": "Stop Spectating",
+   "fork": "Leave Spectating",
+   "files": [
+    "public/js/ui/matchChrome.js"
+   ]
+  },
+  {
+   "zh": "离开观战席并返回大厅，本局模拟不受影响；观战席空着时可以凭同盟密钥再次观战。",
+   "upstream": "Leave the spectator seat and return to the lobby; the simulation goes on. While a spectator seat is free you can watch again with the Alliance Key.",
+   "fork": "Leave the spectator seat and return to the lobby. The match will continue unaffected; if a spectator seat is free, you can rejoin using the Alliance key.",
+   "files": [
+    "public/js/ui/matchChrome.js"
+   ]
+  },
+  {
+   "zh": "暂离",
+   "upstream": "Step Away",
+   "fork": "Step Out",
+   "files": [
+    "public/js/ui/matchChrome.js"
+   ]
+  },
+  {
+   "zh": "AI 托管中",
+   "upstream": "AI Autopilot active",
+   "fork": "AI Takeover Active",
+   "files": [
+    "public/js/ui/matchChrome.js"
+   ]
+  },
+  {
+   "zh": "AI 正在代为操作你的席位",
+   "upstream": "AI is playing your seat for you",
+   "fork": "The AI is playing for you",
+   "files": [
+    "public/js/ui/matchChrome.js"
+   ]
+  },
+  {
+   "zh": "本局禁用干员",
+   "upstream": "Banned Operators",
+   "fork": "Disabled Operators",
+   "files": [
+    "public/js/ui/matchInfo.js"
+   ]
+  },
+  {
+   "zh": "本局信息",
+   "upstream": "Match Info",
+   "fork": " micro=",
+   "files": [
+    "public/js/ui/matchInfo.js"
+   ]
+  },
+  {
+   "zh": "干员语音",
+   "upstream": "Operator Voices",
+   "fork": "Operator Voice",
+   "files": [
+    "public/js/ui/settings.js"
+   ]
+  },
+  {
+   "zh": "精锐干员将进入整备区",
+   "upstream": "The Elite Operator will go to the Bench",
+   "fork": ";\n}\n\n/** The armed (first-tapped) card",
+   "files": [
+    "public/js/ui/shopBar.js"
+   ]
+  },
+  {
+   "zh": "已售出",
+   "upstream": "Sold Out",
+   "fork": "Sold",
+   "files": [
+    "public/js/ui/shopBar.js"
+   ]
+  },
+  {
+   "zh": "展开商店",
+   "upstream": "Expand Shop",
+   "fork": "Unfold Shop",
+   "files": [
+    "public/js/ui/shopBar.js"
+   ]
+  },
+  {
+   "zh": "目前资金",
+   "upstream": "Current Funds",
+   "fork": "Funds",
+   "files": [
+    "public/js/ui/shopBar.js"
+   ]
+  },
+  {
+   "zh": "收起",
+   "upstream": "Collapse",
+   "fork": "Fold",
+   "files": [
+    "public/js/ui/shopBar.js"
+   ]
+  },
+  {
+   "zh": "前往查看",
+   "upstream": "Go View",
+   "fork": "Go Watch",
+   "files": [
+    "public/js/ui/teamPanel.js"
+   ]
+  },
+  {
+   "zh": "撤退至整备区",
+   "upstream": "Retreat to Bench",
+   "fork": "Retreat to the Reserve",
+   "files": [
+    "public/js/ui/underframe.js"
+   ]
+  },
+  {
+   "zh": "放入整备区或战场、配发或使用后才能准备；休整期结束时仍在此处的将被销毁",
+   "upstream": "Move to the Bench or Battlefield, equip or use them before you can Ready; anything still here at the end of the Rest Phase will be destroyed",
+   "fork": ";\n}\n\n/**\n * The temp row",
+   "files": [
+    "public/js/ui/underframe.js"
+   ]
+  },
+  {
+   "zh": "之后的每场作战",
+   "upstream": "every later battle",
+   "fork": "Every battle thereafter",
+   "files": [
+    "server/match/PlayerState.js"
+   ]
+  },
+  {
+   "zh": "悬赏决策",
+   "upstream": "Bounty Decision",
+   "fork": "../display.js",
+   "files": [
+    "server/match/choices.js"
+   ]
+  },
+  {
+   "zh": "道具补给",
+   "upstream": "Item Supply",
+   "fork": ", supply: ",
+   "files": [
+    "server/match/choices.js"
+   ]
+  },
+  {
+   "zh": "机密商店",
+   "upstream": "Secret Shop",
+   "fork": ", shop: ",
+   "files": [
+    "server/match/choices.js"
+   ]
+  },
+  {
+   "zh": "战术决策",
+   "upstream": "Tactical Decision",
+   "fork": ", tactic: ",
+   "files": [
+    "server/match/choices.js"
+   ]
+  }
+ ],
+ "fork_multiple_english": [
+  {
+   "zh": "自己",
+   "variants": {
+    " }, { id: ": [
+     "public/dev/uikit.html"
+    ],
+    "You": [
+     "public/js/ui/gameLogic.js"
+    ]
+   }
+  },
+  {
+   "zh": "销毁",
+   "variants": {
+    "destroy": [
+     "public/dev/uikit.html"
+    ],
+    "Destroy": [
+     "public/js/screens/game.js",
+     "public/js/ui/detailPanel.js",
+     "public/js/ui/underframe.js"
+    ]
+   }
+  },
+  {
+   "zh": "表情",
+   "variants": {
+    "Emotes": [
+     "public/dev/uikit.html"
+    ],
+    "Emote": [
+     "public/js/ui/emotes.js"
+    ]
+   }
+  },
+  {
+   "zh": "博士",
+   "variants": {
+    "Doctor": [
+     "public/js/screens/bandDraft.js",
+     "public/js/screens/lobby.js",
+     "public/js/screens/room.js",
+     "public/js/ui/choiceOverlay.js",
+     "public/js/ui/gameLogic.js",
+     "public/js/ui/teamPanel.js"
+    ],
+    "Player": [
+     "public/js/screens/room.js"
+    ]
+   }
+  },
+  {
+   "zh": "特性",
+   "variants": {
+    "<div class=\"lo-minfo__row\"><span class=\"lo-minfo__k\">Trait</span><${RichText} class=\"lo-minfo__v\" text=${traitBase.descRaw || traitBase.desc} /></div>": [
+     "public/js/screens/loadout.js"
+    ],
+    "Trait": [
+     "public/js/screens/loadout.js"
+    ]
+   }
+  },
+  {
+   "zh": "干员列表",
+   "variants": {
+    "Operator list": [
+     "public/js/screens/loadout.js"
+    ],
+    "Operator List": [
+     "public/js/screens/loadout.js"
+    ]
+   }
+  },
+  {
+   "zh": "本局禁用",
+   "variants": {
+    "Disabled this match": [
+     "public/js/ui/bondStrip.js"
+    ],
+    "Disabled": [
+     "public/js/ui/detailPanel.js"
+    ]
+   }
+  },
+  {
+   "zh": "召唤物",
+   "variants": {
+    ", SPECIAL: ": [
+     "public/js/ui/detailPanel.js"
+    ],
+    "Summon": [
+     "public/js/ui/detailPanel.js"
+    ]
+   }
+  },
+  {
+   "zh": "被动",
+   "variants": {
+    ", ON_DEPLOY: ": [
+     "public/js/ui/detailPanel.js"
+    ],
+    "Passive": [
+     "public/js/ui/detailPanel.js",
+     "public/js/ui/loadoutModel.js"
+    ]
+   }
+  }
+ ]
+}

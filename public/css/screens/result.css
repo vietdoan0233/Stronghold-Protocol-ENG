@@ -11,10 +11,9 @@
 .result__main { position: relative; z-index: 1; flex: 1; min-height: 0; display: grid; grid-template-columns: 5.6rem 1fr; gap: .5rem; padding: .36rem .5rem .3rem .6rem; }
 .result__hero { display: flex; flex-direction: column; align-items: flex-start; gap: .16rem; padding-top: .3rem; min-height: 0; }
 .result__logoimg { height: 1.1rem; width: auto; opacity: .92; }
-/* English headline ("Simulation Complete" / "Simulation Failed"): two lines inside the 5.6rem hero column, so smaller and tighter than the 4-character original (.96rem / .12em) */
-.result__headline { font-size: .7rem; font-weight: 900; letter-spacing: .04em; line-height: 1.05; color: var(--mint-400); text-shadow: 0 0 .4rem rgba(23, 249, 183, .45); animation: head-in 600ms var(--ease-out); }
+.result__headline { font-size: .96rem; font-weight: 900; letter-spacing: .12em; line-height: 1.05; color: var(--mint-400); text-shadow: 0 0 .4rem rgba(23, 249, 183, .45); animation: head-in 600ms var(--ease-out); }
 .result.is-lose .result__headline { color: var(--red-premium); text-shadow: 0 0 .4rem rgba(255, 60, 60, .4); }
-@keyframes head-in { from { opacity: 0; letter-spacing: .16em; } }
+@keyframes head-in { from { opacity: 0; letter-spacing: .5em; } }
 .result__sub { font-size: .2rem; color: var(--text-lo); letter-spacing: .1em; }
 .result__rounds { display: flex; align-items: baseline; gap: .12rem; margin-top: .1rem; }
 .result__rlabel { font-size: .22rem; color: var(--text-md); letter-spacing: .14em; }
@@ -78,7 +77,7 @@
 .result__foot { margin-top: auto; padding-top: .2rem; display: flex; }
 .result__foot .btn { min-width: 3.4rem; }
 
-/* Keep the settlement action inside short landscape touch viewports (the 640×360 phone is the tightest fit). */
+/* English-edition layout fix, applies to every language */
 @media (max-height: 600px) and (pointer: coarse), (max-height: 600px) and (any-pointer: coarse) {
   .result__hero { gap: .08rem; }
 }

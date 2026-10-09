@@ -6,7 +6,6 @@ import assert from 'node:assert/strict';
 import { makeMatch, give, giveItem, DATA } from '../match/harness.js';
 import { createRegistry } from '../../server/match/effectsMeta.js';
 import { triggerGainEffects } from '../../server/sim/content/garrisons.js';
-import { DISPLAY_LANG, L } from '../../server/display.js';
 
 const QUIET = { warn() {}, error() {}, info() {} };
 const REG = createRegistry({ log: QUIET });
@@ -706,11 +705,10 @@ test('歌蕾蒂娅 / 余: granting a chess toasts 「名字：获得X」', () =>
   const n0 = glady.h.allTo('p_0', 'm.toast').length;
   glady.roundStart();
   const lines = glady.h.allTo('p_0', 'm.toast').slice(n0).map((t) => t.text);
-  const prefix = DISPLAY_LANG ? L('歌蕾蒂娅') + ': You gained ' : L('歌蕾蒂娅') + '：获得';
-  const line = lines.find((t) => t.startsWith(prefix));
+  const line = lines.find((t) => t.startsWith('歌蕾蒂娅：获得'));
   assert.ok(line, lines.join(' | '));
-  const gained = line.slice(prefix.length);
-  assert.ok(handChess(glady.ps).some((id) => L(CH(id).name) === gained), `${line} not in ${handChess(glady.ps)}`);
+  const gained = line.slice('歌蕾蒂娅：获得'.length);
+  assert.ok(handChess(glady.ps).some((id) => CH(id).name === gained), `${line} not in ${handChess(glady.ps)}`);
   const yu = setup(12);
   give(yu.m, yu.ps, 'chess_char_6_03_a', 'board', [10, 4]);
   yu.ps.bondCountBonus.egirShip = 9;
@@ -720,11 +718,10 @@ test('歌蕾蒂娅 / 余: granting a chess toasts 「名字：获得X」', () =>
   give(yu.m, yu.ps, fillers[1], 'board', [10, 8]);
   const n1 = yu.h.allTo('p_0', 'm.toast').length;
   yu.roundStart();
-  const yuPrefix = DISPLAY_LANG ? L('余') + ': You gained ' : L('余') + '：获得';
-  const yuLine = yu.h.allTo('p_0', 'm.toast').slice(n1).map((t) => t.text).find((t) => t.startsWith(yuPrefix));
+  const yuLine = yu.h.allTo('p_0', 'm.toast').slice(n1).map((t) => t.text).find((t) => t.startsWith('余：获得'));
   assert.ok(yuLine, yu.h.allTo('p_0', 'm.toast').slice(n1).map((t) => t.text).join(' | '));
-  const yuName = yuLine.slice(yuPrefix.length);
-  assert.ok(handChess(yu.ps).some((id) => L(CH(id).name) === yuName), yuLine);
+  const yuName = yuLine.slice('余：获得'.length);
+  assert.ok(handChess(yu.ps).some((id) => CH(id).name === yuName), yuLine);
 });
 
 test('余 37: a chess of the bond with the most members (normal: 3 in the row; 精锐: always)', () => {

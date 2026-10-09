@@ -62,9 +62,8 @@
 //   cards with `team: true` apply to the picker AND every alive teammate ("若存在其他队友则他们也获得").
 
 import { weightedPick } from './waves.js';
-import { L } from '../display.js';
 
-export const FAMILY_NAMES = { bounty: 'Bounty Draft', supply: 'Item Supply', shop: 'Secret Shop', tactic: 'Tactical Decision' };
+export const FAMILY_NAMES = { bounty: '悬赏决策', supply: '道具补给', shop: '机密商店', tactic: '战术决策' }; // i18n-ignore: = choices.json families (the client shows the localized record)
 
 /**
  * Battles a multi-round bounty card lasts (data `rounds` 99, official text "之后 / 后续的<@ba.vdown>每场</>作战":
@@ -83,7 +82,7 @@ export function bountyBattles(c) {
   const r = Number(c && c.rounds);
   return Math.max(1, Math.min(99, Number.isInteger(r) ? r : 1));
 }
-const N_ZH = ['', '一', '两', '三', '四', '五'];
+const N_ZH = ['', '一', '两', '三', '四', '五']; // i18n-ignore: rewrites the official Chinese bounty text
 /**
  * A bounty text as the card lasts: a multi-round card's "之后的 / 后续每场作战" (rich `<@ba.vdown>每场</>` or plain) reads
  * "接下来<@ba.vup>两场作战</>" like the official two-battle cards while MULTI_ROUND_BOUNTY_BATTLES is set; any other
@@ -92,7 +91,7 @@ const N_ZH = ['', '一', '两', '三', '四', '五'];
 export function bountyText(text, c) {
   if (typeof text !== 'string' || !text || !isMultiRoundBounty(c) || !Number.isInteger(MULTI_ROUND_BOUNTY_BATTLES)) return text;
   const n = MULTI_ROUND_BOUNTY_BATTLES;
-  const battles = `${N_ZH[n] || n}场作战`;
+  const battles = `${N_ZH[n] || n}场作战`; // i18n-ignore
   return text
     .replace(/(?:之后的|后续的?)<@ba\.vdown>每场<\/>作战/g, `接下来<@ba.vup>${battles}</>`)
     .replace(/(?:之后的|后续的?)每场作战/g, `接下来${battles}`);
@@ -405,8 +404,8 @@ function buildCards(gd, rng, family, n, sch, { stageId = null, bondAvailable = n
 
 /** Public card view. */
 export function cardView(c) {
-  const v = { idx: c.idx, kind: c.kind, id: c.id, name: L(c.name), desc: L(c.desc), tier: c.tier ?? null };
-  if (c.kind === 'bounty') Object.assign(v, { descRaw: L(c.descRaw ?? null), coin: c.coin, payout: c.payout, rounds: c.rounds, enemyKey: c.enemyKey, count: c.count });
+  const v = { idx: c.idx, kind: c.kind, id: c.id, name: c.name, desc: c.desc, tier: c.tier ?? null };
+  if (c.kind === 'bounty') Object.assign(v, { descRaw: c.descRaw ?? null, coin: c.coin, payout: c.payout, rounds: c.rounds, enemyKey: c.enemyKey, count: c.count });
   if (c.kind === 'item') v.price = 0;
   if (c.kind === 'tactic') Object.assign(v, { team: c.team, tacticKind: c.tacticKind });
   return v;
@@ -483,9 +482,13 @@ function applyDefault(m, ps, card) {
         handled = true;
         break;
       case 'single_special_choice_gain_bond_chess': {
+        // the player's 自选 stock joins the draw, its bonds read through the player's view (player/diy.js diyStockEntries)
+        const pgd = ps.gd || gd;
+        const hasBond = (cid) => { const c = pgd.chess(cid); return !!(c && Array.isArray(c.bonds) && c.bonds.includes(bs.bond)); };
         for (let i = 0; i < count; i++) {
-          const id = m.pool.roll(m.rngMeta, { maxTier: Math.max(1, ps.shop.level), filter: (cid) => { const c = gd.chess(cid); return !!(c && Array.isArray(c.bonds) && c.bonds.includes(bs.bond)); } })
-            || m.pool.roll(m.rngMeta, { maxTier: 6, filter: (cid) => { const c = gd.chess(cid); return !!(c && Array.isArray(c.bonds) && c.bonds.includes(bs.bond)); } });
+          const extra = typeof ps.diyStockEntries === 'function' ? ps.diyStockEntries() : null;
+          const id = m.pool.roll(m.rngMeta, { maxTier: Math.max(1, ps.shop.level), filter: hasBond, extra })
+            || m.pool.roll(m.rngMeta, { maxTier: 6, filter: hasBond, extra });
           if (id) ps.acquireChess(id, { source: 'choice' });
         }
         handled = true;

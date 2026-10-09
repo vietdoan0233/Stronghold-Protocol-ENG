@@ -167,6 +167,21 @@ export function pickUnitSfx(banks, opts = {}) {
   };
   const exact = (event) => ['attack', 'combat'].map((ab) => banks.get(`${event}.${ab}`)).find((p) => p?.length && ok(p)) ?? null;
   const own = (p) => (p?.length && ok(p) ? p : null);
+  // operators whose default mode is the unsuffixed ability (a plain attack / combat bank of any event): every numbered
+  // variant (attack.1, attack.2 …) is then a skill mode's ability, whatever its file name — 银灰's attack.2 swing
+  // p_atk_silver_n is his S3 mode's (charpack modes Default / S2 / S3), his normal attack is the Default mode's Combat (impact
+  // ON_ABILITY_HIT.combat p_imp_spear_n, no swing bank): community report of 2026-10-06 (item 54) 「银灰的普通攻击的音效错误
+  // 的使用了3技能期间的攻击音效」. Only the plain banks then, or the operator's own projectile banks; newer operators number
+  // their default mode too (attack.0 …) and keep the rule below
+  if (opts.operator && ['ON_ABILITY_START', 'ON_ABILITY_ON', 'ON_ABILITY_HIT'].some((e) => exact(e))) {
+    const swing = exact('ON_ABILITY_START') ?? exact('ON_ABILITY_ON') ?? own(proj.born);
+    const impact = exact('ON_ABILITY_HIT') ?? own(proj.hit);
+    if (swing) out.attack = swing;
+    if (impact) out.hit = impact;
+    if (banks.get('ON_UNIT_DEAD')?.length) out.die = banks.get('ON_UNIT_DEAD');
+    if (banks.get('ON_UNIT_BORN')?.length) out.born = banks.get('ON_UNIT_BORN');
+    return out;
+  }
   // operators: the plain ability of either event before any numbered variant
   const plain = opts.operator ? exact('ON_ABILITY_START') ?? exact('ON_ABILITY_ON') : null;
   const attack = plain
@@ -252,6 +267,11 @@ export const BATTLE_SFX = Object.freeze({
   enemyDieHeavy: { path: 'battle/b_enemy/b_enemy_dead_h.mp3' },
   enemyHit: { path: 'enemy/e_imp/e_imp_general_w.mp3' },
   heal: { bank: 'battle.ON_MODIFIER_HEAL' },
+  // 漏怪: an enemy reached the exit. This is the ORIGINAL Arknights stage cue (`battle.ON_ENEMY_REACHED_EXIT` ->
+  // `Battle/b_ui/b_ui_alarmenter`), not an autochess one — the mode itself has no bank named for an escape (all 13,948
+  // SFX banks of audio_data.json searched). The official treats it as a one-shot alarm: `maxSoundAllowed: 1` with
+  // `popOldest: true` on the `Battle_UI_Important` mixer, so a new escape replaces the one still playing.
+  leak: { bank: 'battle.ON_ENEMY_REACHED_EXIT' },
   win: { path: 'battle/b_ui/b_ui_win.mp3' },
   lose: { path: 'battle/b_ui/b_ui_lose.mp3' },
   killCoin: { bank: 'battle.ON_CUSTOM_TRIGGER.autochess_kill_gain_coin' },
@@ -299,10 +319,10 @@ export const VOICE_SLOTS = Object.freeze({
 });
 
 /**
- * The slots a running battle can actually request — the only ones `public/js/audio.js` ever asks for (the 休整期 is
- * silent, so nothing else is played): 行动出发 start, 首次接敌 faceEnemy, 作战中1-4 skillN, 部署 place (the deploy
- * events) and 选中干员 select (the detail panel, behind its combat flag), plus the settlement lines
- * resultFour / resultThree / resultTwo / resultLose (public/js/screens/game.js onResult).
+ * The slots the client can actually request — the only ones `public/js/audio.js` ever asks for: 行动出发 start, 首次接敌
+ * faceEnemy, 作战中1-4 skillN, 部署 place (a running battle's deploy events), the settlement lines resultFour /
+ * resultThree / resultTwo / resultLose (public/js/screens/game.js onResult) and 选中干员 select (the detail panel opening
+ * on an operator the player tapped, in every phase since 0.2.2).
  * `buildPlan` plans these by default; `--voice-all` widens it to every slot of VOICE_SLOTS.
  */
 export const VOICE_BATTLE_SLOTS = Object.freeze(['start', 'faceEnemy', 'select', 'place',
@@ -313,7 +333,7 @@ export const VOICE_BATTLE_SLOTS = Object.freeze(['start', 'faceEnemy', 'select',
  * 任命队长 squadFirst). `test/docs-consistency.test.js` proves the client never asks for one, so planning them only
  * makes every `npm run assets` download 360 files (19.3 MB, CN dub) that no player will ever hear — they are left out
  * unless `--voice-all` is passed. 部署 `place` and 选中干员 `select` deliberately stay in: the official client groups
- * them with the prep lines, but a battle does play them (the deploy events; the detail panel behind its combat flag).
+ * them with the prep lines, but the client does play them (the deploy events; a tap on an operator).
  */
 export const VOICE_PREP_SLOTS = Object.freeze(['gacha', 'squad', 'squadFirst']);
 

@@ -19,7 +19,6 @@ import { startServer } from '../../server/index.js';
 import { TestClient } from '../helpers/wsClient.js';
 import { FakeBattle } from './fakeBattle.js';
 import { DATA, makeMatch, checkInvariants } from './harness.js';
-import { L } from '../../server/display.js';
 
 const gd = new GameData(DATA, 'mode_multi_hard');
 
@@ -463,7 +462,7 @@ test('CHAR_DAMAGE tickers: a client result names only its own unit types (board,
   h.drive(() => m.phase === PHASE.SETTLE);
   const t = h.bc.slice(before).filter((x) => x.t === 'm.ticker' && x.type === 'CHAR_DAMAGE');
   assert.equal(t.length, 1, t.map((x) => x.text).join(' | '));
-  assert.ok(t[0].text.includes(L(DATA.tokens[wolf].name)), t[0].text);
+  assert.ok(t[0].text.includes(DATA.tokens[wolf].name), t[0].text);
   // the validator: foreign operators dropped, the own summon and the ownerless bond summon (炎佑) kept
   const spec = buildBattleSpec({ battleId: 'v6', fieldId: 'n:p', kind: 'normal', seed: 1, round: 3, timeLimit: 60,
     players: [{ playerId: 'p', units: [{ uid: 7, kind: 'chess', chessId: vigil, row: 10, col: 3, items: [] }], bonds: {} }],

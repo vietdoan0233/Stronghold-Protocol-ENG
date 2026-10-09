@@ -172,19 +172,19 @@ test('the eight stats shown are the record\'s: 生命上限 攻击 防御 法术
   const mod = golden.modules.find((m) => m.isDefault);
   const s = golden.stats;
   const vals = statValues(section(INSIDE, 'elite'));
-  assert.deepEqual(Object.keys(vals), ['Max HP', 'ATK', 'DEF', 'RES', 'Attack Interval', 'Block', 'DP Cost', 'Redeploy']);
+  assert.deepEqual(Object.keys(vals), ['生命上限', '攻击', '防御', '法术抗性', '攻击间隔', '阻挡数', '部署费用', '再部署']);
   assert.deepEqual(vals, {
-    'Max HP': fmtNum(golden.statsBase.maxHp + mod.attr.maxHp), ATK: fmtNum(golden.statsBase.atk + mod.attr.atk), DEF: fmtNum(s.def),
-    RES: String(s.res ?? 0), 'Attack Interval': `${attackInterval(s.bat, s.aspd).toFixed(2)}s`, Block: String(s.blockCnt),
-    'DP Cost': String(s.cost), Redeploy: `${s.respawnTime}s`,
+    生命上限: fmtNum(golden.statsBase.maxHp + mod.attr.maxHp), 攻击: fmtNum(golden.statsBase.atk + mod.attr.atk), 防御: fmtNum(s.def),
+    法术抗性: String(s.res ?? 0), 攻击间隔: `${attackInterval(s.bat, s.aspd).toFixed(2)}s`, 阻挡数: String(s.blockCnt),
+    部署费用: String(s.cost), 再部署: `${s.respawnTime}s`,
   });
   // 不装备 → the base numbers; 普通 → the normal chess's (lower) ones
   const none = statValues(section(INSIDE, 'elite', { [INSIDE]: { module: 'none' } }));
-  assert.equal(none['Max HP'], fmtNum(golden.statsBase.maxHp));
-  assert.equal(none.ATK, fmtNum(golden.statsBase.atk));
+  assert.equal(none['生命上限'], fmtNum(golden.statsBase.maxHp));
+  assert.equal(none['攻击'], fmtNum(golden.statsBase.atk));
   const normal = statValues(section(INSIDE, 'normal'));
-  assert.equal(normal['Max HP'], fmtNum(slot(INSIDE).base.stats.maxHp));
-  assert.ok(Number(normal['Max HP'].replace(/,/g, '')) < Number(none['Max HP'].replace(/,/g, '')));
+  assert.equal(normal['生命上限'], fmtNum(slot(INSIDE).base.stats.maxHp));
+  assert.ok(Number(normal['生命上限'].replace(/,/g, '')) < Number(none['生命上限'].replace(/,/g, '')));
   // the record's numbers, not a live entry: no 实时 / 开战时 tag and no up / down colouring
   const block = statsBlock(section(INSIDE, 'elite'));
   assert.ok(!hasClass(block, 'is-live') && block.props['data-live'] === undefined);
@@ -195,18 +195,18 @@ test('the eight stats shown are the record\'s: 生命上限 攻击 防御 法术
 test('特性 and 天赋 follow the chosen module: 隐现\'s trait upgrade is MAR-X\'s only; 异客\'s talents are rewritten by her other module', () => {
   const rows = (id, level, entries) => kitRows(section(id, level, entries));
   const { golden } = slot(INSIDE);
-  const traitOf = (rs) => rs.find((r) => r.k === 'Trait');
-  // default module: the module's upgraded trait text; 不装备: the plain class trait
-  assert.equal(traitOf(rows(INSIDE, 'elite', {})).text, golden.trait.moduleDescRaw);
-  assert.match(traitOf(rows(INSIDE, 'elite', {})).text, /110%/);
+  const traitOf = (rs) => rs.find((r) => r.k === '特性');
+  // default module: the class trait, then the module's added line (item 16.2 of 2026-10-06); 不装备: the plain class trait
+  assert.equal(traitOf(rows(INSIDE, 'elite', {})).text, `${golden.trait.descRaw}\n${golden.trait.moduleDescRaw}`);
+  assert.match(traitOf(rows(INSIDE, 'elite', {})).text, /^优先攻击空中单位\n[^\n]*110%/);
   assert.equal(traitOf(rows(INSIDE, 'elite', { [INSIDE]: { module: 'none' } })).text, golden.traitBase.descRaw);
   assert.equal(traitOf(rows(INSIDE, 'normal', {})).text, slot(INSIDE).base.trait.descRaw, '普通: its own trait');
   // 天赋: named and not hidden, the record's list
-  const talents = rows(INSIDE, 'elite', {}).filter((r) => r.k === 'Talent');
+  const talents = rows(INSIDE, 'elite', {}).filter((r) => r.k === '天赋');
   assert.deepEqual(talents.map((r) => r.name), golden.talents.filter((t) => t.name && !t.hidden).map((t) => t.name));
   assert.ok(talents.every((r) => r.text.length > 0));
   // 异客: the default module keeps 80% / 3 s, her other module rewrites 机理分析 (70% / 4 s) — what the sim gives her
-  const talentText = (entries) => rows(PASSENGER, 'elite', entries).filter((r) => r.k === 'Talent').map((r) => `${r.name}:${r.text}`).join('\n');
+  const talentText = (entries) => rows(PASSENGER, 'elite', entries).filter((r) => r.k === '天赋').map((r) => `${r.name}:${r.text}`).join('\n');
   const dflt = talentText({});
   const alt = talentText({ [PASSENGER]: { module: PASSENGER_ALT } });
   assert.match(dflt, /机理分析:[^\n]*80%/);
@@ -224,7 +224,7 @@ test('the 普通 / 精锐 toggle: 精锐 is the shown variant, the tabs say so, 
   const elite = section(INSIDE, 'elite');
   assert.equal(elite.props['data-variant'], 'elite');
   const [tn, te] = tabs(elite);
-  assert.deepEqual([textOf(tn), textOf(te)], ['Normal', 'Elite']);
+  assert.deepEqual([textOf(tn), textOf(te)], ['普通', '精锐']);
   assert.deepEqual([tn.props['aria-selected'], te.props['aria-selected']], ['false', 'true']);
   const normal = section(INSIDE, 'normal');
   assert.equal(normal.props['data-variant'], 'normal');
@@ -238,25 +238,25 @@ test('the 普通 / 精锐 toggle: 精锐 is the shown variant, the tabs say so, 
   assert.ok(!be.props.disabled && !bn.props.disabled);
   // the caption says what the numbers are: the chosen module's in 精锐; in 普通 that modules live in 精锐
   const cap = (tree) => textOf([...walk(tree)].find((n) => hasClass(n, 'lo-stats__cap')));
-  assert.match(cap(elite), /^Stats include the selected module;Excludes skill activations, equipment, Alliances, and other in-match bonuses$/);
-  assert.match(cap(normal), /^Normal operators have no modules; the selected module applies to Elite;Excludes skill activations, equipment, Alliances, and other in-match bonuses$/);
+  assert.match(cap(elite), /^数值含所选模组；不含技能发动、装备、盟约等局内加成$/);
+  assert.match(cap(normal), /^普通干员没有模组，所选模组在「精锐」中生效；不含技能发动/);
   // a chess without an elite record: only 普通 is selectable and shown
   const lone = LoadoutStats({ base: { ...slot(INSIDE).base, goldenId: null }, golden: null, entries: {}, level: 'elite', onLevel() {}, getChess: get });
   assert.equal(lone.props['data-variant'], 'normal');
   assert.equal(tabs(lone)[1].props.disabled, true);
-  assert.match(cap(lone), /^Excludes skill activations, equipment, Alliances, and other in-match bonuses$/, 'nothing to point at without an elite');
+  assert.match(cap(lone), /^不含技能发动、装备、盟约等局内加成$/, 'nothing to point at without an elite');
 });
 
 test('place in the detail: after the skills, before the modules; the first .lo-seg stays the skill level toggle (e2e selector)', () => {
   const src = read('public/js/screens/loadout.js');
   const detail = src.slice(src.indexOf('function Detail('), src.indexOf('// ---- filters'));
-  const toggle = detail.indexOf('aria-label="Skill level"');
-  const skills = detail.indexOf('aria-label="Select skill"');
+  const toggle = detail.indexOf("aria-label=${t('技能等级')}");
+  const skills = detail.indexOf("aria-label=${t('选择技能')}");
   const stats = detail.indexOf('<${LoadoutStats} base=${chess}');
   const mods = detail.indexOf('<section class="lo-sec lo-sec--mod">');
   assert.ok(toggle > 0 && skills > toggle && stats > skills && mods > stats, 'skills (and their level toggle) → 局内数值 → modules');
   // one record resolution, shared with the card: chessLoadout, the card's block, trait and talent helpers — no stat arithmetic of its own
-  assert.match(src, /import \{ chessStatsBlock, traitText, chessTalents \} from '\.\.\/ui\/detailPanel\.js';/);
+  assert.match(src, /import \{ chessStatsBlock, traitText, chessTalents, GarrisonBlock \} from '\.\.\/ui\/detailPanel\.js';/);
   assert.match(src, /import \{ chessLoadout \} from '\.\.\/ui\/gameLogic\.js';/);
   const fn = src.slice(src.indexOf('export function statsPreview'), src.indexOf('export function LoadoutStats'));
   assert.ok(!/composeStats|attr\b|maxHp|statsBase/.test(fn), 'no stat arithmetic in the screen');
@@ -292,8 +292,8 @@ test('特性 follows the chosen module also when the skill or the module differs
   const chess = JSON.parse(fs.readFileSync(new URL('../../data/chess.json', import.meta.url), 'utf8'));
   const get = (id) => chess[id];
   const shown = (id, lo) => traitText(get(id), true, chessLoadout(get(id), lo, get));
-  // 隐现 (MAR-X): its other skill keeps the module's line, not the class trait 优先攻击空中单位
-  assert.match(shown('chess_char_1_01_b', { chess_char_1_01_a: { skill: 0, module: null } }), /攻击空中单位时攻击力提升至/);
+  // 隐现 (MAR-X): its other skill keeps the module's line after the class trait 优先攻击空中单位 (item 16.2)
+  assert.match(shown('chess_char_1_01_b', { chess_char_1_01_a: { skill: 0, module: null } }), /^优先攻击空中单位\n攻击空中单位时攻击力提升至/);
   // 信仰搅拌机: SPT-Y shows its own line; 不装备 shows the class trait
   assert.match(shown('chess_char_4_01_b', { chess_char_4_01_a: { skill: get('chess_char_4_01_b').skill.index, module: 'uniequip_003_rmixer' } }), /攻击距离\+1/);
   assert.match(shown('chess_char_4_01_b', { chess_char_4_01_a: { skill: get('chess_char_4_01_b').skill.index, module: 'none' } }), /能够阻挡三个敌人/);

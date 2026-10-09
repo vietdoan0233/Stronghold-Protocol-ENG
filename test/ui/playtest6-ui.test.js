@@ -25,12 +25,9 @@ const read = (p) => readFileSync(path.join(ROOT, p), 'utf8');
 
 // the browser data store reads the real data files from disk
 globalThis.fetch = async (url) => {
-  const u = String(url);
-  const name = u.split('/').pop();
+  const name = String(url).split('/').pop();
   try {
-    // the English overlay tables too (as served at /locales/en/), so the store shows what the player sees
-    const file = u.includes('/locales/') ? path.join(ROOT, 'public', 'locales', 'en', name) : path.join(ROOT, 'data', name);
-    const body = readFileSync(file, 'utf8');
+    const body = readFileSync(path.join(ROOT, 'data', name), 'utf8');
     return { ok: true, status: 200, json: async () => JSON.parse(body) };
   } catch {
     return { ok: false, status: 404, json: async () => ({}) };
@@ -129,13 +126,13 @@ describe('6: 机变 cards (道具补给 / 机密商店 / 悬赏 / 战术) show t
     assert.ok(badge, 'the taker\'s badge');
     assert.equal(children(badge).length, 1, 'avatar only');
     assert.equal(children(badge)[0].type?.name, 'PlayerAvatar');
-    assert.equal(badge.props.title, 'Selected by P2');
-    assert.match(taken[0].props['aria-label'], /, selected by P2$/);
+    assert.equal(badge.props.title, 'P2 已选择');
+    assert.match(taken[0].props['aria-label'], /，P2已选择$/);
     const armed = [...walk(ChoiceView({ pub: { players, deadline: 0 }, sp, myId: 'me', solo: false, armed: 0 }))];
     assert.ok(armed.some((n) => hasClass(n, 'spcard__confirm')));
   });
 
-  test('CSS: left-aligned official card; descriptions grow in full at desktop and on short phones', () => {
+  test('CSS: left-aligned official card; the description is clamped by lines, larger on desktop, ≥ .18rem on short phones', () => {
     const css = read('public/css/screens/game-panels.css');
     const rule = (sel, src = css) => {
       const m = src.match(new RegExp(`(?:^|\\n)\\s*${sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} \\{([^}]*)\\}`));
@@ -144,18 +141,15 @@ describe('6: 机变 cards (道具补给 / 机密商店 / 悬赏 / 战术) show t
     assert.match(rule('.spcard'), /text-align: left/);
     assert.match(rule('.spcard__head'), /display: flex/);
     const desc = rule('.spcard__desc');
-    assert.doesNotMatch(desc, /line-clamp|overflow: hidden/);
+    assert.match(desc, /-webkit-line-clamp: \d/);
     const size = (r) => Number(r.match(/font-size: (\.\d+)rem/)[1]);
     assert.ok(size(desc) >= 0.19, `desktop description ${size(desc)}rem`);
-    assert.match(rule('.spov__inner') || '', /overflow: auto/);
-    assert.match(rule('.spov__grid') || '', /grid-template-rows: repeat\(2, max-content\)/);
-    assert.match(rule('.spcard') || '', /min-height: max-content/);
     // short landscape phones (height < 10.8rem because the root size is clamped at 40 px)
     const phone = css.match(/@media \(max-height: 431\.98px\) \{([\s\S]*?)\n\}/);
     assert.ok(phone, 'a short-screen block');
     const pdesc = rule('.spcard__desc', phone[1]);
     assert.ok(pdesc && size(pdesc) >= 0.18, 'phones keep a readable description');
-    assert.doesNotMatch(pdesc, /line-clamp/, 'phones show the full description');
+    assert.doesNotMatch(pdesc, /line-clamp/, 'phones show as many lines as 16:9 (信标 takes 7 below ≈ 740 px wide)');
     assert.ok(rule('.spcard__icon', phone[1]), 'phones use a smaller icon');
     assert.match(rule('.spov__inner', phone[1]) || '', /top: \.\d+rem/, 'phones: a tighter header gives the grid more height');
     // a taken card's head keeps clear of the taker's badge (top-right corner), on phones too

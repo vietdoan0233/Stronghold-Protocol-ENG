@@ -58,8 +58,8 @@ describe('机密商店: the same item twice (mock harness, headless Chrome)', { 
       await sleep(300);
       let c = await cards(page);
       assert.equal(c.length, 6);
-      assert.equal(c[0].name, 'Polymorphic Isomorph');
-      assert.equal(c[3].name, 'Polymorphic Isomorph');
+      assert.equal(c[0].name, '变形同构体');
+      assert.equal(c[3].name, '变形同构体');
       assert.ok(c[0].taken && c[0].badge && c[0].disabled, 'the first twin: taken, with the taker\'s avatar');
       assert.ok(!c[3].taken && !c[3].badge && !c[3].disabled, 'the second twin: free');
       await page.screenshot({ path: path.join(OUT, `fb1-secret-shop-${name}.png`) });

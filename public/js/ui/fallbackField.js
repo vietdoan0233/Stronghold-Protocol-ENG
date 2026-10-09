@@ -16,12 +16,15 @@
 // Final Assault prep) keeps the own board layout here — every coordinate the UI exchanges is a board coordinate anyway —
 // but draws the tiles of the player's half of the boss field (gameLogic fieldTile, the legality the highlights use: act2
 // m01's fence tiles are floor there, not the normal field's walls; user playtest #5 item 7).
+// A tap on the ground itself emits tileClick { row, col } like render/app.js does, so a special terrain tile
+// explains itself on this board too (GitHub issue #184).
 
 import { render } from '../../vendor/preact.module.js';
 import { html, TierChip } from './components.js';
 import { GEO } from '../../../shared/constants.js';
 import { chessAvatarUrl, itemIconUrl, tokenAvatarUrl, enemyIconUrl } from './assetUrls.js';
-import { tileKey, hasFlag, UF, penPlacement, PEN, fieldTile } from './gameLogic.js';
+import { tileKey, hasFlag, UF, penPlacement, PEN, fieldTile, ownStandIn, ownDiyRecord } from './gameLogic.js';
+import { t } from '../../../shared/i18n.js';
 
 const DRAG_PX = 6;
 const DMG_TTL = 900;
@@ -66,6 +69,12 @@ export function createFallbackView(host, opts = {}) {
   const dataStore = opts.data;
   const m = () => opts.assets || dataStore?.get?.('assets') || null;
   const lookup = (file, id) => dataStore?.lookup?.(file, id) ?? null;
+  /** A battle unit's name in the shown language (the data record of its defId; the sim's own name is the Chinese one). */
+  const unitName = (info) => {
+    const id = String(info.defId || '');
+    const rec = info.side === 'enemy' ? lookup('enemies', id) : id.startsWith('token_') ? lookup('tokens', id) : lookup('chess', id);
+    return rec?.name || info.name || '?';
+  };
   const listeners = new Map();
   const root = document.createElement('div');
   root.className = 'ff';
@@ -118,24 +127,27 @@ export function createFallbackView(host, opts = {}) {
   const handPos = (L, idx) => ({ x: idx * L.tile, y: (L.rows + 0.6) * L.tile });
   const tempPos = (L, idx) => ({ x: (GEO.TEMP_C0 + idx) * L.tile, y: (L.rows + 1.72) * L.tile });
 
-  /** A battle unit's name in the shown language (the data store's record of its defId; the sim's own name is the original Chinese). */
-  function unitName(info) {
-    const id = String(info.defId || '');
-    const rec = info.side === 'enemy' ? lookup('enemies', id) : id.startsWith('token_') ? lookup('tokens', id) : lookup('chess', id);
-    return rec?.name || info.name || '?';
-  }
-
   // ---- pieces (prep) ---------------------------------------------------------------------------------------
   function pieceArt(p) {
     const mm = m();
     if (p.kind === 'item') return itemIconUrl(mm, lookup('items', p.id));
     if (p.kind === 'token') return tokenAvatarUrl(mm, p.id);
-    return chessAvatarUrl(mm, lookup('chess', p.id));
+    const chess = lookup('chess', p.id);
+    return chessAvatarUrl(mm, ownSi(chess) || ownDiy(chess) || chess);
+  }
+  /** 0.2.0 补位: the player's own piece of a chess it does not own is its stand-in, bench and board alike (render/app.js pieceInfo) */
+  function ownSi(chess) {
+    return chess ? ownStandIn(chess, st.priv, dataStore?.get?.('backups') ?? null) : null;
+  }
+  /** 0.2.0 自选编队: the player's own piece of a DIY slot it filled is its operator (gameLogic ownDiyRecord) */
+  function ownDiy(chess) {
+    return chess ? ownDiyRecord(chess, st.priv, { chess: dataStore?.get?.('chess') ?? null, backups: dataStore?.get?.('backups') ?? null }) : null;
   }
   function pieceName(p) {
-    if (p.kind === 'item') return lookup('items', p.id)?.name || 'Item';
-    if (p.kind === 'token') return lookup('tokens', p.id)?.name || 'Summon';
-    return lookup('chess', p.id)?.name || 'Operator';
+    if (p.kind === 'item') return lookup('items', p.id)?.name || t('道具');
+    if (p.kind === 'token') return lookup('tokens', p.id)?.name || t('召唤物');
+    const chess = lookup('chess', p.id);
+    return (ownSi(chess) || ownDiy(chess) || chess)?.name || t('干员');
   }
 
   function Piece({ p, x, y, L, area }) {
@@ -298,7 +310,7 @@ export function createFallbackView(host, opts = {}) {
     });
     return html`<div class="ff-board ff-board--pen" style=${`left:${left}px;top:${top}px;width:${bw}px;height:${tile * rows}px;--tile:${tile}px`}>
       ${cells}${figs}
-      ${models.length ? null : html`<p class="ff-pen__empty">No enemy intel yet</p>`}
+      ${models.length ? null : html`<p class="ff-pen__empty">${t('暂无敌方情报')}</p>`}
     </div>`;
   }
 
@@ -317,6 +329,7 @@ export function createFallbackView(host, opts = {}) {
         const hov = st.hoverTarget?.area === 'board' && st.hoverTarget.row === row && st.hoverTarget.col === col ? dropState(st.hoverTarget) : null;
         tiles.push(html`<div key=${k} class=${cx('ff-tile', `ff-tile--${tileClass(row, col)}`, hl && `is-${hl}`, hov && `is-hover-${hov}`)}
           data-drop="board" data-row=${row} data-col=${col}
+          onPointerDown=${(e) => { if (e.button === 0) emit('tileClick', { row, col, button: 0, clientX: e.clientX, clientY: e.clientY }); }}
           style=${`transform:translate(${p.x}px,${p.y}px);width:${L.tile}px;height:${L.tile}px`}></div>`);
       }
     }
@@ -366,7 +379,7 @@ export function createFallbackView(host, opts = {}) {
     })() : null;
     if (st.camera === 'pen') { render(html`${penView()}<div class="ff-badge">SIMPLIFIED VIEW</div>`, root); return; }
     render(html`<div class=${cx('ff-board', `ff-board--${st.mode}`, `ff-cam--${st.camera}`)} style=${`left:${L.left}px;top:${L.top}px;width:${L.bw}px;height:${L.bh}px;--tile:${L.tile}px`}>
-      ${st.mode === 'prep' ? html`<div class="ff-hand-label" style=${`top:${(L.rows + 0.18) * L.tile}px`}><span>Reserve</span><i></i></div>` : null}
+      ${st.mode === 'prep' ? html`<div class="ff-hand-label" style=${`top:${(L.rows + 0.18) * L.tile}px`}><span>${t('整备区')}</span><i></i></div>` : null}
       ${tiles}${hand}${units}${pieces}${floats}
     </div>${ghost}
     <div class="ff-badge">SIMPLIFIED VIEW</div>`, root);

@@ -53,5 +53,5 @@ test('PhaseCapsule: the live pool of the battle on screen wins over the ~1 Hz m.
   // no snapshot yet (the battle is loading): m.public
   assert.equal(barText(PhaseCapsule({ pub, hud: null })), '0.1%', '900 of 1 800 000 = 0.05 %');
   assert.equal(barText(PhaseCapsule({ pub: { phase: PHASE.FINAL_ASSAULT, bossHp: { hp: 900000, max: 1800000 } }, hud: { killed: 1, total: 20, boss: null } })), '50%');
-  assert.equal(barText(PhaseCapsule({ pub: { phase: PHASE.FINAL_ASSAULT }, hud: null })), 'Enemy Leader');
+  assert.equal(barText(PhaseCapsule({ pub: { phase: PHASE.FINAL_ASSAULT }, hud: null })), '敌方领袖');
 });

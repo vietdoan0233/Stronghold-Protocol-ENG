@@ -13,18 +13,19 @@ import { html, Icon } from './components.js';
 import { DpCounter } from './hud.js';
 import { GIcon } from './gameComponents.js';
 import { switcherLabel, cycleField } from './gameLogic.js';
+import { t } from '../../../shared/i18n.js';
 
 const cx = (...p) => p.flat().filter(Boolean).join(' ');
 
 /** Teammates' progress under the waiting pill (css/screens/game.css .chud__progress / .chud__prog). */
 function ProgressList({ list }) {
   if (!Array.isArray(list) || !list.length) return null;
-  return html`<div class="chud__progress" role="list" aria-label="Teammates' combat progress">
+  return html`<div class="chud__progress" role="list" aria-label=${t('队友作战进度')}>
     ${list.map((p) => html`<span key=${p.playerId} role="listitem" class=${cx('chud__prog', p.done && 'is-done')}>
       <b>${p.name}</b>
       ${p.done
-        ? html`<span class="chud__prog__ok" aria-label="Combat over">✓</span>`
-        : html`<span class="num">${p.killed != null && p.total != null ? `${p.killed}/${p.total}` : '•••'}</span>`}
+        ? html`<span class="chud__prog__ok" aria-label=${t('作战结束')}>✓</span>`
+        : html`<span class="num">${(p.resolved ?? p.killed) != null && p.total != null ? `${p.resolved ?? p.killed}/${p.total}` : '•••'}</span>`}
     </span>`)}
   </div>`;
 }
@@ -44,14 +45,14 @@ export function CombatHud({ pub, myId, watching, hud, myDone, onWatch, spectatin
   return html`<div class="chud">
     <${DpCounter} dp=${hud?.dp} />
     <div class="chud__bottom">
-      ${myDone ? html`<div class="chud__msg" role="status"><${Icon} name="hourglass" /><span>Combat over, waiting for teammates to finish</span></div>` : null}
-      ${spectating ? (spectator ? html`<div class="chud__msg" role="status"><${GIcon} name="eye" /><span>Spectating</span></div>`
-        : html`<div class="chud__msg chud__msg--dead" role="status"><${Icon} name="close" /><span>You have been eliminated, now spectating</span></div>`) : null}
+      ${myDone ? html`<div class="chud__msg" role="status"><${Icon} name="hourglass" /><span>${t('作战结束，等待队友完成作战')}</span></div>` : null}
+      ${spectating ? (spectator ? html`<div class="chud__msg" role="status"><${GIcon} name="eye" /><span>${t('观战中')}</span></div>`
+        : html`<div class="chud__msg chud__msg--dead" role="status"><${Icon} name="close" /><span>${t('你已被淘汰，正在观战')}</span></div>`) : null}
       ${fields.length ? html`<div class=${cx('vswitch', !canCycle && 'is-single')}>
-        <button type="button" class="vswitch__arrow" disabled=${!canCycle} aria-label="Previous battlefield"
+        <button type="button" class="vswitch__arrow" disabled=${!canCycle} aria-label=${t('上一个战场')}
           onClick=${() => { const n = cycleField(fields, watching, -1); if (n && n !== watching) onWatch(n); }}><${Icon} name="chevronLeft" /></button>
         <span class="vswitch__label">${label}</span>
-        <button type="button" class="vswitch__arrow" disabled=${!canCycle} aria-label="Next battlefield"
+        <button type="button" class="vswitch__arrow" disabled=${!canCycle} aria-label=${t('下一个战场')}
           onClick=${() => { const n = cycleField(fields, watching, 1); if (n && n !== watching) onWatch(n); }}><${Icon} name="chevronRight" /></button>
       </div>` : null}
     </div>
@@ -72,22 +73,22 @@ function ClientHud({ hud, myDone, spectating, spectator = false, client }) {
   return html`<div class="chud">
     <${DpCounter} dp=${hud?.dp} />
     <div class="chud__bottom">
-      ${myDone && !observing ? html`<div class="chud__msg chud__wait" role="status"><${Icon} name="hourglass" /><span>Combat over, waiting for teammates to finish</span></div>
+      ${myDone && !observing ? html`<div class="chud__msg chud__wait" role="status"><${Icon} name="hourglass" /><span>${t('作战结束，等待队友完成作战')}</span></div>
         <${ProgressList} list=${client.progress} />` : null}
-      ${spectating && !observing ? (spectator ? html`<div class="chud__msg" role="status"><${GIcon} name="eye" /><span>Spectating · Click a teammate's portrait on the left to switch fields</span></div>`
-        : html`<div class="chud__msg chud__msg--dead" role="status"><${Icon} name="close" /><span>You have been eliminated; click a teammate's portrait to go watch</span></div>`) : null}
+      ${spectating && !observing ? (spectator ? html`<div class="chud__msg" role="status"><${GIcon} name="eye" /><span>${t('观战中，可点击左侧成员头像前往查看')}</span></div>`
+        : html`<div class="chud__msg chud__msg--dead" role="status"><${Icon} name="close" /><span>${t('你已被淘汰，可点击队友头像前往查看')}</span></div>`) : null}
       ${observing && !halves ? html`<div class="vswitch chud__observe is-single" role="status">
         <span class="vswitch__label"><${GIcon} name="eye" /><span>${observing.name}</span></span>
         ${client.onBack ? html`<button type="button" class="btn btn--secondary btn--sm chud__back" onClick=${() => client.onBack()}>
-          <span class="btn__label">Back to Battlefield</span></button>` : null}
+          <span class="btn__label">${t('返回战场')}</span></button>` : null}
       </div>` : null}
       ${halves ? html`<div class=${cx('vswitch', 'chud__layers', observing && 'is-observing')}>
-        <button type="button" class="vswitch__arrow" disabled=${idx <= 0} aria-label="Left half" onClick=${() => step(-1)}><${Icon} name="chevronLeft" /></button>
+        <button type="button" class="vswitch__arrow" disabled=${idx <= 0} aria-label=${t('左侧战场')} onClick=${() => step(-1)}><${Icon} name="chevronLeft" /></button>
         <span class="vswitch__label">
-          ${cur && cur.watch ? html`<${GIcon} name="eye" />` : null}<span>${cur ? cur.label : 'Panorama'}</span></span>
-        <button type="button" class="vswitch__arrow" disabled=${idx >= layers.length - 1} aria-label="Right half" onClick=${() => step(1)}><${Icon} name="chevronRight" /></button>
+          ${cur && cur.watch ? html`<${GIcon} name="eye" />` : null}<span>${cur ? cur.label : t('全景')}</span></span>
+        <button type="button" class="vswitch__arrow" disabled=${idx >= layers.length - 1} aria-label=${t('右侧战场')} onClick=${() => step(1)}><${Icon} name="chevronRight" /></button>
         ${observing && client.onBack ? html`<button type="button" class="btn btn--secondary btn--sm chud__back" onClick=${() => client.onBack()}>
-          <span class="btn__label">Back to Battlefield</span></button>` : null}
+          <span class="btn__label">${t('返回战场')}</span></button>` : null}
       </div>` : null}
     </div>
   </div>`;
