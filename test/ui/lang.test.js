@@ -220,3 +220,41 @@ test('timed-out startup cannot overwrite a newer default selection', async (ctx)
   await turn();
   h.state('zh');
 });
+
+// FORK CHANGE (Stronghold-Protocol-ENG): English is the default with no `?lang=` and no stored choice.
+test('fork default: nothing stored starts in English, without saving it', async (ctx) => {
+  const h = await setup(ctx);
+  const boot = h.initLang();
+  h.finishIndex();
+  await turn();
+  h.finish('en');
+  assert.equal(await boot, 'en');
+  h.state('en', null);
+  assert.deepEqual(h.initialLang(), { lang: 'en', fromUrl: false });
+});
+
+test('fork default: a stored Chinese choice still wins over the English default', async (ctx) => {
+  const h = await setup(ctx, 'zh');
+  const boot = h.initLang();
+  h.finishIndex();
+  await turn();
+  assert.equal(await boot, 'zh');
+  h.state('zh');
+  assert.deepEqual(h.calls, ['/packs/index.json']);
+  assert.deepEqual(h.initialLang(), { lang: 'zh', fromUrl: false });
+});
+
+test('fork default: a timed-out startup with nothing stored still applies English when its pack arrives', async (ctx) => {
+  const h = await setup(ctx);
+  let timeout;
+  ctx.mock.method(globalThis, 'setTimeout', (fn) => { timeout = fn; return 0; });
+  const boot = h.initLang();
+  h.finishIndex();
+  await turn();
+  timeout();
+  assert.equal(await boot, 'zh');
+  h.state('zh', null);
+  h.finish('en');
+  await turn();
+  h.state('en', null);
+});

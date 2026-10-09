@@ -6,9 +6,11 @@
 // m.ticker / error codes). No language is known by name here: a pack is a file in a folder (the owner's decision of
 // 2026-10-07).
 //
-// Chinese is the default (the owner's decision of 2026-10-05) — the browser's language is not consulted. Order at boot:
+// FORK CHANGE (Stronghold-Protocol-ENG; upstream's default is Chinese, the owner's decision of 2026-10-05): a player with
+// no `?lang=` and no stored choice starts in English (FORK_DEFAULT_LANG); Chinese stays one switch away. The browser's
+// language is not consulted. Order at boot:
 // `?lang=<code>` in the URL (then removed from the address bar and kept as the choice), the stored choice (localStorage
-// `sp.pref.lang`), else Chinese; a code no pack has falls back to Chinese (`en-US` takes the `en` pack). A switch
+// `sp.pref.lang`), else English (a stored code no pack has counts as none); a code no pack has falls back to Chinese (`en-US` takes the `en` pack). A switch
 // re-renders the app in place (main.js App subscribes with useLang) — no reload; the game texts follow as soon as their
 // overlays have downloaded (data.js notifies its subscribers). Without an index (a static host that lacks the file) the
 // stored or requested pack still loads by its code, and the menu offers it beside Chinese.
@@ -25,6 +27,8 @@ import { loadPref, savePref } from '../store.js';
 import { data } from '../data.js';
 import { html } from './components.js';
 
+/** FORK CHANGE: the language a player starts in with no `?lang=` and no stored choice (upstream: Chinese, DEFAULT_LANG). */
+export const FORK_DEFAULT_LANG = 'en';
 /** The switch's own label, in both languages (whoever opens it may not read the current one). */
 const SWITCH_LABEL = 'Language / 语言'; // i18n-ignore
 const PREF_KEY = 'lang';
@@ -120,7 +124,8 @@ export async function loadLangChain(lang, doFetch = defaultFetch) {
 export const dataChain = (lang) => langChain(lang).filter((c) => langInfo(c)?.data !== false).map((c) => ({ code: c, url: langInfo(c)?.dataUrl }));
 
 /**
- * The language to start in: the URL's `?lang=`, then the stored choice, then Chinese. `tentative`: also a well-formed
+ * The language to start in: the URL's `?lang=`, then the stored choice, then English (FORK_DEFAULT_LANG; Chinese when no
+ * English pack is known). `tentative`: also a well-formed
  * code no pack is known for (boot without an index tries to load it).
  * @param {string} [search] location.search
  * @param {(key: string, fallback: any) => any} [load]
@@ -134,7 +139,7 @@ export function initialLang(search = globalThis.location?.search || '', load = l
   if (fromUrl) return { lang: fromUrl, fromUrl: true };
   let stored = null;
   try { stored = pick(load(PREF_KEY, null)); } catch { /* ignore */ }
-  return { lang: stored || DEFAULT_LANG, fromUrl: false };
+  return { lang: stored || pick(FORK_DEFAULT_LANG) || DEFAULT_LANG, fromUrl: false };
 }
 
 function stripLangParam() {
@@ -211,7 +216,11 @@ export async function initLang() {
   })();
   const got = await Promise.race([boot, new Promise((r) => setTimeout(() => r(TIMEOUT), BOOT_WAIT_MS))]);
   if (got === TIMEOUT) {
-    boot.then((lang) => { if (request === langRequest && lang && normalizeLang(loadPref(PREF_KEY, null)) === lang) applyLang(lang); });
+    boot.then((lang) => {
+      // a stored choice must match what loaded; with none (the fork's English default) the late pack is the choice
+      const saved = normalizeLang(loadPref(PREF_KEY, null));
+      if (request === langRequest && lang && (!saved || saved === lang)) applyLang(lang);
+    });
   } else if (request === langRequest && got) applyLang(got);
   return getLang();
 }
