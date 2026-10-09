@@ -99,8 +99,9 @@ test('docs and messages say what falls back without the local art and how a serv
   assert.equal(localGaps({ enemySpines: false, tokenSpines: false }), '，缺少新版的灼热/炽焰源石虫模型和自选召唤物模型');
   assert.match(read('tools/setup.mjs'), /\$\{localGaps\(local\)\}（重新提取：--local）/);
   const readme = read('README.md');
-  assert.match(readme, /召唤物/);
-  assert.match(readme, /表情和「玩法说明」的教程图随上面的素材一起从公开镜像下载/);
-  assert.match(readme, /\*\*同一版本\*\*的整合包/);
+  // the README is Chinese upstream and English in this fork: either wording satisfies each check
+  assert.match(readme, /召唤物|summons/);
+  assert.match(readme, /表情和「玩法说明」的教程图随上面的素材一起从公开镜像下载|Emotes and the "How to play" tutorial images are downloaded from the public mirrors/);
+  assert.match(readme, /\*\*同一版本\*\*的整合包|\*\*of the same version\*\*/);
   assert.ok(!/需本地提取/.test(read('docs/PLAYING.md')), 'PLAYING: the 玩法说明 pages come with the download');
 });
